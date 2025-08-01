@@ -74,6 +74,17 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
+    // Add redirect callback to fix redirect loops
+    async redirect({ url, baseUrl }) {
+      // If the URL is absolute and starts with the base URL, return it directly
+      if (url.startsWith(baseUrl)) return url;
+      
+      // If it's an absolute URL to a different domain, return the base URL
+      if (url.startsWith("http")) return baseUrl;
+      
+      // For relative URLs, prepend the base URL
+      return new URL(url, baseUrl).toString();
+    },
   },
   session: {
     strategy: 'jwt',

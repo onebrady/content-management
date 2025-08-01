@@ -20,7 +20,11 @@ export default function SignInPage() {
 
   const handleSignIn = async () => {
     try {
-      await signIn('azure-ad', { callbackUrl: '/dashboard' });
+      // Use fixed callback URL and force redirect to prevent loops
+      await signIn('azure-ad', { 
+        callbackUrl: '/dashboard',
+        redirect: true 
+      });
     } catch (error) {
       console.error('Sign in error:', error);
     }

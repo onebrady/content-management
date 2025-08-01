@@ -16,6 +16,7 @@ export default withAuth(
 
     // Check if user is authenticated
     if (!token) {
+      // Redirect to signin without adding callbackUrl to prevent redirect loops
       return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
 
