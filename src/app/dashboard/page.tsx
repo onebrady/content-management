@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Card,
@@ -16,6 +16,7 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemButton,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add,
@@ -30,16 +31,82 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { UserProfile } from '@/components/user/UserProfile';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { analytics, loading: analyticsLoading } = useAnalytics();
   const router = useRouter();
+  const [stats, setStats] = useState([
+    {
+      title: 'Total Content',
+      value: '0',
+      icon: <Article />,
+      color: 'primary.main',
+    },
+    {
+      title: 'Pending Approvals',
+      value: '0',
+      icon: <Approval />,
+      color: 'warning.main',
+    },
+    {
+      title: 'Active Users',
+      value: '0',
+      icon: <People />,
+      color: 'success.main',
+    },
+    {
+      title: 'Recent Activity',
+      value: '0',
+      icon: <TrendingUp />,
+      color: 'info.main',
+    },
+  ]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/signin');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  useEffect(() => {
+    if (analytics) {
+      // Update stats with real data
+      setStats([
+        {
+          title: 'Total Content',
+          value: analytics.totalContent.toString(),
+          icon: <Article />,
+          color: 'primary.main',
+        },
+        {
+          title: 'Pending Approvals',
+          value:
+            analytics.contentByStatus
+              .find((status) => status.status === 'PENDING')
+              ?.count.toString() || '0',
+          icon: <Approval />,
+          color: 'warning.main',
+        },
+        {
+          title: 'Active Users',
+          value: analytics.totalUsers.toString(),
+          icon: <People />,
+          color: 'success.main',
+        },
+        {
+          title: 'Recent Activity',
+          value: (
+            analytics.recentActivity.newContent +
+            analytics.recentActivity.updatedContent
+          ).toString(),
+          icon: <TrendingUp />,
+          color: 'info.main',
+        },
+      ]);
+    }
+  }, [analytics]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -80,33 +147,6 @@ export default function DashboardPage() {
     },
   ];
 
-  const stats = [
-    {
-      title: 'Total Content',
-      value: '24',
-      icon: <Article />,
-      color: 'primary.main',
-    },
-    {
-      title: 'Pending Approvals',
-      value: '3',
-      icon: <Approval />,
-      color: 'warning.main',
-    },
-    {
-      title: 'Active Users',
-      value: '12',
-      icon: <People />,
-      color: 'success.main',
-    },
-    {
-      title: 'Growth Rate',
-      value: '+15%',
-      icon: <TrendingUp />,
-      color: 'info.main',
-    },
-  ];
-
   return (
     <DashboardLayout>
       <Box sx={{ p: 3 }}>
@@ -136,6 +176,7 @@ export default function DashboardPage() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 2,
+                      minHeight: '100px',
                     }}
                   >
                     <Box
@@ -149,12 +190,18 @@ export default function DashboardPage() {
                       {stat.icon}
                     </Box>
                     <Box>
-                      <Typography variant="h4" component="div">
-                        {stat.value}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {stat.title}
-                      </Typography>
+                      {analyticsLoading ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        <>
+                          <Typography variant="h4" component="div">
+                            {stat.value}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {stat.title}
+                          </Typography>
+                        </>
+                      )}
                     </Box>
                   </Paper>
                 </Grid>
@@ -198,35 +245,84 @@ export default function DashboardPage() {
                 <Typography variant="h6" gutterBottom>
                   Recent Activity
                 </Typography>
-                <List>
-                  <ListItem>
-                    <ListItemIcon>
-                      <Notifications />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="New content submitted for review"
-                      secondary="2 hours ago"
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon>
-                      <Article />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Blog post published"
-                      secondary="4 hours ago"
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon>
-                      <People />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="New user registered"
-                      secondary="1 day ago"
-                    />
-                  </ListItem>
-                </List>
+                {analyticsLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : analytics ? (
+                  <List>
+                    {analytics.recentActivity.newContent > 0 && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <Article />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`${analytics.recentActivity.newContent} new content items created`}
+                          secondary="Last 30 days"
+                        />
+                      </ListItem>
+                    )}
+                    {analytics.recentActivity.updatedContent > 0 && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <Article />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`${analytics.recentActivity.updatedContent} content items updated`}
+                          secondary="Last 30 days"
+                        />
+                      </ListItem>
+                    )}
+                    {analytics.recentActivity.newComments > 0 && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <Notifications />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`${analytics.recentActivity.newComments} new comments added`}
+                          secondary="Last 30 days"
+                        />
+                      </ListItem>
+                    )}
+                    {analytics.recentActivity.newApprovals > 0 && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <Approval />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`${analytics.recentActivity.newApprovals} content approvals processed`}
+                          secondary="Last 30 days"
+                        />
+                      </ListItem>
+                    )}
+                    {analytics.totalUsers > 0 && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <People />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`${analytics.totalUsers} active users`}
+                          secondary="Total"
+                        />
+                      </ListItem>
+                    )}
+                    {analytics.recentActivity.newContent === 0 &&
+                      analytics.recentActivity.updatedContent === 0 &&
+                      analytics.recentActivity.newComments === 0 &&
+                      analytics.recentActivity.newApprovals === 0 && (
+                        <ListItem>
+                          <ListItemText
+                            primary="No recent activity"
+                            secondary="Last 30 days"
+                          />
+                        </ListItem>
+                      )}
+                  </List>
+                ) : (
+                  <Typography color="text.secondary">
+                    Unable to load recent activity
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Grid>

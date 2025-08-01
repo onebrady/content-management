@@ -87,12 +87,17 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
+      console.log('Fetching users...');
       const response = await fetch('/api/users');
+      console.log('Users API response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Users data received:', data);
         setUsers(data);
       } else {
-        console.error('Failed to fetch users');
+        const errorText = await response.text();
+        console.error('Failed to fetch users:', response.status, errorText);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -116,6 +121,7 @@ export default function UsersPage() {
     if (!selectedUser) return;
 
     try {
+      console.log('Updating user:', selectedUser.id, 'with data:', editForm);
       const response = await fetch(`/api/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
@@ -123,8 +129,11 @@ export default function UsersPage() {
         },
         body: JSON.stringify(editForm),
       });
+      console.log('Update user response status:', response.status);
 
       if (response.ok) {
+        const updatedUser = await response.json();
+        console.log('User updated successfully:', updatedUser);
         setNotification({
           open: true,
           message: 'User updated successfully',
@@ -133,9 +142,11 @@ export default function UsersPage() {
         setEditDialogOpen(false);
         fetchUsers();
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to update user:', response.status, errorData);
         setNotification({
           open: true,
-          message: 'Failed to update user',
+          message: errorData.error || 'Failed to update user',
           severity: 'error',
         });
       }
@@ -153,11 +164,14 @@ export default function UsersPage() {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
+      console.log('Deleting user:', userId);
       const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
       });
+      console.log('Delete user response status:', response.status);
 
       if (response.ok) {
+        console.log('User deleted successfully');
         setNotification({
           open: true,
           message: 'User deleted successfully',
@@ -165,9 +179,11 @@ export default function UsersPage() {
         });
         fetchUsers();
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to delete user:', response.status, errorData);
         setNotification({
           open: true,
-          message: 'Failed to delete user',
+          message: errorData.error || 'Failed to delete user',
           severity: 'error',
         });
       }
