@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
+    "postbuild": "prisma migrate deploy && tsx prisma/seed.ts",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -42,6 +43,7 @@
     "@tiptap/starter-kit": "^2.1.0",
     "@uploadthing/react": "^7.3.2",
     "ace-builds": "^1.43.2",
+    "bcryptjs": "^3.0.2",
     "clsx": "^2.0.0",
     "date-fns": "^4.1.0",
     "next": "^15.0.0",

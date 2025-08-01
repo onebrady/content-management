@@ -10,6 +10,7 @@ import {
   Typography,
   Box,
   Alert,
+  TextField,
 } from '@mui/material';
 import { Microsoft } from '@mui/icons-material';
 
@@ -18,6 +19,9 @@ export default function SignInPage() {
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [credentialsError, setCredentialsError] = useState<string | null>(null);
 
   useEffect(() => {
     // If user is already signed in, redirect to dashboard
@@ -43,6 +47,23 @@ export default function SignInPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCredentialsLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setCredentialsError(null);
+    const res = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+    if (res?.error) {
+      setCredentialsError('Invalid email or password.');
+    } else if (res?.ok) {
+      router.push('/dashboard');
+    }
+    setIsLoading(false);
   };
 
   // Show loading state while checking session
@@ -121,6 +142,49 @@ export default function SignInPage() {
           >
             {isLoading ? 'Signing in...' : 'Sign in with Microsoft'}
           </Button>
+          {/* Credentials login form */}
+          <Box
+            component="form"
+            onSubmit={handleCredentialsLogin}
+            sx={{ mt: 4 }}
+          >
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+              Or sign in with email and password
+            </Typography>
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <TextField
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+              margin="normal"
+              required
+            />
+            {credentialsError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {credentialsError}
+              </Alert>
+            )}
+            <Button
+              type="submit"
+              variant="outlined"
+              color="primary"
+              fullWidth
+              disabled={isLoading}
+              sx={{ mt: 2 }}
+            >
+              {isLoading ? 'Signing in...' : 'Sign in with Email'}
+            </Button>
+          </Box>
           <Typography
             variant="caption"
             color="text.secondary"

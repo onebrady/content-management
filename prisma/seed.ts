@@ -1,4 +1,5 @@
 import { PrismaClient, UserRole, ContentType, Priority } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -47,6 +48,18 @@ async function main() {
       name: 'Viewer User',
       role: UserRole.VIEWER,
       department: 'Sales',
+    },
+  });
+
+  const password = await bcrypt.hash('C&CREM&q5j&4fN', 10);
+  await prisma.user.upsert({
+    where: { email: 'onebrady@gmail.com' },
+    update: { password, role: 'ADMIN' },
+    create: {
+      email: 'onebrady@gmail.com',
+      name: 'Seeded Admin',
+      password,
+      role: 'ADMIN',
     },
   });
 
@@ -128,4 +141,4 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-  }); 
+  });
