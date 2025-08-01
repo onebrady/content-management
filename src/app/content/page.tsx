@@ -39,6 +39,17 @@ interface ContentData {
   };
 }
 
+interface Tag {
+  id: string;
+  name: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
 function ContentPageInner() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
@@ -47,6 +58,8 @@ function ContentPageInner() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [content, setContent] = useState<ContentData[]>([]);
   const [selectedContent, setSelectedContent] = useState<any>(null);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -71,76 +84,6 @@ function ContentPageInner() {
     severity: 'info',
   });
 
-  // Mock data for demonstration
-  const mockContent: ContentData[] = [
-    {
-      id: '1',
-      title: 'Getting Started with Content Management',
-      type: 'ARTICLE',
-      status: 'DRAFT',
-      priority: 'MEDIUM',
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-15T10:00:00Z',
-      author: {
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-      },
-      assignee: {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-      },
-      tags: [
-        { id: '1', name: 'Tutorial' },
-        { id: '2', name: 'Guide' },
-      ],
-      _count: {
-        comments: 3,
-        approvals: 1,
-        attachments: 2,
-      },
-    },
-    {
-      id: '2',
-      title: 'Advanced Content Creation Techniques',
-      type: 'BLOG_POST',
-      status: 'IN_REVIEW',
-      priority: 'HIGH',
-      createdAt: '2024-01-14T14:30:00Z',
-      updatedAt: '2024-01-15T09:15:00Z',
-      author: {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-      },
-      tags: [
-        { id: '3', name: 'Advanced' },
-        { id: '4', name: 'Techniques' },
-      ],
-      _count: {
-        comments: 5,
-        approvals: 2,
-        attachments: 1,
-      },
-    },
-  ];
-
-  const mockTags = [
-    { id: '1', name: 'Tutorial' },
-    { id: '2', name: 'Guide' },
-    { id: '3', name: 'Advanced' },
-    { id: '4', name: 'Techniques' },
-    { id: '5', name: 'Marketing' },
-    { id: '6', name: 'SEO' },
-  ];
-
-  const mockUsers = [
-    { id: '1', name: 'John Doe', email: 'john@example.com' },
-    { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
-    { id: '3', name: 'Bob Johnson', email: 'bob@example.com' },
-  ];
-
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/signin');
@@ -155,20 +98,99 @@ function ContentPageInner() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    // Simulate loading content
-    setIsLoadingContent(true);
-    setTimeout(() => {
-      setContent(mockContent);
-      setPagination({
-        page: 1,
-        limit: 10,
-        total: mockContent.length,
-        pages: Math.ceil(mockContent.length / 10),
+  // Add error handling for API failures
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Fetch content from API
+  const fetchContent = async () => {
+    try {
+      setIsLoadingContent(true);
+      setApiError(null);
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString(),
+        ...(filters.search && { search: filters.search }),
+        ...(filters.status && { status: filters.status }),
+        ...(filters.type && { type: filters.type }),
+        ...(filters.priority && { priority: filters.priority }),
       });
+
+      const response = await fetch(`/api/content?${params}`);
+      if (!response.ok) {
+        if (response.status === 401) {
+          setApiError('Authentication required. Please sign in.');
+          router.push('/auth/signin');
+          return;
+        }
+        throw new Error(`Failed to fetch content: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setContent(data.content);
+      setPagination({
+        page: data.pagination.page,
+        limit: data.pagination.limit,
+        total: data.pagination.total,
+        pages: data.pagination.pages,
+      });
+    } catch (error) {
+      console.error('Error fetching content:', error);
+      setApiError('Failed to load content. Please try again.');
+      showNotification('Failed to load content', 'error');
+    } finally {
       setIsLoadingContent(false);
-    }, 1000);
-  }, []);
+    }
+  };
+
+  // Fetch tags from API
+  const fetchTags = async () => {
+    try {
+      const response = await fetch('/api/tags');
+      if (!response.ok) {
+        if (response.status === 401) {
+          setApiError('Authentication required. Please sign in.');
+          router.push('/auth/signin');
+          return;
+        }
+        throw new Error('Failed to fetch tags');
+      }
+      const data = await response.json();
+      setTags(data);
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+      setApiError('Failed to load tags. Please try again.');
+      showNotification('Failed to load tags', 'error');
+    }
+  };
+
+  // Fetch users from API
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('/api/users');
+      if (!response.ok) {
+        if (response.status === 401) {
+          setApiError('Authentication required. Please sign in.');
+          router.push('/auth/signin');
+          return;
+        }
+        throw new Error('Failed to fetch users');
+      }
+      const data = await response.json();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setApiError('Failed to load users. Please try again.');
+      showNotification('Failed to load users', 'error');
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchContent();
+      fetchTags();
+      fetchUsers();
+    }
+  }, [isAuthenticated, pagination.page, filters]);
 
   const handleCreate = () => {
     setViewMode('create');
@@ -190,63 +212,64 @@ function ContentPageInner() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    setContent((prev) => prev.filter((item) => item.id !== id));
-    showNotification('Content deleted successfully', 'success');
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/content/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete content');
+      }
+
+      setContent((prev) => prev.filter((item) => item.id !== id));
+      showNotification('Content deleted successfully', 'success');
+    } catch (error) {
+      console.error('Error deleting content:', error);
+      showNotification('Failed to delete content', 'error');
+    }
   };
 
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const url = selectedContent
+        ? `/api/content/${selectedContent.id}`
+        : '/api/content';
+      const method = selectedContent ? 'PUT' : 'POST';
 
-      if (viewMode === 'edit') {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save content');
+      }
+
+      const savedContent = await response.json();
+
+      if (selectedContent) {
         // Update existing content
         setContent((prev) =>
           prev.map((item) =>
-            item.id === selectedContent.id
-              ? { ...item, ...data, updatedAt: new Date().toISOString() }
-              : item
+            item.id === selectedContent.id ? savedContent : item
           )
         );
         showNotification('Content updated successfully', 'success');
       } else {
-        // Create new content
-        const newContent: ContentData = {
-          id: Date.now().toString(),
-          title: data.title,
-          type: data.type,
-          status: 'DRAFT',
-          priority: data.priority,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          author: {
-            id: user?.id || '1',
-            name: user?.name || 'Current User',
-            email: user?.email || 'user@example.com',
-          },
-          assignee: data.assigneeId
-            ? mockUsers.find((u) => u.id === data.assigneeId)
-            : undefined,
-          tags: data.tags
-            ? mockTags.filter((tag) => data.tags.includes(tag.id))
-            : [],
-          _count: {
-            comments: 0,
-            approvals: 0,
-            attachments: 0,
-          },
-        };
-
-        setContent((prev) => [newContent, ...prev]);
+        // Add new content
+        setContent((prev) => [savedContent, ...prev]);
         showNotification('Content created successfully', 'success');
       }
 
       setViewMode('list');
       setSelectedContent(null);
     } catch (error) {
+      console.error('Error saving content:', error);
       showNotification('Failed to save content', 'error');
     } finally {
       setIsSubmitting(false);
@@ -264,10 +287,12 @@ function ContentPageInner() {
 
   const handleSearch = (search: string) => {
     setFilters((prev) => ({ ...prev, search }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleFilter = (newFilters: any) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const showNotification = (
@@ -290,13 +315,25 @@ function ContentPageInner() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">
+          Please sign in to access the content management system.
+        </Alert>
+      </Box>
+    );
   }
 
   return (
     <DashboardLayout>
       <Box sx={{ p: 3 }}>
         <Breadcrumbs />
+
+        {apiError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {apiError}
+          </Alert>
+        )}
 
         {viewMode === 'list' && (
           <ContentList
@@ -319,8 +356,8 @@ function ContentPageInner() {
               onSubmit={handleSubmit}
               onCancel={handleCancel}
               isLoading={isSubmitting}
-              tags={mockTags}
-              users={mockUsers}
+              tags={tags}
+              users={users}
             />
           </Box>
         )}
@@ -332,8 +369,8 @@ function ContentPageInner() {
               onSubmit={handleSubmit}
               onCancel={handleCancel}
               isLoading={isSubmitting}
-              tags={mockTags}
-              users={mockUsers}
+              tags={tags}
+              users={users}
             />
           </Box>
         )}
