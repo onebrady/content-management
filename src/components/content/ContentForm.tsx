@@ -104,18 +104,36 @@ export function ContentForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    onSubmit({
-      ...formData,
-      body: formData.body, // Keep as JSON string for API
-      attachments: uploadedFiles,
-    });
+    try {
+      // Ensure the body is properly formatted
+      const contentData = {
+        ...formData,
+        body: formData.body,
+        attachments: uploadedFiles,
+        // Ensure dates are properly formatted
+        dueDate: formData.dueDate
+          ? new Date(formData.dueDate).toISOString()
+          : null,
+        // Ensure arrays are properly formatted
+        tags: formData.tags || [],
+      };
+
+      console.log('Submitting content data:', contentData);
+      onSubmit(contentData);
+    } catch (error) {
+      console.error('Error preparing content data:', error);
+      setErrors((prev) => ({
+        ...prev,
+        submit: 'Failed to prepare content data. Please check your input.',
+      }));
+    }
   };
 
   const handleContentChange = (content: string) => {

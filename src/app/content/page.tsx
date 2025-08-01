@@ -249,27 +249,54 @@ function ContentPageInner() {
       const method = selectedContent ? 'PUT' : 'POST';
 
       console.log('Making request to:', url, 'with method:', method);
+
+      // Prepare the request body
+      const requestBody = {
+        ...data,
+        // Ensure required fields are present
+        title: data.title.trim(),
+        type: data.type || ContentType.ARTICLE,
+        priority: data.priority || Priority.MEDIUM,
+        // Format dates properly
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+        // Ensure arrays are properly formatted
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        // Include status for updates
+        status: selectedContent
+          ? data.status || selectedContent.status
+          : ContentStatus.DRAFT,
+      };
+
+      console.log('Request body:', requestBody);
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(requestBody),
+        credentials: 'include', // Include credentials for authentication
       });
 
       console.log('Response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Error response:', errorData);
-        throw new Error(`Failed to save content: ${response.status}`);
+        let errorMessage = 'Failed to save content';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          console.error('Error response:', errorData);
+        } catch (e) {
+          console.error('Could not parse error response');
+        }
+        throw new Error(errorMessage);
       }
 
       const savedContent = await response.json();
       console.log('Saved content:', savedContent);
 
       if (selectedContent) {
-        // Update existing content
+        // Update existing content in the list
         setContent((prev) =>
           prev.map((item) =>
             item.id === selectedContent.id ? savedContent : item
@@ -277,16 +304,20 @@ function ContentPageInner() {
         );
         showNotification('Content updated successfully', 'success');
       } else {
-        // Add new content
+        // Add new content to the list
         setContent((prev) => [savedContent, ...prev]);
         showNotification('Content created successfully', 'success');
       }
 
+      // Refresh the content list to ensure we have the latest data
+      fetchContent();
+
+      // Return to list view
       setViewMode('list');
       setSelectedContent(null);
     } catch (error) {
       console.error('Error saving content:', error);
-      showNotification('Failed to save content', 'error');
+      showNotification(error.message || 'Failed to save content', 'error');
     } finally {
       setIsSubmitting(false);
     }
