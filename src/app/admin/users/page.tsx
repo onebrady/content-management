@@ -161,29 +161,54 @@ export default function UsersPage() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-
     try {
-      console.log('Deleting user:', userId);
+      // First confirm the deletion
+      if (!window.confirm('Are you sure you want to delete this user?')) {
+        console.log('User deletion cancelled');
+        return;
+      }
+
+      console.log('Attempting to delete user with ID:', userId);
+
+      // Make the DELETE request
       const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
       });
+
       console.log('Delete user response status:', response.status);
 
+      // Handle the response
       if (response.ok) {
         console.log('User deleted successfully');
+
+        // Update the UI by removing the deleted user
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+
+        // Show success notification
         setNotification({
           open: true,
           message: 'User deleted successfully',
           severity: 'success',
         });
-        fetchUsers();
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to delete user:', response.status, errorData);
+        // Parse error response
+        let errorMessage = 'Failed to delete user';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          console.error('Delete error response:', errorData);
+        } catch (e) {
+          console.error('Could not parse error response');
+        }
+
+        // Show error notification
         setNotification({
           open: true,
-          message: errorData.error || 'Failed to delete user',
+          message: errorMessage,
           severity: 'error',
         });
       }
@@ -191,7 +216,7 @@ export default function UsersPage() {
       console.error('Error deleting user:', error);
       setNotification({
         open: true,
-        message: 'Error deleting user',
+        message: 'An unexpected error occurred while deleting the user',
         severity: 'error',
       });
     }
@@ -309,8 +334,15 @@ export default function UsersPage() {
                         <PermissionGuard permission={PERMISSIONS.USER_DELETE}>
                           <IconButton
                             size="small"
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => {
+                              console.log(
+                                'Delete button clicked for user:',
+                                user.id
+                              );
+                              handleDeleteUser(user.id);
+                            }}
                             color="error"
+                            aria-label={`Delete user ${user.name}`}
                           >
                             <Delete />
                           </IconButton>
