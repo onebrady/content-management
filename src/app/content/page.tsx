@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Box, Alert, Snackbar } from '@mui/material';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
@@ -39,7 +39,7 @@ interface ContentData {
   };
 }
 
-export default function ContentPage() {
+function ContentPageInner() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -365,5 +365,13 @@ export default function ContentPage() {
         </Snackbar>
       </Box>
     </DashboardLayout>
+  );
+}
+
+export default function ContentPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <ContentPageInner />
+    </Suspense>
   );
 }

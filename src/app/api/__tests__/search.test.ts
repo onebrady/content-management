@@ -282,7 +282,10 @@ describe('Search API Route', () => {
 
     // Verify that NextResponse.json was called with error message and status 500
     expect(NextResponse.json).toHaveBeenCalledWith(
-      { error: 'Failed to perform search' },
+      expect.objectContaining({
+        error: 'Failed to perform search',
+        details: expect.any(String),
+      }),
       { status: 500 }
     );
     expect(data).toHaveProperty('error', 'Failed to perform search');

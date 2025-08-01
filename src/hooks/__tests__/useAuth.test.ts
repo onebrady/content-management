@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAuth } from '../useAuth';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { UserRole } from '@/types/database';
 
 // Mock next-auth
 jest.mock('next-auth/react');
@@ -15,94 +16,91 @@ describe('useAuth Hook', () => {
   });
 
   it('should return authenticated status and user when session exists', () => {
-    // Mock session data
-    mockUseSession.mockReturnValue({
-      data: {
-        user: {
-          id: 'test-user',
-          name: 'Test User',
-          email: 'test@example.com',
-          role: 'ADMIN',
-        },
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      },
-      status: 'authenticated',
-      update: jest.fn(),
-    } as any);
-
-    const { result } = renderHook(() => useAuth());
-
-    expect(result.current.status).toBe('authenticated');
-    expect(result.current.user).toEqual({
+    const mockUser = {
       id: 'test-user',
       name: 'Test User',
       email: 'test@example.com',
-      role: 'ADMIN',
+      role: UserRole.ADMIN,
+      department: 'IT',
+    };
+
+    mockUseSession.mockReturnValue({
+      data: { user: mockUser, expires: '2024-12-31' },
+      status: 'authenticated',
+      update: jest.fn(),
     });
+
+    const { result } = renderHook(() => useAuth());
+
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.user).toEqual(mockUser);
+    expect(result.current.isLoading).toBe(false);
   });
 
   it('should return unauthenticated status and null user when no session', () => {
-    // Mock no session
     mockUseSession.mockReturnValue({
       data: null,
       status: 'unauthenticated',
       update: jest.fn(),
-    } as any);
+    });
 
     const { result } = renderHook(() => useAuth());
 
-    expect(result.current.status).toBe('unauthenticated');
-    expect(result.current.user).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.user).toBeUndefined();
+    expect(result.current.isLoading).toBe(false);
   });
 
   it('should return loading status when session is loading', () => {
-    // Mock loading session
     mockUseSession.mockReturnValue({
       data: null,
       status: 'loading',
       update: jest.fn(),
-    } as any);
+    });
 
     const { result } = renderHook(() => useAuth());
 
-    expect(result.current.status).toBe('loading');
-    expect(result.current.user).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.user).toBeUndefined();
+    expect(result.current.isLoading).toBe(true);
   });
 
   it('should call signIn when login is called', async () => {
-    // Mock successful sign in
-    mockSignIn.mockResolvedValue({ ok: true, error: null } as any);
-
-    // Mock session data
     mockUseSession.mockReturnValue({
       data: null,
       status: 'unauthenticated',
       update: jest.fn(),
-    } as any);
+    });
 
     const { result } = renderHook(() => useAuth());
 
     await act(async () => {
-      await result.current.login('test@example.com', 'password');
+      await result.current.signIn('credentials', {
+        email: 'test@example.com',
+        password: 'password',
+      });
     });
 
     expect(mockSignIn).toHaveBeenCalledWith('credentials', {
-      redirect: false,
       email: 'test@example.com',
       password: 'password',
     });
   });
 
   it('should call signOut when logout is called', async () => {
-    // Mock session data
+    const mockUser = {
+      id: 'test-user',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: UserRole.ADMIN,
+      department: 'IT',
+    };
+
     mockUseSession.mockReturnValue({
-      data: {
-        user: { id: 'test-user' },
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      },
+      data: { user: mockUser, expires: '2024-12-31' },
       status: 'authenticated',
       update: jest.fn(),
-    } as any);
+    });
 
     const { result } = renderHook(() => useAuth());
 
@@ -113,32 +111,158 @@ describe('useAuth Hook', () => {
     expect(mockSignOut).toHaveBeenCalled();
   });
 
-  it('should return error when login fails', async () => {
-    // Mock failed sign in
-    mockSignIn.mockResolvedValue({
-      ok: false,
-      error: 'Invalid credentials',
-    } as any);
+  it('should return correct role checks for admin user', () => {
+    const mockUser = {
+      id: 'test-user',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: UserRole.ADMIN,
+      department: 'IT',
+    };
 
-    // Mock session data
+    mockUseSession.mockReturnValue({
+      data: { user: mockUser, expires: '2024-12-31' },
+      status: 'authenticated',
+      update: jest.fn(),
+    });
+
+    const { result } = renderHook(() => useAuth());
+
+    expect(result.current.isAdmin).toBe(true);
+    expect(result.current.isModerator).toBe(true);
+    expect(result.current.isContributor).toBe(true);
+    expect(result.current.isViewer).toBe(true);
+  });
+
+  it('should return correct role checks for moderator user', () => {
+    const mockUser = {
+      id: 'test-user',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: UserRole.MODERATOR,
+      department: 'IT',
+    };
+
+    mockUseSession.mockReturnValue({
+      data: { user: mockUser, expires: '2024-12-31' },
+      status: 'authenticated',
+      update: jest.fn(),
+    });
+
+    const { result } = renderHook(() => useAuth());
+
+    expect(result.current.isAdmin).toBe(false);
+    expect(result.current.isModerator).toBe(true);
+    expect(result.current.isContributor).toBe(true);
+    expect(result.current.isViewer).toBe(true);
+  });
+
+  it('should return correct role checks for contributor user', () => {
+    const mockUser = {
+      id: 'test-user',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: UserRole.CONTRIBUTOR,
+      department: 'IT',
+    };
+
+    mockUseSession.mockReturnValue({
+      data: { user: mockUser, expires: '2024-12-31' },
+      status: 'authenticated',
+      update: jest.fn(),
+    });
+
+    const { result } = renderHook(() => useAuth());
+
+    expect(result.current.isAdmin).toBe(false);
+    expect(result.current.isModerator).toBe(false);
+    expect(result.current.isContributor).toBe(true);
+    expect(result.current.isViewer).toBe(true);
+  });
+
+  it('should return correct role checks for viewer user', () => {
+    const mockUser = {
+      id: 'test-user',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: UserRole.VIEWER,
+      department: 'IT',
+    };
+
+    mockUseSession.mockReturnValue({
+      data: { user: mockUser, expires: '2024-12-31' },
+      status: 'authenticated',
+      update: jest.fn(),
+    });
+
+    const { result } = renderHook(() => useAuth());
+
+    expect(result.current.isAdmin).toBe(false);
+    expect(result.current.isModerator).toBe(false);
+    expect(result.current.isContributor).toBe(false);
+    expect(result.current.isViewer).toBe(true);
+  });
+
+  it('should return false for all role checks when not authenticated', () => {
     mockUseSession.mockReturnValue({
       data: null,
       status: 'unauthenticated',
       update: jest.fn(),
-    } as any);
+    });
 
     const { result } = renderHook(() => useAuth());
 
-    let error;
-    await act(async () => {
-      error = await result.current.login('test@example.com', 'wrong-password');
+    expect(result.current.isAdmin).toBe(false);
+    expect(result.current.isModerator).toBe(false);
+    expect(result.current.isContributor).toBe(false);
+    expect(result.current.isViewer).toBe(false);
+  });
+
+  it('should use hasRole method correctly', () => {
+    const mockUser = {
+      id: 'test-user',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: UserRole.ADMIN,
+      department: 'IT',
+    };
+
+    mockUseSession.mockReturnValue({
+      data: { user: mockUser, expires: '2024-12-31' },
+      status: 'authenticated',
+      update: jest.fn(),
     });
 
-    expect(error).toBe('Invalid credentials');
-    expect(mockSignIn).toHaveBeenCalledWith('credentials', {
-      redirect: false,
+    const { result } = renderHook(() => useAuth());
+
+    expect(result.current.hasRole(UserRole.ADMIN)).toBe(true);
+    expect(result.current.hasRole(UserRole.MODERATOR)).toBe(false);
+    expect(result.current.hasRole(UserRole.CONTRIBUTOR)).toBe(false);
+    expect(result.current.hasRole(UserRole.VIEWER)).toBe(false);
+  });
+
+  it('should use hasAnyRole method correctly', () => {
+    const mockUser = {
+      id: 'test-user',
+      name: 'Test User',
       email: 'test@example.com',
-      password: 'wrong-password',
+      role: UserRole.MODERATOR,
+      department: 'IT',
+    };
+
+    mockUseSession.mockReturnValue({
+      data: { user: mockUser, expires: '2024-12-31' },
+      status: 'authenticated',
+      update: jest.fn(),
     });
+
+    const { result } = renderHook(() => useAuth());
+
+    expect(
+      result.current.hasAnyRole([UserRole.ADMIN, UserRole.MODERATOR])
+    ).toBe(true);
+    expect(
+      result.current.hasAnyRole([UserRole.CONTRIBUTOR, UserRole.VIEWER])
+    ).toBe(false);
   });
 });

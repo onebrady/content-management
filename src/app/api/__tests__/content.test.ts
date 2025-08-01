@@ -127,7 +127,10 @@ describe('Content API Routes', () => {
 
       // Verify that NextResponse.json was called with error message and status 500
       expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Failed to fetch content' },
+        expect.objectContaining({
+          error: 'Failed to fetch content',
+          details: expect.any(String),
+        }),
         { status: 500 }
       );
       expect(data).toHaveProperty('error', 'Failed to fetch content');

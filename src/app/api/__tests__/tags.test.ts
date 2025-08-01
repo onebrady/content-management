@@ -111,7 +111,10 @@ describe('Tags API Routes', () => {
 
       // Verify NextResponse.json was called with error message and status 500
       expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Failed to fetch tags' },
+        expect.objectContaining({
+          error: 'Failed to fetch tags',
+          details: expect.any(String),
+        }),
         { status: 500 }
       );
       expect(data).toHaveProperty('error', 'Failed to fetch tags');
@@ -206,7 +209,10 @@ describe('Tags API Routes', () => {
 
       // Verify NextResponse.json was called with status 500
       expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Failed to create tag' },
+        expect.objectContaining({
+          error: 'Failed to create tag',
+          details: expect.any(String),
+        }),
         { status: 500 }
       );
       expect(data).toHaveProperty('error', 'Failed to create tag');
