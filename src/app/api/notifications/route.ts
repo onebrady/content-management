@@ -54,7 +54,14 @@ export const GET = createProtectedHandler(async (req) => {
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch notifications' },
+      {
+        error: 'Failed to fetch notifications',
+        details: error instanceof Error ? error.message : String(error),
+        stack:
+          process.env.NODE_ENV !== 'production' && error instanceof Error
+            ? error.stack
+            : undefined,
+      },
       { status: 500 }
     );
   }
