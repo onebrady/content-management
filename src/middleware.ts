@@ -9,15 +9,25 @@ export default withAuth(
     const path = req.nextUrl.pathname;
 
     // Public routes that don't require authentication
-    const publicRoutes = ['/', '/auth/signin', '/auth/error'];
-    if (publicRoutes.includes(path)) {
+    const publicRoutes = [
+      '/',
+      '/auth/signin',
+      '/auth/error',
+      '/api/auth',
+      '/_next',
+      '/favicon.ico',
+    ];
+
+    // Check if current path is public
+    if (publicRoutes.some((route) => path.startsWith(route))) {
       return NextResponse.next();
     }
 
     // Check if user is authenticated
     if (!token) {
-      // Redirect to signin without adding callbackUrl to prevent redirect loops
-      return NextResponse.redirect(new URL('/auth/signin', req.url));
+      // Redirect to signin with a clean URL to prevent loops
+      const signInUrl = new URL('/auth/signin', req.url);
+      return NextResponse.redirect(signInUrl);
     }
 
     // Role-based route protection using permissions
@@ -67,7 +77,10 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        // Allow all requests to pass through, we'll handle auth in the middleware function
+        return true;
+      },
     },
   }
 );

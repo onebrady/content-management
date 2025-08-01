@@ -25,65 +25,94 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: true,
-        domain: '.westerntruck.com', // Use root domain with dot prefix for subdomain support
+        secure: process.env.NODE_ENV === 'production',
+        // Only set domain in production to avoid localhost issues
+        ...(process.env.NODE_ENV === 'production' && {
+          domain: '.westerntruck.com',
+        }),
       },
     },
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Ensure user exists in our database with proper role
-      if (user.email) {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-        });
-
-        if (!existingUser) {
-          // Create new user with default CONTRIBUTOR role
-          await prisma.user.create({
-            data: {
-              email: user.email,
-              name: user.name || user.email,
-              role: UserRole.CONTRIBUTOR,
-            },
+      try {
+        // Ensure user exists in our database with proper role
+        if (user.email) {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
           });
-        }
-      }
-      return true;
-    },
-    async session({ session, user }) {
-      // Add user role to session
-      if (session.user?.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: session.user.email },
-        });
 
-        if (dbUser) {
-          session.user.id = dbUser.id;
-          session.user.role = dbUser.role;
-          session.user.department = dbUser.department;
+          if (!existingUser) {
+            // Create new user with default CONTRIBUTOR role
+            await prisma.user.create({
+              data: {
+                email: user.email,
+                name: user.name || user.email,
+                role: UserRole.CONTRIBUTOR,
+              },
+            });
+          }
         }
+        return true;
+      } catch (error) {
+        console.error('SignIn callback error:', error);
+        return false;
       }
-      return session;
     },
-    async jwt({ token, user }) {
-      // Add user role to JWT token
-      if (user) {
-        token.role = user.role;
-        token.department = user.department;
+    async session({ session, user, token }) {
+      try {
+        // Add user role to session
+        if (session.user?.email) {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: session.user.email },
+          });
+
+          if (dbUser) {
+            session.user.id = dbUser.id;
+            session.user.role = dbUser.role;
+            session.user.department = dbUser.department;
+          }
+        }
+        return session;
+      } catch (error) {
+        console.error('Session callback error:', error);
+        return session;
       }
-      return token;
     },
-    // Add redirect callback to fix redirect loops
+    async jwt({ token, user, account }) {
+      try {
+        // Add user role to JWT token
+        if (user) {
+          token.role = user.role;
+          token.department = user.department;
+        }
+        return token;
+      } catch (error) {
+        console.error('JWT callback error:', error);
+        return token;
+      }
+    },
+    // Improved redirect callback to prevent loops
     async redirect({ url, baseUrl }) {
+      // Log redirect attempts for debugging
+      console.log('Redirect callback:', { url, baseUrl });
+      
       // If the URL is absolute and starts with the base URL, return it directly
-      if (url.startsWith(baseUrl)) return url;
+      if (url.startsWith(baseUrl)) {
+        console.log('Returning absolute URL:', url);
+        return url;
+      }
       
       // If it's an absolute URL to a different domain, return the base URL
-      if (url.startsWith("http")) return baseUrl;
+      if (url.startsWith("http")) {
+        console.log('Returning base URL for external URL:', baseUrl);
+        return baseUrl;
+      }
       
       // For relative URLs, prepend the base URL
-      return new URL(url, baseUrl).toString();
+      const finalUrl = new URL(url, baseUrl).toString();
+      console.log('Returning relative URL:', finalUrl);
+      return finalUrl;
     },
   },
   session: {
@@ -95,4 +124,5 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 };

@@ -1,34 +1,75 @@
 'use client';
 
-import { signIn, getSession } from 'next-auth/react';
+import { signIn, getSession, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Button, Card, CardContent, Typography, Box } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Button, Card, CardContent, Typography, Box, Alert } from '@mui/material';
 import { Microsoft } from '@mui/icons-material';
 
 export default function SignInPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is already signed in
-    getSession().then((session) => {
-      if (session) {
-        router.push('/dashboard');
-      }
-    });
-  }, [router]);
+    // If user is already signed in, redirect to dashboard
+    if (session && status === 'authenticated') {
+      router.push('/dashboard');
+    }
+  }, [session, status, router]);
 
   const handleSignIn = async () => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      // Use fixed callback URL and force redirect to prevent loops
+      // Use a simple callback URL to prevent loops
       await signIn('azure-ad', { 
         callbackUrl: '/dashboard',
         redirect: true 
       });
     } catch (error) {
       console.error('Sign in error:', error);
+      setError('Failed to sign in. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Show loading state while checking session
+  if (status === 'loading') {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Typography>Loading...</Typography>
+      </Box>
+    );
+  }
+
+  // If already authenticated, show loading while redirecting
+  if (session && status === 'authenticated') {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Typography>Redirecting to dashboard...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -48,11 +89,19 @@ export default function SignInPage() {
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Sign in to access the Content Management Tool
           </Typography>
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
           <Button
             variant="contained"
             size="large"
             startIcon={<Microsoft />}
             onClick={handleSignIn}
+            disabled={isLoading}
             sx={{
               width: '100%',
               py: 1.5,
@@ -62,7 +111,7 @@ export default function SignInPage() {
               },
             }}
           >
-            Sign in with Microsoft
+            {isLoading ? 'Signing in...' : 'Sign in with Microsoft'}
           </Button>
           <Typography
             variant="caption"
