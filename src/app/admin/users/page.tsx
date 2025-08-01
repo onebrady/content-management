@@ -162,40 +162,27 @@ export default function UsersPage() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // First confirm the deletion
       if (!window.confirm('Are you sure you want to delete this user?')) {
-        console.log('User deletion cancelled');
         return;
       }
+      console.log('Attempting to delete user:', userId);
 
-      console.log('Attempting to delete user with ID:', userId);
-
-      // Make the DELETE request
       const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       });
 
       console.log('Delete user response status:', response.status);
 
-      // Handle the response
       if (response.ok) {
-        console.log('User deleted successfully');
-
-        // Update the UI by removing the deleted user
-        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-
-        // Show success notification
+        setUsers((prev) => prev.filter((user) => user.id !== userId));
         setNotification({
           open: true,
           message: 'User deleted successfully',
           severity: 'success',
         });
       } else {
-        // Parse error response
         let errorMessage = 'Failed to delete user';
         try {
           const errorData = await response.json();
@@ -204,8 +191,6 @@ export default function UsersPage() {
         } catch (e) {
           console.error('Could not parse error response');
         }
-
-        // Show error notification
         setNotification({
           open: true,
           message: errorMessage,
@@ -334,13 +319,7 @@ export default function UsersPage() {
                         <PermissionGuard permission={PERMISSIONS.USER_DELETE}>
                           <IconButton
                             size="small"
-                            onClick={() => {
-                              console.log(
-                                'Delete button clicked for user:',
-                                user.id
-                              );
-                              handleDeleteUser(user.id);
-                            }}
+                            onClick={() => handleDeleteUser(user.id)}
                             color="error"
                             aria-label={`Delete user ${user.name}`}
                           >
