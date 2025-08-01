@@ -130,7 +130,7 @@ describe('Content API Routes', () => {
 
       const requestData = {
         title: 'New Content',
-        body: { content: [], type: 'doc' },
+        body: JSON.stringify({ content: [], type: 'doc' }), // Send as JSON string
         type: 'ARTICLE',
       };
 
@@ -169,7 +169,7 @@ describe('Content API Routes', () => {
 
       const requestData = {
         title: 'New Content',
-        body: { content: [], type: 'doc' },
+        body: JSON.stringify({ content: [], type: 'doc' }), // Send as JSON string
         type: 'ARTICLE',
       };
 
