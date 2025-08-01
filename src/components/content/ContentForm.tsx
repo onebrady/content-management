@@ -68,7 +68,7 @@ export function ContentForm({
     if (initialData) {
       setFormData({
         title: initialData.title || '',
-        body: initialData.body ? JSON.stringify(initialData.body) : '',
+        body: initialData.body || '',
         type: initialData.type || ContentType.ARTICLE,
         priority: initialData.priority || Priority.MEDIUM,
         dueDate: initialData.dueDate

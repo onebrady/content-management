@@ -12,7 +12,6 @@ import {
 import {
   FormatBold,
   FormatItalic,
-  FormatUnderline,
   FormatStrikethrough,
   FormatListBulleted,
   FormatListNumbered,
@@ -77,15 +76,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             <FormatItalic />
           </ToggleButton>
         </Tooltip>
-        <Tooltip title="Underline">
-          <ToggleButton
-            value="underline"
-            selected={editor.isActive('underline')}
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-          >
-            <FormatUnderline />
-          </ToggleButton>
-        </Tooltip>
+
         <Tooltip title="Strikethrough">
           <ToggleButton
             value="strike"

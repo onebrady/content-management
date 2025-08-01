@@ -193,6 +193,7 @@ function ContentPageInner() {
   }, [isAuthenticated, pagination.page, filters]);
 
   const handleCreate = () => {
+    console.log('Create button clicked');
     setViewMode('create');
   };
 
@@ -205,21 +206,29 @@ function ContentPageInner() {
   };
 
   const handleView = (id: string) => {
+    console.log('View button clicked for ID:', id);
     const contentItem = content.find((item) => item.id === id);
     if (contentItem) {
       setSelectedContent(contentItem);
       setViewMode('detail');
+    } else {
+      console.error('Content item not found for ID:', id);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
+      console.log('Attempting to delete content with ID:', id);
       const response = await fetch(`/api/content/${id}`, {
         method: 'DELETE',
       });
 
+      console.log('Delete response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to delete content');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Delete error response:', errorData);
+        throw new Error(`Failed to delete content: ${response.status}`);
       }
 
       setContent((prev) => prev.filter((item) => item.id !== id));
@@ -233,11 +242,13 @@ function ContentPageInner() {
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
+      console.log('Submitting content data:', data);
       const url = selectedContent
         ? `/api/content/${selectedContent.id}`
         : '/api/content';
       const method = selectedContent ? 'PUT' : 'POST';
 
+      console.log('Making request to:', url, 'with method:', method);
       const response = await fetch(url, {
         method,
         headers: {
@@ -246,11 +257,16 @@ function ContentPageInner() {
         body: JSON.stringify(data),
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to save content');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error response:', errorData);
+        throw new Error(`Failed to save content: ${response.status}`);
       }
 
       const savedContent = await response.json();
+      console.log('Saved content:', savedContent);
 
       if (selectedContent) {
         // Update existing content

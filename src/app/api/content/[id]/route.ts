@@ -157,7 +157,7 @@ export const PUT = createProtectedHandler(async (req) => {
       where: { id },
       data: {
         title,
-        body: contentBody ? JSON.parse(contentBody) : undefined,
+        body: contentBody || undefined,
         type,
         priority,
         dueDate: dueDate ? new Date(dueDate) : null,

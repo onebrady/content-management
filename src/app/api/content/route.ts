@@ -123,7 +123,7 @@ export const POST = createProtectedHandler(async (req) => {
     const content = await prisma.content.create({
       data: {
         title,
-        body: JSON.parse(contentBody), // Parse the rich text content
+        body: contentBody, // Store the HTML content directly
         type,
         priority: priority || Priority.MEDIUM,
         dueDate: dueDate ? new Date(dueDate) : null,

@@ -27,6 +27,7 @@ export function PermissionGuard({
   const { user } = useAuth();
 
   if (!user) {
+    console.log('PermissionGuard: No user found');
     return fallback;
   }
 
@@ -34,15 +35,18 @@ export function PermissionGuard({
 
   if (permission) {
     hasAccess = hasPermission(user.role as UserRole, permission);
+    console.log('PermissionGuard: Checking permission', { permission, userRole: user.role, hasAccess });
   } else if (permissions) {
     if (requireAll) {
       hasAccess = hasAllPermissions(user.role as UserRole, permissions);
     } else {
       hasAccess = hasAnyPermission(user.role as UserRole, permissions);
     }
+    console.log('PermissionGuard: Checking permissions', { permissions, userRole: user.role, hasAccess });
   } else {
     // If no permission specified, show content
     hasAccess = true;
+    console.log('PermissionGuard: No permission specified, allowing access');
   }
 
   return hasAccess ? <>{children}</> : <>{fallback}</>;

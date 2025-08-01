@@ -139,11 +139,15 @@ export function ContentList({
   };
 
   const canEdit = (contentItem: any) => {
-    return user?.role === 'ADMIN' || contentItem.author.id === user?.id;
+    const canEditResult = user?.role === 'ADMIN' || contentItem.author.id === user?.id;
+    console.log('Can edit check:', { userRole: user?.role, authorId: contentItem.author.id, userId: user?.id, canEdit: canEditResult });
+    return canEditResult;
   };
 
   const canDelete = (contentItem: any) => {
-    return user?.role === 'ADMIN' || contentItem.author.id === user?.id;
+    const canDeleteResult = user?.role === 'ADMIN' || contentItem.author.id === user?.id;
+    console.log('Can delete check:', { userRole: user?.role, authorId: contentItem.author.id, userId: user?.id, canDelete: canDeleteResult });
+    return canDeleteResult;
   };
 
   if (isLoading) {
