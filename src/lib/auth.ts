@@ -13,8 +13,17 @@ export const authOptions: NextAuthOptions = {
       tenantId: process.env.AZURE_AD_TENANT_ID!,
       authorization: {
         params: {
-          scope: 'openid profile email',
+          scope: 'openid profile email User.Read',
         },
+      },
+      // Add profile callback to handle Azure AD profile data correctly
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email || profile.preferred_username,
+          image: null,
+        };
       },
     }),
   ],
@@ -61,16 +70,28 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, user, token }) {
       try {
-        // Add user role to session
-        if (session.user?.email) {
-          const dbUser = await prisma.user.findUnique({
-            where: { email: session.user.email },
-          });
+        // Add user role to session from token first
+        if (token && session.user) {
+          // Use token data if available
+          session.user.id = token.sub;
+          if (token.role) {
+            session.user.role = token.role as string;
+          }
+          if (token.department) {
+            session.user.department = token.department as string;
+          }
 
-          if (dbUser) {
-            session.user.id = dbUser.id;
-            session.user.role = dbUser.role;
-            session.user.department = dbUser.department;
+          // Also fetch from database as fallback
+          if (session.user?.email) {
+            const dbUser = await prisma.user.findUnique({
+              where: { email: session.user.email },
+            });
+
+            if (dbUser) {
+              session.user.id = dbUser.id;
+              session.user.role = dbUser.role;
+              session.user.department = dbUser.department;
+            }
           }
         }
         return session;
@@ -85,6 +106,12 @@ export const authOptions: NextAuthOptions = {
         if (user) {
           token.role = user.role;
           token.department = user.department;
+
+          // Store account info on first sign in
+          if (account) {
+            token.accessToken = account.access_token;
+            token.provider = account.provider;
+          }
         }
         return token;
       } catch (error) {
@@ -92,27 +119,27 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
     },
-    // Improved redirect callback to prevent loops
+    // Simplified redirect callback to prevent loops
     async redirect({ url, baseUrl }) {
       // Log redirect attempts for debugging
       console.log('Redirect callback:', { url, baseUrl });
-      
+
+      // Handle relative URLs
+      if (url.startsWith('/')) {
+        const finalUrl = `${baseUrl}${url}`;
+        console.log('Returning relative URL:', finalUrl);
+        return finalUrl;
+      }
+
       // If the URL is absolute and starts with the base URL, return it directly
       if (url.startsWith(baseUrl)) {
         console.log('Returning absolute URL:', url);
         return url;
       }
-      
-      // If it's an absolute URL to a different domain, return the base URL
-      if (url.startsWith("http")) {
-        console.log('Returning base URL for external URL:', baseUrl);
-        return baseUrl;
-      }
-      
-      // For relative URLs, prepend the base URL
-      const finalUrl = new URL(url, baseUrl).toString();
-      console.log('Returning relative URL:', finalUrl);
-      return finalUrl;
+
+      // For any other URL, redirect to dashboard
+      console.log('Redirecting to dashboard');
+      return `${baseUrl}/dashboard`;
     },
   },
   session: {
@@ -124,5 +151,5 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development',
+  debug: true, // Enable debug mode to see detailed logs
 };

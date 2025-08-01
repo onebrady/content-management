@@ -3,7 +3,14 @@
 import { signIn, getSession, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Button, Card, CardContent, Typography, Box, Alert } from '@mui/material';
+import {
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Alert,
+} from '@mui/material';
 import { Microsoft } from '@mui/icons-material';
 
 export default function SignInPage() {
@@ -22,12 +29,13 @@ export default function SignInPage() {
   const handleSignIn = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Use a simple callback URL to prevent loops
-      await signIn('azure-ad', { 
+      // Force redirect to true and use a simple path
+      await signIn('azure-ad', {
         callbackUrl: '/dashboard',
-        redirect: true 
+        redirect: true,
       });
     } catch (error) {
       console.error('Sign in error:', error);
@@ -89,13 +97,13 @@ export default function SignInPage() {
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Sign in to access the Content Management Tool
           </Typography>
-          
+
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
-          
+
           <Button
             variant="contained"
             size="large"
