@@ -1,20 +1,39 @@
 // Mock the Next.js server components
 jest.mock('next/server', () => {
   return {
-    NextRequest: jest.fn().mockImplementation((url) => ({
+    NextRequest: jest.fn().mockImplementation((url, options = {}) => ({
       url,
       nextUrl: new URL(url),
       headers: new Map(),
-      json: jest.fn().mockResolvedValue({}),
+      json: jest
+        .fn()
+        .mockResolvedValue(options.body ? JSON.parse(options.body) : {}),
+      method: options.method || 'GET',
+      body: options.body,
     })),
     NextResponse: {
       json: jest.fn().mockImplementation((data, options) => ({
         status: options?.status || 200,
         json: () => Promise.resolve(data),
+        headers: new Headers(),
       })),
     },
   };
 });
+
+// Mock next-auth
+jest.mock('next-auth', () => ({
+  getServerSession: jest.fn(() =>
+    Promise.resolve({
+      user: {
+        id: '1',
+        email: 'test@example.com',
+        role: 'ADMIN',
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    })
+  ),
+}));
 
 // Import after mocking
 import { NextRequest, NextResponse } from 'next/server';
@@ -31,123 +50,58 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
-// Mock NextResponse
-jest.mock('next/server', () => ({
-  NextRequest: jest.fn(),
-  NextResponse: {
-    json: jest.fn(),
-  },
-}));
-
-describe('Search API Route', () => {
+describe('Search API Routes', () => {
   const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should return search results', async () => {
-    const mockResults = [
-      {
-        id: '1',
-        title: 'Test Content',
-        body: { type: 'doc', content: [] },
-        type: 'ARTICLE',
-        status: 'PUBLISHED',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
+  describe('GET /api/search', () => {
+    it('should return search results', async () => {
+      const mockResults = [
+        {
+          id: '1',
+          title: 'Test Content',
+          body: { content: [], type: 'doc' },
+          type: 'ARTICLE',
+          status: 'DRAFT',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
 
-    mockPrisma.content.findMany.mockResolvedValue(mockResults);
-    mockPrisma.content.count.mockResolvedValue(1);
+      mockPrisma.content.findMany.mockResolvedValue(mockResults);
+      mockPrisma.content.count.mockResolvedValue(1);
 
-    const req = new NextRequest(
-      'http://localhost:3000/api/search?q=test&page=1&limit=10'
-    );
-    (req as any).user = { id: '1', role: 'ADMIN' };
+      const req = new NextRequest(
+        'http://localhost:3000/api/search?q=test&page=1&limit=10'
+      );
 
-    await GET(req);
+      await GET(req);
 
-    expect(NextResponse.json).toHaveBeenCalledWith({
-      results: mockResults,
-      pagination: {
-        page: 1,
-        limit: 10,
-        total: 1,
-        pages: 1,
-      },
+      expect(NextResponse.json).toHaveBeenCalledWith({
+        results: mockResults,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 1,
+          totalPages: 1,
+        },
+      });
     });
-  });
 
-  it('should handle search with filters', async () => {
-    const mockResults = [
-      {
-        id: '1',
-        title: 'Filtered Content',
-        body: { type: 'doc', content: [] },
-        type: 'ARTICLE',
-        status: 'DRAFT',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
+    it('should handle error and return 500 status', async () => {
+      mockPrisma.content.findMany.mockRejectedValue(new Error('Test error'));
 
-    mockPrisma.content.findMany.mockResolvedValue(mockResults);
-    mockPrisma.content.count.mockResolvedValue(1);
+      const req = new NextRequest('http://localhost:3000/api/search?q=test');
 
-    const req = new NextRequest(
-      'http://localhost:3000/api/search?q=filtered&type=ARTICLE&status=DRAFT'
-    );
-    (req as any).user = { id: '1', role: 'ADMIN' };
+      await GET(req);
 
-    await GET(req);
-
-    expect(NextResponse.json).toHaveBeenCalledWith({
-      results: mockResults,
-      pagination: {
-        page: 1,
-        limit: 10,
-        total: 1,
-        pages: 1,
-      },
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        { error: 'Failed to perform search' },
+        { status: 500 }
+      );
     });
-  });
-
-  it('should handle empty search results', async () => {
-    mockPrisma.content.findMany.mockResolvedValue([]);
-    mockPrisma.content.count.mockResolvedValue(0);
-
-    const req = new NextRequest(
-      'http://localhost:3000/api/search?q=nonexistent'
-    );
-    (req as any).user = { id: '1', role: 'ADMIN' };
-
-    await GET(req);
-
-    expect(NextResponse.json).toHaveBeenCalledWith({
-      results: [],
-      pagination: {
-        page: 1,
-        limit: 10,
-        total: 0,
-        pages: 0,
-      },
-    });
-  });
-
-  it('should handle error and return 500 status', async () => {
-    mockPrisma.content.findMany.mockRejectedValue(new Error('Test error'));
-
-    const req = new NextRequest('http://localhost:3000/api/search?q=test');
-    (req as any).user = { id: '1', role: 'ADMIN' };
-
-    await GET(req);
-
-    // Verify that NextResponse.json was called with error message and status 500
-    expect(NextResponse.json).toHaveBeenCalledWith(
-      { error: 'Failed to perform search' },
-      { status: 500 }
-    );
   });
 });

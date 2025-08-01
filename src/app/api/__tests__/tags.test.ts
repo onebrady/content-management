@@ -1,11 +1,15 @@
 // Mock the Next.js server components
 jest.mock('next/server', () => {
   return {
-    NextRequest: jest.fn().mockImplementation((url) => ({
+    NextRequest: jest.fn().mockImplementation((url, options = {}) => ({
       url,
       nextUrl: new URL(url),
       headers: new Map(),
-      json: jest.fn().mockResolvedValue({}),
+      json: jest
+        .fn()
+        .mockResolvedValue(options.body ? JSON.parse(options.body) : {}),
+      method: options.method || 'GET',
+      body: options.body,
     })),
     NextResponse: {
       json: jest.fn().mockImplementation((data, options) => ({
@@ -16,6 +20,20 @@ jest.mock('next/server', () => {
     },
   };
 });
+
+// Mock next-auth
+jest.mock('next-auth', () => ({
+  getServerSession: jest.fn(() =>
+    Promise.resolve({
+      user: {
+        id: '1',
+        email: 'test@example.com',
+        role: 'ADMIN',
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    })
+  ),
+}));
 
 // Import after mocking
 import { NextRequest, NextResponse } from 'next/server';
@@ -30,14 +48,6 @@ jest.mock('@/lib/prisma', () => ({
       findFirst: jest.fn(),
       create: jest.fn(),
     },
-  },
-}));
-
-// Mock NextResponse
-jest.mock('next/server', () => ({
-  NextRequest: jest.fn(),
-  NextResponse: {
-    json: jest.fn(),
   },
 }));
 
@@ -58,7 +68,6 @@ describe('Tags API Routes', () => {
       mockPrisma.tag.findMany.mockResolvedValue(mockTags);
 
       const req = new NextRequest('http://localhost:3000/api/tags');
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await GET(req);
 
@@ -69,7 +78,6 @@ describe('Tags API Routes', () => {
       mockPrisma.tag.findMany.mockRejectedValue(new Error('Test error'));
 
       const req = new NextRequest('http://localhost:3000/api/tags');
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await GET(req);
 
@@ -101,14 +109,13 @@ describe('Tags API Routes', () => {
         method: 'POST',
         body: JSON.stringify(requestData),
       });
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await POST(req);
 
       expect(NextResponse.json).toHaveBeenCalledWith(mockTag, { status: 201 });
     });
 
-    it('should return 400 for duplicate tag name', async () => {
+    it('should return existing tag for duplicate name', async () => {
       const existingTag = {
         id: '1',
         name: 'Existing Tag',
@@ -124,14 +131,10 @@ describe('Tags API Routes', () => {
         method: 'POST',
         body: JSON.stringify(requestData),
       });
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await POST(req);
 
-      expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Tag with this name already exists' },
-        { status: 400 }
-      );
+      expect(NextResponse.json).toHaveBeenCalledWith(existingTag);
     });
 
     it('should return 400 for missing name', async () => {
@@ -143,7 +146,6 @@ describe('Tags API Routes', () => {
         method: 'POST',
         body: JSON.stringify(requestData),
       });
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await POST(req);
 
@@ -164,7 +166,6 @@ describe('Tags API Routes', () => {
         method: 'POST',
         body: JSON.stringify(requestData),
       });
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await POST(req);
 

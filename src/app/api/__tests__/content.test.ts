@@ -1,52 +1,59 @@
 // Mock the Next.js server components
 jest.mock('next/server', () => {
   return {
-    NextRequest: jest.fn().mockImplementation((url) => ({
+    NextRequest: jest.fn().mockImplementation((url, options = {}) => ({
       url,
       nextUrl: new URL(url),
       headers: new Map(),
-      json: jest.fn().mockResolvedValue({}),
+      json: jest
+        .fn()
+        .mockResolvedValue(
+          options.body
+            ? typeof options.body === 'string'
+              ? JSON.parse(options.body)
+              : options.body
+            : {}
+        ),
+      method: options.method || 'GET',
+      body: options.body,
     })),
     NextResponse: {
       json: jest.fn().mockImplementation((data, options) => ({
         status: options?.status || 200,
         json: () => Promise.resolve(data),
+        headers: new Headers(),
       })),
     },
   };
 });
 
+// Mock next-auth
+jest.mock('next-auth', () => ({
+  getServerSession: jest.fn(() =>
+    Promise.resolve({
+      user: {
+        id: '1',
+        email: 'test@example.com',
+        role: 'ADMIN',
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    })
+  ),
+}));
+
 // Import after mocking
 import { NextRequest, NextResponse } from 'next/server';
 import { GET, POST } from '../content/route';
 import { prisma } from '@/lib/prisma';
-import { PERMISSIONS } from '@/lib/permissions';
 
 // Mock the prisma client
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     content: {
       findMany: jest.fn(),
-      count: jest.fn(),
       create: jest.fn(),
+      count: jest.fn(),
     },
-  },
-}));
-
-// Mock the permissions
-jest.mock('@/lib/permissions', () => ({
-  PERMISSIONS: {
-    CONTENT_VIEW: 'content:view',
-    CONTENT_CREATE: 'content:create',
-  },
-  requirePermission: jest.fn((permission) => (handler: any) => handler),
-}));
-
-// Mock NextResponse
-jest.mock('next/server', () => ({
-  NextRequest: jest.fn(),
-  NextResponse: {
-    json: jest.fn(),
   },
 }));
 
@@ -63,7 +70,7 @@ describe('Content API Routes', () => {
         {
           id: '1',
           title: 'Test Content',
-          body: { type: 'doc', content: [] },
+          body: { content: [], type: 'doc' },
           type: 'ARTICLE',
           status: 'DRAFT',
           createdAt: new Date(),
@@ -74,8 +81,9 @@ describe('Content API Routes', () => {
       mockPrisma.content.findMany.mockResolvedValue(mockContent);
       mockPrisma.content.count.mockResolvedValue(1);
 
-      const req = new NextRequest('http://localhost:3000/api/content?page=1&limit=10');
-      (req as any).user = { id: '1', role: 'ADMIN' };
+      const req = new NextRequest(
+        'http://localhost:3000/api/content?page=1&limit=10'
+      );
 
       await GET(req);
 
@@ -94,7 +102,6 @@ describe('Content API Routes', () => {
       mockPrisma.content.findMany.mockRejectedValue(new Error('Test error'));
 
       const req = new NextRequest('http://localhost:3000/api/content');
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await GET(req);
 
@@ -111,7 +118,7 @@ describe('Content API Routes', () => {
       const mockContent = {
         id: '1',
         title: 'New Content',
-        body: { type: 'doc', content: [] },
+        body: { content: [], type: 'doc' },
         type: 'ARTICLE',
         status: 'DRAFT',
         authorId: '1',
@@ -123,33 +130,31 @@ describe('Content API Routes', () => {
 
       const requestData = {
         title: 'New Content',
-        body: JSON.stringify({ type: 'doc', content: [] }),
+        body: { content: [], type: 'doc' },
         type: 'ARTICLE',
-        priority: 'MEDIUM',
       };
 
       const req = new NextRequest('http://localhost:3000/api/content', {
         method: 'POST',
-        body: JSON.stringify(requestData),
+        body: requestData,
       });
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await POST(req);
 
-      expect(NextResponse.json).toHaveBeenCalledWith(mockContent, { status: 201 });
+      expect(NextResponse.json).toHaveBeenCalledWith(mockContent, {
+        status: 201,
+      });
     });
 
     it('should return 400 for missing required fields', async () => {
       const requestData = {
-        title: 'New Content',
-        // Missing body and type
+        // Missing required fields
       };
 
       const req = new NextRequest('http://localhost:3000/api/content', {
         method: 'POST',
-        body: JSON.stringify(requestData),
+        body: requestData,
       });
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await POST(req);
 
@@ -164,15 +169,14 @@ describe('Content API Routes', () => {
 
       const requestData = {
         title: 'New Content',
-        body: JSON.stringify({ type: 'doc', content: [] }),
+        body: { content: [], type: 'doc' },
         type: 'ARTICLE',
       };
 
       const req = new NextRequest('http://localhost:3000/api/content', {
         method: 'POST',
-        body: JSON.stringify(requestData),
+        body: requestData,
       });
-      (req as any).user = { id: '1', role: 'ADMIN' };
 
       await POST(req);
 
