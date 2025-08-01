@@ -9,7 +9,7 @@ import { ContentList } from '@/components/content/ContentList';
 import { ContentForm } from '@/components/content/ContentForm';
 import { ContentDetail } from '@/components/content/ContentDetail';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'detail';
 
@@ -42,6 +42,7 @@ interface ContentData {
 export default function ContentPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [content, setContent] = useState<ContentData[]>([]);
@@ -145,6 +146,14 @@ export default function ContentPage() {
       router.push('/auth/signin');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  useEffect(() => {
+    // Check for mode query parameter
+    const mode = searchParams.get('mode');
+    if (mode === 'create') {
+      setViewMode('create');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     // Simulate loading content
