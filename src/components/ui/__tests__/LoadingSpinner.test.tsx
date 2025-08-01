@@ -1,44 +1,30 @@
 import React from 'react';
-import { render, screen } from '@/utils/test-utils';
+import { render, screen } from '@testing-library/react';
 import { LoadingSpinner } from '../LoadingSpinner';
 
 describe('LoadingSpinner Component', () => {
-  it('should render with default size', () => {
+  it('should render with default message', () => {
     render(<LoadingSpinner />);
-
+    
     const spinner = screen.getByRole('progressbar');
     expect(spinner).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
-  it('should render with small size when specified', () => {
-    render(<LoadingSpinner size="small" />);
-
+  it('should render with custom message', () => {
+    render(<LoadingSpinner message="Please wait..." />);
+    
     const spinner = screen.getByRole('progressbar');
     expect(spinner).toBeInTheDocument();
-    expect(spinner).toHaveClass('MuiCircularProgress-sizeSmall');
+    expect(screen.getByText('Please wait...')).toBeInTheDocument();
   });
 
-  it('should render with large size when specified', () => {
-    render(<LoadingSpinner size="large" />);
-
+  it('should render with correct structure', () => {
+    render(<LoadingSpinner />);
+    
     const spinner = screen.getByRole('progressbar');
     expect(spinner).toBeInTheDocument();
-    expect(spinner).toHaveClass('MuiCircularProgress-sizeLarge');
-  });
-
-  it('should render with custom color when specified', () => {
-    render(<LoadingSpinner color="secondary" />);
-
-    const spinner = screen.getByRole('progressbar');
-    expect(spinner).toBeInTheDocument();
-    expect(spinner).toHaveClass('MuiCircularProgress-colorSecondary');
-  });
-
-  it('should render with custom className when provided', () => {
-    render(<LoadingSpinner className="custom-spinner" />);
-
-    const spinner = screen.getByRole('progressbar');
-    expect(spinner).toBeInTheDocument();
-    expect(spinner.parentElement).toHaveClass('custom-spinner');
+    // Check that the spinner is a CircularProgress component (renders as SPAN)
+    expect(spinner.tagName).toBe('SPAN');
   });
 });

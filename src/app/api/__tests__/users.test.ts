@@ -20,132 +20,103 @@ jest.mock('next/server', () => {
 // Import after mocking
 import { NextRequest, NextResponse } from 'next/server';
 import { GET } from '../users/route';
+import { prisma } from '@/lib/prisma';
 
 // Mock the prisma client
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
-      findMany: jest.fn().mockResolvedValue([
-        {
-          id: 'user-1',
-          name: 'Test User 1',
-          email: 'user1@example.com',
-          role: 'ADMIN',
-        },
-        {
-          id: 'user-2',
-          name: 'Test User 2',
-          email: 'user2@example.com',
-          role: 'EDITOR',
-        },
-      ]),
+      findMany: jest.fn(),
     },
   },
 }));
 
-// Mock the API auth middleware
-jest.mock('@/lib/api-auth', () => ({
-  createProtectedHandler: (handler: any) => handler,
-  requirePermission: () => (req: any) => {
-    req.user = { id: 'admin-user', role: 'ADMIN' };
-    return req;
+// Mock NextResponse
+jest.mock('next/server', () => ({
+  NextRequest: jest.fn(),
+  NextResponse: {
+    json: jest.fn(),
   },
 }));
 
 describe('Users API Route', () => {
+  const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should return list of users', async () => {
-    // Create a mock request
-    const request = {
-      nextUrl: new URL('http://localhost:3000/api/users'),
-      url: 'http://localhost:3000/api/users',
-      user: { id: 'admin-user', role: 'ADMIN' },
-    } as unknown as NextRequest;
-
-    // Mock the response data
-    const mockResponseData = [
+  it('should return users list', async () => {
+    const mockUsers = [
       {
-        id: 'user-1',
-        name: 'Test User 1',
-        email: 'user1@example.com',
+        id: '1',
+        name: 'John Doe',
+        email: 'john@example.com',
         role: 'ADMIN',
+        department: 'IT',
       },
       {
-        id: 'user-2',
-        name: 'Test User 2',
-        email: 'user2@example.com',
-        role: 'EDITOR',
+        id: '2',
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        role: 'CONTRIBUTOR',
+        department: 'Marketing',
       },
     ];
 
-    // Mock NextResponse.json
-    (NextResponse.json as jest.Mock).mockReturnValue({
-      status: 200,
-      json: () => Promise.resolve(mockResponseData),
-      headers: new Headers(),
-    });
+    mockPrisma.user.findMany.mockResolvedValue(mockUsers);
 
-    const response = await GET(request);
-    const data = await response.json();
+    const req = new NextRequest('http://localhost:3000/api/users');
+    (req as any).user = { id: '1', role: 'ADMIN' };
 
-    // Verify NextResponse.json was called
-    expect(NextResponse.json).toHaveBeenCalled();
-    expect(data).toHaveLength(2);
-    expect(data[0]).toHaveProperty('id', 'user-1');
-    expect(data[1]).toHaveProperty('id', 'user-2');
+    await GET(req);
+
+    expect(NextResponse.json).toHaveBeenCalledWith(mockUsers);
   });
 
   it('should filter users by role when query parameter is provided', async () => {
-    const request = new NextRequest(
-      'http://localhost:3000/api/users?role=ADMIN'
-    );
-    request.user = { id: 'admin-user', role: 'ADMIN' };
+    const mockUsers = [
+      {
+        id: '1',
+        name: 'John Doe',
+        email: 'john@example.com',
+        role: 'ADMIN',
+        department: 'IT',
+      },
+    ];
 
-    await GET(request);
+    mockPrisma.user.findMany.mockResolvedValue(mockUsers);
 
-    const prismaFindMany = require('@/lib/prisma').prisma.user.findMany;
-    expect(prismaFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          role: 'ADMIN',
-        }),
-      })
-    );
+    const req = new NextRequest('http://localhost:3000/api/users?role=ADMIN');
+    (req as any).user = { id: '1', role: 'ADMIN' };
+
+    await GET(req);
+
+    expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
+      where: { role: 'ADMIN' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        department: true,
+      },
+      orderBy: { name: 'asc' },
+    });
   });
 
   it('should handle error and return 500 status', async () => {
-    // Mock the prisma findMany method to throw an error
-    require('@/lib/prisma').prisma.user.findMany.mockRejectedValueOnce(
-      new Error('Test error')
-    );
+    mockPrisma.user.findMany.mockRejectedValue(new Error('Test error'));
 
-    const request = new NextRequest('http://localhost:3000/api/users');
-    request.user = { id: 'admin-user', role: 'ADMIN' };
+    const req = new NextRequest('http://localhost:3000/api/users');
+    (req as any).user = { id: '1', role: 'ADMIN' };
 
-    // Mock NextResponse.json for error
-    (NextResponse.json as jest.Mock).mockReturnValue({
-      status: 500,
-      json: () =>
-        Promise.resolve({
-          error: 'Failed to fetch users',
-        }),
-      headers: new Headers(),
-    });
-
-    const response = await GET(request);
-    const data = await response.json();
+    await GET(req);
 
     // Verify NextResponse.json was called with error message and status 500
     expect(NextResponse.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        error: 'Failed to fetch users',
-        details: expect.any(String),
-      }),
+      { error: 'Failed to fetch users' },
       { status: 500 }
     );
-    expect(data).toHaveProperty('error', 'Failed to fetch users');
   });
 });

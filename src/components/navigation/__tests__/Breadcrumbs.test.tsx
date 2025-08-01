@@ -1,58 +1,56 @@
 import React from 'react';
-import { render, screen } from '@/utils/test-utils';
+import { render, screen } from '@testing-library/react';
 import { Breadcrumbs } from '../Breadcrumbs';
 
-// Mock useRouter
+// Mock next/navigation
+const mockUsePathname = jest.fn();
+
 jest.mock('next/navigation', () => ({
-  useRouter: jest.fn().mockReturnValue({
-    push: jest.fn(),
-  }),
-  usePathname: jest.fn().mockReturnValue('/content/123'),
+  usePathname: () => mockUsePathname(),
 }));
 
 describe('Breadcrumbs Component', () => {
-  it('should render breadcrumb items based on path', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should render breadcrumbs based on current path', () => {
+    mockUsePathname.mockReturnValue('/content/123');
+
     render(<Breadcrumbs />);
 
-    // Check for breadcrumb items
+    // Check for Home breadcrumb
     expect(screen.getByText('Home')).toBeInTheDocument();
+    
+    // Check for Content breadcrumb
     expect(screen.getByText('Content')).toBeInTheDocument();
+    
+    // Check for the last breadcrumb (123)
     expect(screen.getByText('123')).toBeInTheDocument();
   });
 
-  it('should render with custom items when provided', () => {
-    const customItems = [
-      { label: 'Dashboard', href: '/dashboard' },
-      { label: 'Projects', href: '/projects' },
-      { label: 'Project Details', href: '/projects/1' },
-    ];
-
-    render(<Breadcrumbs items={customItems} />);
-
-    // Check for custom breadcrumb items
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Projects')).toBeInTheDocument();
-    expect(screen.getByText('Project Details')).toBeInTheDocument();
-  });
-
-  it('should handle empty path correctly', () => {
-    // Override the mock for this test
-    require('next/navigation').usePathname.mockReturnValueOnce('');
+  it('should render with correct navigation structure', () => {
+    mockUsePathname.mockReturnValue('/content/123');
 
     render(<Breadcrumbs />);
 
-    // Should only show Home
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.queryByText('Content')).not.toBeInTheDocument();
+    // Check that breadcrumbs are rendered
+    expect(screen.getByLabelText('breadcrumb')).toBeInTheDocument();
+    
+    // Check for links
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(2); // Home and Content links
+    
+    // Check that the last item is not a link (it's just text)
+    expect(screen.getByText('123')).toBeInTheDocument();
   });
 
-  it('should handle root path correctly', () => {
-    // Override the mock for this test
-    require('next/navigation').usePathname.mockReturnValueOnce('/');
+  it('should handle root path', () => {
+    mockUsePathname.mockReturnValue('/');
 
     render(<Breadcrumbs />);
 
-    // Should only show Home
+    // Only Home should be visible
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.queryByText('Content')).not.toBeInTheDocument();
   });

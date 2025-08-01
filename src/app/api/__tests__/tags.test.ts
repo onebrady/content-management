@@ -20,202 +20,159 @@ jest.mock('next/server', () => {
 // Import after mocking
 import { NextRequest, NextResponse } from 'next/server';
 import { GET, POST } from '../tags/route';
+import { prisma } from '@/lib/prisma';
 
 // Mock the prisma client
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     tag: {
-      findMany: jest.fn().mockResolvedValue([
-        { id: 'tag-1', name: 'Marketing', count: 5 },
-        { id: 'tag-2', name: 'Technical', count: 3 },
-        { id: 'tag-3', name: 'Documentation', count: 7 },
-      ]),
-      create: jest.fn().mockImplementation((data) => {
-        return Promise.resolve({
-          id: 'new-tag',
-          name: data.data.name,
-          count: 0,
-        });
-      }),
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      create: jest.fn(),
     },
   },
 }));
 
-// Mock the API auth middleware
-jest.mock('@/lib/api-auth', () => ({
-  createProtectedHandler: (handler: any) => handler,
-  requirePermission: () => (req: any) => {
-    req.user = { id: 'user-1', role: 'ADMIN' };
-    return req;
+// Mock NextResponse
+jest.mock('next/server', () => ({
+  NextRequest: jest.fn(),
+  NextResponse: {
+    json: jest.fn(),
   },
 }));
 
 describe('Tags API Routes', () => {
+  const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe('GET /api/tags', () => {
-    it('should return list of tags', async () => {
-      // Create a mock request
-      const request = {
-        nextUrl: new URL('http://localhost:3000/api/tags'),
-        url: 'http://localhost:3000/api/tags',
-      } as unknown as NextRequest;
-
-      // Mock the response data
-      const mockResponseData = [
-        { id: 'tag-1', name: 'Marketing', count: 5 },
-        { id: 'tag-2', name: 'Technical', count: 3 },
-        { id: 'tag-3', name: 'Documentation', count: 7 },
+    it('should return tags list', async () => {
+      const mockTags = [
+        { id: '1', name: 'Technology' },
+        { id: '2', name: 'Business' },
       ];
 
-      // Mock NextResponse.json
-      (NextResponse.json as jest.Mock).mockReturnValue({
-        status: 200,
-        json: () => Promise.resolve(mockResponseData),
-        headers: new Headers(),
-      });
+      mockPrisma.tag.findMany.mockResolvedValue(mockTags);
 
-      const response = await GET(request);
-      const data = await response.json();
+      const req = new NextRequest('http://localhost:3000/api/tags');
+      (req as any).user = { id: '1', role: 'ADMIN' };
 
-      // Verify NextResponse.json was called
-      expect(NextResponse.json).toHaveBeenCalled();
-      expect(data).toHaveLength(3);
-      expect(data[0]).toHaveProperty('name', 'Marketing');
-      expect(data[1]).toHaveProperty('name', 'Technical');
-      expect(data[2]).toHaveProperty('name', 'Documentation');
+      await GET(req);
+
+      expect(NextResponse.json).toHaveBeenCalledWith(mockTags);
     });
 
     it('should handle error and return 500 status', async () => {
-      // Mock the prisma findMany method to throw an error
-      require('@/lib/prisma').prisma.tag.findMany.mockRejectedValueOnce(
-        new Error('Test error')
-      );
+      mockPrisma.tag.findMany.mockRejectedValue(new Error('Test error'));
 
-      const request = new NextRequest('http://localhost:3000/api/tags');
+      const req = new NextRequest('http://localhost:3000/api/tags');
+      (req as any).user = { id: '1', role: 'ADMIN' };
 
-      // Mock NextResponse.json for error
-      (NextResponse.json as jest.Mock).mockReturnValue({
-        status: 500,
-        json: () =>
-          Promise.resolve({
-            error: 'Failed to fetch tags',
-          }),
-        headers: new Headers(),
-      });
-
-      const response = await GET(request);
-      const data = await response.json();
+      await GET(req);
 
       // Verify NextResponse.json was called with error message and status 500
       expect(NextResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: 'Failed to fetch tags',
-          details: expect.any(String),
-        }),
+        { error: 'Failed to fetch tags' },
         { status: 500 }
       );
-      expect(data).toHaveProperty('error', 'Failed to fetch tags');
     });
   });
 
   describe('POST /api/tags', () => {
-    it('should create a new tag', async () => {
-      // Mock request with tag data
-      const request = {
-        json: jest.fn().mockResolvedValue({
-          name: 'New Tag',
-        }),
-        user: { id: 'user-1', role: 'ADMIN' },
-      } as unknown as NextRequest;
+    it('should create new tag successfully', async () => {
+      const mockTag = {
+        id: '1',
+        name: 'New Tag',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      // Mock NextResponse.json for successful creation
-      (NextResponse.json as jest.Mock).mockReturnValue({
-        status: 201,
-        json: () =>
-          Promise.resolve({
-            id: 'new-tag',
-            name: 'New Tag',
-            count: 0,
-          }),
-        headers: new Headers(),
+      mockPrisma.tag.findFirst.mockResolvedValue(null);
+      mockPrisma.tag.create.mockResolvedValue(mockTag);
+
+      const requestData = {
+        name: 'New Tag',
+      };
+
+      const req = new NextRequest('http://localhost:3000/api/tags', {
+        method: 'POST',
+        body: JSON.stringify(requestData),
       });
+      (req as any).user = { id: '1', role: 'ADMIN' };
 
-      const response = await POST(request);
-      const data = await response.json();
+      await POST(req);
 
-      // Verify NextResponse.json was called
-      expect(NextResponse.json).toHaveBeenCalled();
-      expect(data).toHaveProperty('id', 'new-tag');
-      expect(data).toHaveProperty('name', 'New Tag');
+      expect(NextResponse.json).toHaveBeenCalledWith(mockTag, { status: 201 });
     });
 
-    it('should handle validation errors', async () => {
-      // Mock request with invalid data (empty name)
-      const request = {
-        json: jest.fn().mockResolvedValue({
-          name: '',
-        }),
-        user: { id: 'user-1', role: 'ADMIN' },
-      } as unknown as NextRequest;
+    it('should return 400 for duplicate tag name', async () => {
+      const existingTag = {
+        id: '1',
+        name: 'Existing Tag',
+      };
 
-      // Mock NextResponse.json for validation error
-      (NextResponse.json as jest.Mock).mockReturnValue({
-        status: 400,
-        json: () =>
-          Promise.resolve({
-            error: 'Validation error',
-            details: ['Tag name is required'],
-          }),
-        headers: new Headers(),
+      mockPrisma.tag.findFirst.mockResolvedValue(existingTag);
+
+      const requestData = {
+        name: 'Existing Tag',
+      };
+
+      const req = new NextRequest('http://localhost:3000/api/tags', {
+        method: 'POST',
+        body: JSON.stringify(requestData),
       });
+      (req as any).user = { id: '1', role: 'ADMIN' };
 
-      const response = await POST(request);
-      const data = await response.json();
+      await POST(req);
 
-      // Verify NextResponse.json was called
-      expect(NextResponse.json).toHaveBeenCalled();
-      expect(data).toHaveProperty('error', 'Validation error');
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        { error: 'Tag with this name already exists' },
+        { status: 400 }
+      );
+    });
+
+    it('should return 400 for missing name', async () => {
+      const requestData = {
+        // Missing name
+      };
+
+      const req = new NextRequest('http://localhost:3000/api/tags', {
+        method: 'POST',
+        body: JSON.stringify(requestData),
+      });
+      (req as any).user = { id: '1', role: 'ADMIN' };
+
+      await POST(req);
+
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        { error: 'Tag name is required' },
+        { status: 400 }
+      );
     });
 
     it('should handle server errors', async () => {
-      // Mock request with tag data
-      const request = {
-        json: jest.fn().mockResolvedValue({
-          name: 'New Tag',
-        }),
-        user: { id: 'user-1', role: 'ADMIN' },
-      } as unknown as NextRequest;
+      mockPrisma.tag.findFirst.mockRejectedValue(new Error('Test error'));
 
-      // Mock prisma create to throw an error
-      require('@/lib/prisma').prisma.tag.create.mockRejectedValueOnce(
-        new Error('Database error')
-      );
+      const requestData = {
+        name: 'New Tag',
+      };
 
-      // Mock NextResponse.json for server error
-      (NextResponse.json as jest.Mock).mockReturnValue({
-        status: 500,
-        json: () =>
-          Promise.resolve({
-            error: 'Failed to create tag',
-          }),
-        headers: new Headers(),
+      const req = new NextRequest('http://localhost:3000/api/tags', {
+        method: 'POST',
+        body: JSON.stringify(requestData),
       });
+      (req as any).user = { id: '1', role: 'ADMIN' };
 
-      const response = await POST(request);
-      const data = await response.json();
+      await POST(req);
 
       // Verify NextResponse.json was called with status 500
       expect(NextResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: 'Failed to create tag',
-          details: expect.any(String),
-        }),
+        { error: 'Failed to create tag' },
         { status: 500 }
       );
-      expect(data).toHaveProperty('error', 'Failed to create tag');
     });
   });
 });
