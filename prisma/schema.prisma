@@ -1,0 +1,250 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  VIEWER
+  CONTRIBUTOR
+  MODERATOR
+  ADMIN
+}
+
+enum ContentStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+enum ContentType {
+  ARTICLE
+  BLOG_POST
+  MARKETING_COPY
+  DOCUMENTATION
+  SOCIAL_MEDIA
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Models
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  role          UserRole  @default(CONTRIBUTOR)
+  department    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Auth relations
+  accounts      Account[]
+  sessions      Session[]
+
+  // Content relations
+  createdContent    Content[] @relation("ContentAuthor")
+  assignedContent   Content[] @relation("ContentAssignee")
+  comments          Comment[]
+  approvals         Approval[]
+  activities        ContentActivity[]
+  notifications     Notification[]
+  contentVersions   ContentVersion[]
+}
+
+model Content {
+  id          String        @id @default(cuid())
+  title       String
+  body        Json          // Rich text content
+  status      ContentStatus @default(DRAFT)
+  type        ContentType
+  priority    Priority      @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  publishedAt DateTime?
+  version     Int           @default(1)  // Current version number
+
+  // Relations
+  authorId    String
+  author      User          @relation("ContentAuthor", fields: [authorId], references: [id])
+  assigneeId  String?
+  assignee    User?         @relation("ContentAssignee", fields: [assigneeId], references: [id])
+
+  comments    Comment[]
+  approvals   Approval[]
+  attachments Attachment[]
+  tags        Tag[]
+  activities  ContentActivity[]
+  notifications Notification[]
+  versions    ContentVersion[]
+}
+
+model Approval {
+  id          String        @id @default(cuid())
+  status      ApprovalStatus
+  comments    String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  contentId   String
+  content     Content       @relation(fields: [contentId], references: [id])
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+
+  @@unique([contentId, userId])
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  commentText String    // Renamed from 'content' to avoid conflict
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  contentId   String
+  content     Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // For nested comments (replies)
+  parentId    String?
+  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentReplies")
+
+  @@index([contentId])
+  @@index([userId])
+  @@index([parentId])
+}
+
+model Attachment {
+  id          String    @id @default(cuid())
+  filename    String
+  url         String
+  size        Int
+  createdAt   DateTime  @default(now())
+
+  contentId   String
+  content     Content   @relation(fields: [contentId], references: [id])
+}
+
+model Tag {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  createdAt   DateTime  @default(now())
+
+  contents    Content[]
+}
+
+// NextAuth.js models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model ContentActivity {
+  id        String   @id @default(cuid())
+  contentId String
+  userId    String
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([contentId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  contentId String?
+  type      String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content? @relation(fields: [contentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([contentId])
+  @@index([isRead])
+}
+
+model ContentVersion {
+  id            String    @id @default(cuid())
+  versionNumber Int       // Version number (1, 2, 3, etc.)
+  title         String    // Title at this version
+  body          Json      // Content body at this version
+  status        ContentStatus
+  type          ContentType
+  priority      Priority
+  dueDate       DateTime?
+  createdAt     DateTime  @default(now()) // When this version was created
+  
+  // Change metadata
+  changeDescription String? // Description of changes made in this version
+  
+  // Relations
+  contentId      String
+  content        Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User     @relation(fields: [createdById], references: [id])
+  
+  @@unique([contentId, versionNumber])
+  @@index([contentId])
+  @@index([createdById])
+}

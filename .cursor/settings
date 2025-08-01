@@ -1,0 +1,10 @@
+{
+  "ai.fileAccess": {
+    "allowedPaths": [
+      "~/.agent-os/"
+    ]
+  },
+  "files.exclude": {
+    "**/.agent-os": false
+  }
+}
