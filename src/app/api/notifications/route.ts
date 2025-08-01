@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedHandler } from '@/lib/api-auth';
+import { createProtectedHandler, authenticateRequest } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/notifications - Get all notifications for the current user
@@ -65,7 +65,7 @@ export const GET = createProtectedHandler(async (req) => {
       { status: 500 }
     );
   }
-});
+}, authenticateRequest);
 
 // PATCH /api/notifications - Mark notifications as read
 export const PATCH = createProtectedHandler(async (req) => {
@@ -116,8 +116,15 @@ export const PATCH = createProtectedHandler(async (req) => {
   } catch (error) {
     console.error('Error marking notifications as read:', error);
     return NextResponse.json(
-      { error: 'Failed to mark notifications as read' },
+      {
+        error: 'Failed to mark notifications as read',
+        details: error instanceof Error ? error.message : String(error),
+        stack:
+          process.env.NODE_ENV !== 'production' && error instanceof Error
+            ? error.stack
+            : undefined,
+      },
       { status: 500 }
     );
   }
-});
+}, authenticateRequest);
