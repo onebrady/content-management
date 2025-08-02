@@ -6,7 +6,7 @@ import SearchClient from './search-client';
 export default function SearchPage({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  searchParams: Promise<{ q?: string }>;
 }) {
   return (
     <Suspense fallback={<div>Loading search...</div>}>

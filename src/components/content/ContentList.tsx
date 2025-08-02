@@ -4,421 +4,328 @@ import { useState, useEffect } from 'react';
 import {
   Box,
   Card,
-  CardContent,
-  Typography,
+  Text,
+  Badge,
   Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
-  Chip,
-  IconButton,
+  TextInput,
+  Select,
+  ActionIcon,
   Tooltip,
-  Alert,
-  CircularProgress,
-  Pagination,
-} from '@mui/material';
+  Divider,
+  Paper,
+  Group,
+  Stack,
+  Title,
+  Dialog,
+  Modal,
+} from '@mantine/core';
 import {
-  Add,
-  Edit,
-  Delete,
-  Visibility,
-  Search,
-  FilterList,
-} from '@mui/icons-material';
-import { ContentType, ContentStatus, Priority } from '@prisma/client';
-import { useAuth } from '@/hooks/useAuth';
-import { PERMISSIONS } from '@/lib/permissions';
-import { PermissionGuard } from '@/components/auth/PermissionGuard';
+  IconSearch,
+  IconFilter,
+  IconPlus,
+  IconEye,
+  IconEdit,
+  IconLink,
+  IconTrash,
+} from '@tabler/icons-react';
+import { ContentStatus, ContentType, Priority } from '@prisma/client';
+
+interface Content {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  type: string;
+  priority: string;
+  dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  author: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  assignee?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  tags: Array<{ id: string; name: string }>;
+  _count: {
+    comments: number;
+    approvals: number;
+    attachments: number;
+  };
+}
 
 interface ContentListProps {
-  content: Array<{
-    id: string;
-    title: string;
-    type: ContentType;
-    status: ContentStatus;
-    priority: Priority;
-    createdAt: string;
-    updatedAt: string;
-    author: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    assignee?: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    tags: Array<{ id: string; name: string }>;
-    _count: {
-      comments: number;
-      approvals: number;
-      attachments: number;
-    };
-  }>;
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+  content: Content[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onViewBySlug: (slug: string) => void;
   onCreate: () => void;
-  onPageChange: (page: number) => void;
-  onSearch: (search: string) => void;
-  onFilter: (filters: any) => void;
-  isLoading?: boolean;
 }
 
 export function ContentList({
-  content,
-  pagination,
+  content = [],
   onView,
   onEdit,
   onDelete,
+  onViewBySlug,
   onCreate,
-  onPageChange,
-  onSearch,
-  onFilter,
-  isLoading = false,
 }: ContentListProps) {
-  const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
+    search: '',
     status: '',
     type: '',
     priority: '',
   });
 
-  const getStatusColor = (status: ContentStatus) => {
-    switch (status) {
-      case ContentStatus.DRAFT:
-        return 'default';
-      case ContentStatus.IN_REVIEW:
-        return 'warning';
-      case ContentStatus.APPROVED:
-        return 'success';
-      case ContentStatus.REJECTED:
-        return 'error';
-      case ContentStatus.PUBLISHED:
-        return 'info';
-      default:
-        return 'default';
-    }
-  };
+  // Delete confirmation dialog state
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    contentId: string | null;
+    contentTitle: string;
+  }>({
+    open: false,
+    contentId: null,
+    contentTitle: '',
+  });
 
-  const getPriorityColor = (priority: Priority) => {
-    switch (priority) {
-      case Priority.LOW:
-        return 'success';
-      case Priority.MEDIUM:
-        return 'info';
-      case Priority.HIGH:
-        return 'warning';
-      case Priority.URGENT:
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
+  const [filteredContent, setFilteredContent] = useState<Content[]>(content);
 
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    onSearch(value);
-  };
+  useEffect(() => {
+    const safeContent = Array.isArray(content) ? content : [];
+    setFilteredContent(safeContent);
+  }, [content]);
 
   const handleFilterChange = (field: string, value: string) => {
-    const newFilters = { ...filters, [field]: value };
-    setFilters(newFilters);
-    onFilter(newFilters);
+    setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  const canEdit = (contentItem: any) => {
-    const canEditResult = user?.role === 'ADMIN' || contentItem.author.id === user?.id;
-    console.log('Can edit check:', { userRole: user?.role, authorId: contentItem.author.id, userId: user?.id, canEdit: canEditResult });
-    return canEditResult;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'DRAFT':
+        return 'gray';
+      case 'IN_REVIEW':
+        return 'yellow';
+      case 'APPROVED':
+        return 'green';
+      case 'PUBLISHED':
+        return 'blue';
+      case 'REJECTED':
+        return 'red';
+      default:
+        return 'gray';
+    }
   };
 
-  const canDelete = (contentItem: any) => {
-    const canDeleteResult = user?.role === 'ADMIN' || contentItem.author.id === user?.id;
-    console.log('Can delete check:', { userRole: user?.role, authorId: contentItem.author.id, userId: user?.id, canDelete: canDeleteResult });
-    return canDeleteResult;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'LOW':
+        return 'gray';
+      case 'MEDIUM':
+        return 'yellow';
+      case 'HIGH':
+        return 'orange';
+      case 'URGENT':
+        return 'red';
+      default:
+        return 'gray';
+    }
   };
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const handleDeleteClick = (contentId: string, contentTitle: string) => {
+    setDeleteDialog({
+      open: true,
+      contentId,
+      contentTitle,
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteDialog.contentId) {
+      onDelete(deleteDialog.contentId);
+      setDeleteDialog({ ...deleteDialog, open: false });
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialog({ ...deleteDialog, open: false });
+  };
 
   return (
     <Box>
-      {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
-        <Typography variant="h5" component="h2">
-          Content Management
-        </Typography>
-        <PermissionGuard permission={PERMISSIONS.CONTENT_CREATE}>
-          <Button variant="contained" startIcon={<Add />} onClick={onCreate}>
-            Create Content
-          </Button>
-        </PermissionGuard>
-      </Box>
-
-      {/* Search and Filters */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                placeholder="Search content..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <Search sx={{ mr: 1, color: 'text.secondary' }} />
-                  ),
-                }}
-                sx={{
-                  '& .MuiInputBase-root': {
-                    fontSize: '1rem',
-                    minHeight: '48px',
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={2.5}>
-              <FormControl fullWidth>
-                <InputLabel sx={{ fontSize: '1rem' }}>Status</InputLabel>
-                <Select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  label="Status"
-                  sx={{
-                    fontSize: '1rem',
-                    minHeight: '48px',
-                    '& .MuiSelect-select': {
-                      fontSize: '1rem',
-                    },
-                  }}
-                >
-                  <MenuItem value="" sx={{ fontSize: '1rem' }}>All Status</MenuItem>
-                  {Object.values(ContentStatus).map((status) => (
-                    <MenuItem key={status} value={status} sx={{ fontSize: '1rem' }}>
-                      {status.replace('_', ' ')}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2.5}>
-              <FormControl fullWidth>
-                <InputLabel sx={{ fontSize: '1rem' }}>Type</InputLabel>
-                <Select
-                  value={filters.type}
-                  onChange={(e) => handleFilterChange('type', e.target.value)}
-                  label="Type"
-                  sx={{
-                    fontSize: '1rem',
-                    minHeight: '48px',
-                    '& .MuiSelect-select': {
-                      fontSize: '1rem',
-                    },
-                  }}
-                >
-                  <MenuItem value="" sx={{ fontSize: '1rem' }}>All Types</MenuItem>
-                  {Object.values(ContentType).map((type) => (
-                    <MenuItem key={type} value={type} sx={{ fontSize: '1rem' }}>
-                      {type.replace('_', ' ')}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2.5}>
-              <FormControl fullWidth>
-                <InputLabel sx={{ fontSize: '1rem' }}>Priority</InputLabel>
-                <Select
-                  value={filters.priority}
-                  onChange={(e) =>
-                    handleFilterChange('priority', e.target.value)
-                  }
-                  label="Priority"
-                  sx={{
-                    fontSize: '1rem',
-                    minHeight: '48px',
-                    '& .MuiSelect-select': {
-                      fontSize: '1rem',
-                    },
-                  }}
-                >
-                  <MenuItem value="" sx={{ fontSize: '1rem' }}>All Priorities</MenuItem>
-                  {Object.values(Priority).map((priority) => (
-                    <MenuItem key={priority} value={priority} sx={{ fontSize: '1rem' }}>
-                      {priority}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-
-      {/* Content List */}
-      {content.length === 0 ? (
-        <Card>
-          <CardContent sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No content found
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {searchTerm || Object.values(filters).some((f) => f)
-                ? 'Try adjusting your search or filters'
-                : 'Create your first piece of content to get started'}
-            </Typography>
-          </CardContent>
-        </Card>
-      ) : (
-        <Grid container spacing={2}>
-          {content.map((item) => (
-            <Grid item xs={12} key={item.id}>
-              <Card>
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" gutterBottom>
-                        {item.title}
-                      </Typography>
-
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          gap: 1,
-                          mb: 2,
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <Chip
-                          label={item.type.replace('_', ' ')}
-                          size="small"
-                          variant="outlined"
-                        />
-                        <Chip
-                          label={item.status.replace('_', ' ')}
-                          color={getStatusColor(item.status)}
-                          size="small"
-                        />
-                        <Chip
-                          label={item.priority}
-                          color={getPriorityColor(item.priority)}
-                          size="small"
-                        />
-                        {item.tags.map((tag) => (
-                          <Chip
-                            key={tag.id}
-                            label={tag.name}
-                            size="small"
-                            variant="outlined"
-                          />
-                        ))}
-                      </Box>
-
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          gap: 2,
-                          color: 'text.secondary',
-                          fontSize: '0.875rem',
-                        }}
-                      >
-                        <span>By {item.author.name}</span>
-                        {item.assignee && (
-                          <span>Assigned to {item.assignee.name}</span>
-                        )}
-                        <span>
-                          Updated{' '}
-                          {new Date(item.updatedAt).toLocaleDateString()}
-                        </span>
-                        <span>{item._count.comments} comments</span>
-                        <span>{item._count.approvals} approvals</span>
-                        <span>{item._count.attachments} attachments</span>
-                      </Box>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Tooltip title="View">
-                        <IconButton
-                          size="small"
-                          onClick={() => onView(item.id)}
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </Tooltip>
-
-                      {canEdit(item) && (
-                        <Tooltip title="Edit">
-                          <IconButton
-                            size="small"
-                            onClick={() => onEdit(item.id)}
-                          >
-                            <Edit />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-
-                      {canDelete(item) && (
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            onClick={() => onDelete(item.id)}
-                            color="error"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+      {/* Filters */}
+      <Paper p="md" mb="lg" withBorder>
+        <Title order={4} mb="md">
+          Filters
+        </Title>
+        <Grid>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <TextInput
+              placeholder="Search content..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              leftSection={<IconSearch size={16} />}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Select
+              placeholder="Status"
+              value={filters.status}
+              onChange={(value) => handleFilterChange('status', value || '')}
+              data={[
+                { value: '', label: 'All Status' },
+                { value: 'DRAFT', label: 'Draft' },
+                { value: 'IN_REVIEW', label: 'In Review' },
+                { value: 'APPROVED', label: 'Approved' },
+                { value: 'PUBLISHED', label: 'Published' },
+                { value: 'REJECTED', label: 'Rejected' },
+              ]}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Select
+              placeholder="Type"
+              value={filters.type}
+              onChange={(value) => handleFilterChange('type', value || '')}
+              data={[
+                { value: '', label: 'All Types' },
+                { value: 'ARTICLE', label: 'Article' },
+                { value: 'BLOG_POST', label: 'Blog Post' },
+                { value: 'NEWS', label: 'News' },
+                { value: 'DOCUMENT', label: 'Document' },
+              ]}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Select
+              placeholder="Priority"
+              value={filters.priority}
+              onChange={(value) => handleFilterChange('priority', value || '')}
+              data={[
+                { value: '', label: 'All Priorities' },
+                { value: 'LOW', label: 'Low' },
+                { value: 'MEDIUM', label: 'Medium' },
+                { value: 'HIGH', label: 'High' },
+                { value: 'URGENT', label: 'Urgent' },
+              ]}
+            />
+          </Grid.Col>
         </Grid>
-      )}
+      </Paper>
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <Pagination
-            count={pagination.pages}
-            page={pagination.page}
-            onChange={(_, page) => onPageChange(page)}
-            color="primary"
-          />
-        </Box>
-      )}
+      {/* Content Grid */}
+      <Grid>
+        {(filteredContent || []).map((item) => (
+          <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={item.id}>
+            <Card withBorder shadow="sm">
+              <Card.Section p="md">
+                <Group justify="space-between" align="flex-start">
+                  <Box style={{ flex: 1 }}>
+                    <Text fw={500} size="lg" mb="xs">
+                      {item.title}
+                    </Text>
+                    <Text size="sm" c="dimmed" mb="xs">
+                      by {item.author.name}
+                    </Text>
+                    <Group gap="xs" mb="xs">
+                      <Badge
+                        color={getStatusColor(item.status)}
+                        variant="light"
+                      >
+                        {item.status}
+                      </Badge>
+                      <Badge
+                        color={getPriorityColor(item.priority)}
+                        variant="light"
+                      >
+                        {item.priority}
+                      </Badge>
+                    </Group>
+                    <Text size="xs" c="dimmed">
+                      Created: {formatDate(item.createdAt)}
+                    </Text>
+                    {item.dueDate && (
+                      <Text size="xs" c="dimmed">
+                        Due: {formatDate(item.dueDate)}
+                      </Text>
+                    )}
+                  </Box>
+                  <Group gap="xs">
+                    <Tooltip label="View">
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        onClick={() => onView(item.id)}
+                      >
+                        <IconEye size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Edit">
+                      <ActionIcon
+                        variant="light"
+                        color="yellow"
+                        onClick={() => onEdit(item.id)}
+                      >
+                        <IconEdit size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="View by Slug">
+                      <ActionIcon
+                        variant="light"
+                        color="green"
+                        onClick={() => onViewBySlug(item.slug)}
+                      >
+                        <IconLink size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Delete">
+                      <ActionIcon
+                        variant="light"
+                        color="red"
+                        onClick={() => handleDeleteClick(item.id, item.title)}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </Group>
+              </Card.Section>
+            </Card>
+          </Grid.Col>
+        ))}
+      </Grid>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        opened={deleteDialog.open}
+        onClose={handleDeleteCancel}
+        title="Confirm Deletion"
+        centered
+      >
+        <Stack gap="md">
+          <Text>
+            Are you sure you want to delete &quot;{deleteDialog.contentTitle}
+            &quot;? This action cannot be undone.
+          </Text>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="outlined" onClick={handleDeleteCancel}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleDeleteConfirm}>
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Box>
   );
 }

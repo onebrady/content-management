@@ -1,26 +1,30 @@
 'use client';
 
-import { ReactNode } from 'react';
-import { Box, Container } from '@mui/material';
-import { useAuth } from '@/hooks/useAuth';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AppShell, Burger, Group } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { NavbarNested } from './NavbarNested';
 
 interface AppLayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { isLoading } = useAuth();
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
+  const [opened, { toggle }] = useDisclosure();
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Container maxWidth={false} disableGutters>
-        {children}
-      </Container>
-    </Box>
+    <AppShell
+      navbar={{
+        width: 300,
+        breakpoint: 'sm',
+        collapsed: { mobile: !opened },
+      }}
+      padding="md"
+    >
+      <AppShell.Navbar p="md">
+        <NavbarNested />
+      </AppShell.Navbar>
+
+      <AppShell.Main>{children}</AppShell.Main>
+    </AppShell>
   );
-} 
+}

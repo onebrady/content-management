@@ -2,24 +2,43 @@
 
 import { usePathname } from 'next/navigation';
 import {
-  Breadcrumbs as MuiBreadcrumbs,
-  Link,
-  Typography,
+  Breadcrumbs as MantineBreadcrumbs,
+  Anchor,
+  Text,
   Box,
-} from '@mui/material';
-import { NavigateNext, Home } from '@mui/icons-material';
+} from '@mantine/core';
+import { IconHome, IconChevronRight } from '@tabler/icons-react';
 import NextLink from 'next/link';
 
-export function Breadcrumbs() {
+interface BreadcrumbItem {
+  label: string;
+  href: string;
+}
+
+interface BreadcrumbsProps {
+  items?: BreadcrumbItem[];
+}
+
+export function Breadcrumbs({ items }: BreadcrumbsProps) {
   const pathname = usePathname();
 
   const generateBreadcrumbs = () => {
+    // If custom items are provided, use them
+    if (items) {
+      return items.map((item, index) => ({
+        label: item.label,
+        href: item.href,
+        icon: index === 0 ? <IconHome size={16} /> : null,
+      }));
+    }
+
+    // Default breadcrumb generation
     const paths = pathname.split('/').filter(Boolean);
     const breadcrumbs = [
       {
         label: 'Home',
         href: '/',
-        icon: <Home fontSize="small" />,
+        icon: <IconHome size={16} />,
       },
     ];
 
@@ -40,38 +59,37 @@ export function Breadcrumbs() {
   const breadcrumbs = generateBreadcrumbs();
 
   return (
-    <Box sx={{ mb: 2 }}>
-      <MuiBreadcrumbs
-        separator={<NavigateNext fontSize="small" />}
-        aria-label="breadcrumb"
+    <Box mb="md">
+      <MantineBreadcrumbs
+        separator={<IconChevronRight size={16} />}
+        separatorMargin="md"
       >
         {breadcrumbs.map((breadcrumb, index) => {
           const isLast = index === breadcrumbs.length - 1;
 
           if (isLast) {
             return (
-              <Typography key={breadcrumb.href} color="text.primary">
+              <Text key={breadcrumb.href} size="sm" c="dimmed">
                 {breadcrumb.icon}
                 {breadcrumb.label}
-              </Typography>
+              </Text>
             );
           }
 
           return (
-            <Link
+            <Anchor
               key={breadcrumb.href}
               component={NextLink}
               href={breadcrumb.href}
-              color="inherit"
-              underline="hover"
-              sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+              size="sm"
+              c="blue"
             >
               {breadcrumb.icon}
               {breadcrumb.label}
-            </Link>
+            </Anchor>
           );
         })}
-      </MuiBreadcrumbs>
+      </MantineBreadcrumbs>
     </Box>
   );
 }

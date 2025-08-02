@@ -34,3 +34,13 @@ body {
 
 /* Import editor styles */
 @import '../styles/editor.css';
+
+/* Hero Image Hover Effect */
+.hero-image-overlay {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.hero-image-overlay:hover {
+  opacity: 1 !important;
+}

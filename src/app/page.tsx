@@ -3,8 +3,8 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Button, Box, Typography, Container } from '@mui/material';
-import { Login } from '@mui/icons-material';
+import { Button, Box, Text, Container, Title, Stack } from '@mantine/core';
+import { IconLogin } from '@tabler/icons-react';
 
 export default function Home() {
   const { isAuthenticated, isLoading, signIn } = useAuth();
@@ -19,22 +19,22 @@ export default function Home() {
   if (isLoading) {
     return (
       <Box
-        sx={{
+        style={{
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Typography>Loading...</Typography>
+        <Text>Loading...</Text>
       </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container size="lg">
       <Box
-        sx={{
+        style={{
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
@@ -43,27 +43,30 @@ export default function Home() {
           textAlign: 'center',
         }}
       >
-        <Typography variant="h2" component="h1" gutterBottom>
-          Content Management Tool
-        </Typography>
-        <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
-          Secure, role-based content management with Microsoft Azure AD
-          authentication
-        </Typography>
-        <Typography variant="body1" sx={{ mb: 6, maxWidth: 600 }}>
-          Streamline your content creation, review, and approval workflows with
-          our enterprise-grade content management system. Built with Next.js,
-          Material-UI, and Microsoft Azure AD for secure authentication.
-        </Typography>
-        <Button
-          variant="contained"
-          size="large"
-          startIcon={<Login />}
-          onClick={() => signIn('azure-ad')}
-          sx={{ px: 4, py: 1.5 }}
-        >
-          Get Started
-        </Button>
+        <Stack gap="xl" align="center">
+          <Title order={1} size="3rem">
+            Content Management Tool
+          </Title>
+          <Text size="xl" c="dimmed">
+            Secure, role-based content management with Microsoft Azure AD
+            authentication
+          </Text>
+          <Text size="md" maw={600}>
+            Streamline your content creation, review, and approval workflows
+            with our enterprise-grade content management system. Built with
+            Next.js, Mantine UI, and Microsoft Azure AD for secure
+            authentication.
+          </Text>
+          <Button
+            size="lg"
+            leftSection={<IconLogin size={20} />}
+            onClick={() => signIn('azure-ad')}
+            px="xl"
+            py="md"
+          >
+            Get Started
+          </Button>
+        </Stack>
       </Box>
     </Container>
   );

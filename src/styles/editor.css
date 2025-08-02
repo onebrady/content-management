@@ -38,10 +38,37 @@
 .ProseMirror ol {
   margin: 0.5rem 0;
   padding-left: 1.5rem;
+  list-style-position: outside;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
 }
 
 .ProseMirror li {
   margin: 0.25rem 0;
+  display: list-item;
+}
+
+/* Nested list styles */
+.ProseMirror ul ul {
+  list-style-type: circle;
+}
+
+.ProseMirror ul ul ul {
+  list-style-type: square;
+}
+
+.ProseMirror ol ol {
+  list-style-type: lower-alpha;
+}
+
+.ProseMirror ol ol ol {
+  list-style-type: lower-roman;
 }
 
 .ProseMirror blockquote {

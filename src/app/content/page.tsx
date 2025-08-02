@@ -1,37 +1,55 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { Box, Alert, Snackbar } from '@mui/material';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Box, Alert, Button, Loader, Group, Stack, Title } from '@mantine/core';
+import {
+  IconDeviceFloppy,
+  IconArrowLeft,
+  IconEdit,
+  IconTrash,
+} from '@tabler/icons-react';
+import { ContentStatus, ContentType, Priority } from '@prisma/client';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ContentList } from '@/components/content/ContentList';
 import { ContentForm } from '@/components/content/ContentForm';
 import { ContentDetail } from '@/components/content/ContentDetail';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter, useSearchParams } from 'next/navigation';
 
-type ViewMode = 'list' | 'create' | 'edit' | 'detail';
-
-interface ContentData {
+interface Content {
   id: string;
   title: string;
-  type: string;
+  slug: string;
+  body: any;
   status: string;
+  type: string;
   priority: string;
+  dueDate: string | null;
   createdAt: string;
   updatedAt: string;
+  publishedAt: string | null;
   author: {
     id: string;
     name: string;
     email: string;
+    role: string;
   };
   assignee?: {
     id: string;
     name: string;
     email: string;
+    role: string;
   };
   tags: Array<{ id: string; name: string }>;
+  attachments: Array<{
+    id: string;
+    filename: string;
+    url: string;
+    size: number;
+  }>;
+  comments: Array<any>;
+  approvals: Array<any>;
   _count: {
     comments: number;
     approvals: number;
@@ -39,41 +57,22 @@ interface ContentData {
   };
 }
 
-interface Tag {
-  id: string;
-  name: string;
-}
+type ContentMode = 'list' | 'create' | 'view' | 'edit';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-function ContentPageInner() {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
+export default function ContentPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user } = useAuth();
 
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [content, setContent] = useState<ContentData[]>([]);
-  const [selectedContent, setSelectedContent] = useState<any>(null);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0,
-  });
-  const [filters, setFilters] = useState({
-    search: '',
-    status: '',
-    type: '',
-    priority: '',
-  });
-  const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [content, setContent] = useState<Content[]>([]);
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [tags, setTags] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const contentFormRef = useRef<{ submit: () => void }>(null);
+
+  // Notification state
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -84,264 +83,219 @@ function ContentPageInner() {
     severity: 'info',
   });
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/auth/signin');
-    }
-  }, [isAuthenticated, isLoading, router]);
+  // Get current mode from URL params
+  const mode = (searchParams.get('mode') as ContentMode) || 'list';
+  const contentId = searchParams.get('id');
 
-  useEffect(() => {
-    // Check for mode query parameter
-    const mode = searchParams.get('mode');
-    if (mode === 'create') {
-      setViewMode('create');
-    }
-  }, [searchParams]);
-
-  // Add error handling for API failures
-  const [apiError, setApiError] = useState<string | null>(null);
-
-  // Fetch content from API
+  // Fetch content list
   const fetchContent = async () => {
+    console.log('Fetching content...');
     try {
-      setIsLoadingContent(true);
-      setApiError(null);
-      const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
-        ...(filters.search && { search: filters.search }),
-        ...(filters.status && { status: filters.status }),
-        ...(filters.type && { type: filters.type }),
-        ...(filters.priority && { priority: filters.priority }),
+      const response = await fetch('/api/content', {
+        credentials: 'include',
+      });
+      console.log('Content response status:', response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fetched content response:', data);
+        // Handle paginated response
+        const contentArray = data.content || [];
+        console.log('Setting content array:', contentArray);
+        setContent(contentArray);
+      } else {
+        console.error('Failed to fetch content:', response.status);
+        setContent([]);
+      }
+    } catch (error) {
+      console.error('Error fetching content:', error);
+      showNotification('Failed to load content', 'error');
+      setContent([]);
+    }
+  };
+
+  // Fetch tags and users
+  const fetchTagsAndUsers = async () => {
+    try {
+      const [tagsResponse, usersResponse] = await Promise.all([
+        fetch('/api/tags', { credentials: 'include' }),
+        fetch('/api/users', { credentials: 'include' }),
+      ]);
+
+      if (tagsResponse.ok) {
+        const tagsData = await tagsResponse.json();
+        setTags(tagsData);
+      }
+
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        setUsers(usersData);
+      }
+    } catch (error) {
+      console.error('Error fetching tags and users:', error);
+    }
+  };
+
+  // Fetch individual content for view/edit modes
+  const fetchContentById = async (id: string) => {
+    try {
+      const response = await fetch(`/api/content/${id}`, {
+        credentials: 'include',
       });
 
-      const response = await fetch(`/api/content?${params}`);
       if (!response.ok) {
-        if (response.status === 401) {
-          setApiError('Authentication required. Please sign in.');
-          router.push('/auth/signin');
-          return;
-        }
         throw new Error(`Failed to fetch content: ${response.status}`);
       }
 
-      const data = await response.json();
-      setContent(data.content);
-      setPagination({
-        page: data.pagination.page,
-        limit: data.pagination.limit,
-        total: data.pagination.total,
-        pages: data.pagination.pages,
-      });
+      const contentItem = await response.json();
+      setSelectedContent(contentItem);
     } catch (error) {
-      console.error('Error fetching content:', error);
-      setApiError('Failed to load content. Please try again.');
-      showNotification('Failed to load content', 'error');
-    } finally {
-      setIsLoadingContent(false);
+      console.error('Error fetching content details:', error);
+      showNotification('Failed to load content details', 'error');
     }
   };
 
-  // Fetch tags from API
-  const fetchTags = async () => {
-    try {
-      const response = await fetch('/api/tags');
-      if (!response.ok) {
-        if (response.status === 401) {
-          setApiError('Authentication required. Please sign in.');
-          router.push('/auth/signin');
-          return;
-        }
-        throw new Error('Failed to fetch tags');
-      }
-      const data = await response.json();
-      setTags(data);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-      setApiError('Failed to load tags. Please try again.');
-      showNotification('Failed to load tags', 'error');
-    }
-  };
-
-  // Fetch users from API
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch('/api/users');
-      if (!response.ok) {
-        if (response.status === 401) {
-          setApiError('Authentication required. Please sign in.');
-          router.push('/auth/signin');
-          return;
-        }
-        throw new Error('Failed to fetch users');
-      }
-      const data = await response.json();
-      setUsers(data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setApiError('Failed to load users. Please try again.');
-      showNotification('Failed to load users', 'error');
-    }
-  };
-
+  // Initialize data
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchContent();
-      fetchTags();
-      fetchUsers();
+    const initializeData = async () => {
+      console.log('Initializing data, setting loading to true');
+      setLoading(true);
+      await Promise.all([fetchContent(), fetchTagsAndUsers()]);
+      console.log('Data initialized, setting loading to false');
+      setLoading(false);
+    };
+
+    initializeData();
+  }, []);
+
+  // Handle mode changes
+  useEffect(() => {
+    if (mode === 'view' || mode === 'edit') {
+      if (contentId && !selectedContent) {
+        fetchContentById(contentId);
+      }
+    } else {
+      setSelectedContent(null);
     }
-  }, [isAuthenticated, pagination.page, filters]);
+  }, [mode, contentId]);
+
+  // Navigation functions
+  const navigateToMode = (newMode: ContentMode, id?: string) => {
+    const params = new URLSearchParams();
+    if (newMode !== 'list') {
+      params.set('mode', newMode);
+      if (id) {
+        params.set('id', id);
+      }
+    }
+    const url = params.toString()
+      ? `/content?${params.toString()}`
+      : '/content';
+    router.push(url);
+  };
 
   const handleCreate = () => {
-    console.log('Create button clicked');
-    setViewMode('create');
-  };
-
-  const handleEdit = (id: string) => {
-    const contentItem = content.find((item) => item.id === id);
-    if (contentItem) {
-      setSelectedContent(contentItem);
-      setViewMode('edit');
-    }
+    navigateToMode('create');
   };
 
   const handleView = (id: string) => {
-    console.log('View button clicked for ID:', id);
-    const contentItem = content.find((item) => item.id === id);
+    navigateToMode('view', id);
+  };
+
+  const handleEdit = (id: string) => {
+    navigateToMode('edit', id);
+  };
+
+  const handleViewBySlug = (slug: string) => {
+    // Find content by slug and navigate to view mode
+    const contentItem = content.find((item) => item.slug === slug);
     if (contentItem) {
-      setSelectedContent(contentItem);
-      setViewMode('detail');
-    } else {
-      console.error('Content item not found for ID:', id);
+      navigateToMode('view', contentItem.id);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      console.log('Attempting to delete content with ID:', id);
       const response = await fetch(`/api/content/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
-      console.log('Delete response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Delete error response:', errorData);
+      if (response.ok) {
+        showNotification('Content deleted successfully', 'success');
+        // Refresh the content list
+        await fetchContent();
+      } else {
         throw new Error(`Failed to delete content: ${response.status}`);
       }
-
-      setContent((prev) => prev.filter((item) => item.id !== id));
-      showNotification('Content deleted successfully', 'success');
     } catch (error) {
       console.error('Error deleting content:', error);
       showNotification('Failed to delete content', 'error');
     }
   };
 
-  const handleSubmit = async (data: any) => {
+  const handleBackToList = () => {
+    navigateToMode('list');
+  };
+
+  // Form submission handlers
+  const handleSubmit = async (contentData: any) => {
     setIsSubmitting(true);
     try {
-      console.log('Submitting content data:', data);
       const url = selectedContent
         ? `/api/content/${selectedContent.id}`
         : '/api/content';
+
       const method = selectedContent ? 'PUT' : 'POST';
-
-      console.log('Making request to:', url, 'with method:', method);
-
-      // Prepare the request body
-      const requestBody = {
-        ...data,
-        // Ensure required fields are present
-        title: data.title.trim(),
-        type: data.type || ContentType.ARTICLE,
-        priority: data.priority || Priority.MEDIUM,
-        // Format dates properly
-        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
-        // Ensure arrays are properly formatted
-        tags: Array.isArray(data.tags) ? data.tags : [],
-        // Include status for updates
-        status: selectedContent
-          ? data.status || selectedContent.status
-          : ContentStatus.DRAFT,
-      };
-
-      console.log('Request body:', requestBody);
 
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
-        credentials: 'include', // Include credentials for authentication
+        credentials: 'include',
+        body: JSON.stringify(contentData),
       });
 
-      console.log('Response status:', response.status);
+      if (response.ok) {
+        const savedContent = await response.json();
 
-      if (!response.ok) {
-        let errorMessage = 'Failed to save content';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-          console.error('Error response:', errorData);
-        } catch (e) {
-          console.error('Could not parse error response');
+        if (selectedContent) {
+          // Edit mode - redirect to view mode
+          showNotification('Content updated successfully', 'success');
+          navigateToMode('view', savedContent.id);
+        } else {
+          // Create mode - redirect to list and refresh
+          showNotification('Content created successfully', 'success');
+          await fetchContent(); // Refresh the list
+          navigateToMode('list');
         }
-        throw new Error(errorMessage);
-      }
-
-      const savedContent = await response.json();
-      console.log('Saved content:', savedContent);
-
-      if (selectedContent) {
-        // Update existing content in the list
-        setContent((prev) =>
-          prev.map((item) =>
-            item.id === selectedContent.id ? savedContent : item
-          )
-        );
-        showNotification('Content updated successfully', 'success');
       } else {
-        // Add new content to the list
-        setContent((prev) => [savedContent, ...prev]);
-        showNotification('Content created successfully', 'success');
+        throw new Error(
+          `Failed to ${selectedContent ? 'update' : 'create'} content`
+        );
       }
-
-      // Refresh the content list to ensure we have the latest data
-      fetchContent();
-
-      // Return to list view
-      setViewMode('list');
-      setSelectedContent(null);
     } catch (error) {
       console.error('Error saving content:', error);
-      showNotification(error.message || 'Failed to save content', 'error');
+      showNotification(
+        `Failed to ${selectedContent ? 'update' : 'create'} content`,
+        'error'
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = () => {
-    setViewMode('list');
-    setSelectedContent(null);
+    if (mode === 'create') {
+      navigateToMode('list');
+    } else if (mode === 'edit') {
+      navigateToMode('view', contentId!);
+    } else {
+      navigateToMode('list');
+    }
   };
 
-  const handlePageChange = (page: number) => {
-    setPagination((prev) => ({ ...prev, page }));
-  };
-
-  const handleSearch = (search: string) => {
-    setFilters((prev) => ({ ...prev, search }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  const handleFilter = (newFilters: any) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
+  // Show notification function
   const showNotification = (
     message: string,
     severity: 'success' | 'error' | 'info' | 'warning'
@@ -353,53 +307,172 @@ function ContentPageInner() {
     });
   };
 
+  // Handle close notification
   const handleCloseNotification = () => {
     setNotification((prev) => ({ ...prev, open: false }));
   };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
+  // Generate breadcrumb items based on current mode
+  const getBreadcrumbItems = () => {
+    const items = [{ label: 'Content', href: '/content' }];
 
-  if (!isAuthenticated) {
+    if (mode === 'create') {
+      items.push({ label: 'Create Content', href: '/content?mode=create' });
+    } else if (mode === 'view' && selectedContent) {
+      items.push({
+        label: selectedContent.title,
+        href: `/content?mode=view&id=${selectedContent.id}`,
+      });
+    } else if (mode === 'edit' && selectedContent) {
+      items.push(
+        {
+          label: selectedContent.title,
+          href: `/content?mode=view&id=${selectedContent.id}`,
+        },
+        { label: 'Edit', href: `/content?mode=edit&id=${selectedContent.id}` }
+      );
+    }
+
+    return items;
+  };
+
+  // Loading state
+  if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="warning">
-          Please sign in to access the content management system.
-        </Alert>
-      </Box>
+      <AppLayout>
+        <Box p="md" ta="center">
+          <Loader size="lg" />
+        </Box>
+      </AppLayout>
     );
   }
 
   return (
-    <DashboardLayout>
-      <Box sx={{ p: 3 }}>
-        <Breadcrumbs />
+    <AppLayout>
+      <Box p="md">
+        {/* Header with Breadcrumbs and Action Buttons */}
+        <Group justify="space-between" align="center" mb="lg">
+          <Breadcrumbs items={getBreadcrumbItems()} />
 
-        {apiError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {apiError}
-          </Alert>
+          <Group gap="sm">
+            {/* Back button for non-list modes */}
+            {mode !== 'list' && (
+              <Button
+                variant="outlined"
+                leftSection={<IconArrowLeft size={16} />}
+                onClick={handleBackToList}
+              >
+                Back to Content
+              </Button>
+            )}
+
+            {/* Create button for list mode */}
+            {mode === 'list' && (
+              <Button
+                variant="filled"
+                onClick={handleCreate}
+                color="blue"
+                size="md"
+              >
+                Create Content
+              </Button>
+            )}
+
+            {/* Save button for create/edit modes */}
+            {(mode === 'create' || mode === 'edit') && (
+              <Group gap="sm">
+                <Button
+                  variant="filled"
+                  leftSection={<IconDeviceFloppy size={16} />}
+                  onClick={() => {
+                    contentFormRef.current?.submit();
+                  }}
+                  disabled={isSubmitting}
+                  color="blue"
+                  size="md"
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+                {mode === 'edit' && selectedContent && (
+                  <Button
+                    variant="outlined"
+                    color="red"
+                    leftSection={<IconTrash size={16} />}
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `Are you sure you want to delete "${selectedContent.title}"? This action cannot be undone.`
+                        )
+                      ) {
+                        handleDelete(selectedContent.id);
+                        navigateToMode('list');
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                )}
+              </Group>
+            )}
+
+            {/* Edit button for view mode */}
+            {mode === 'view' && selectedContent && (
+              <Group gap="sm">
+                <Button
+                  variant="filled"
+                  leftSection={<IconEdit size={16} />}
+                  onClick={() => handleEdit(selectedContent.id)}
+                  color="blue"
+                  size="md"
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="red"
+                  leftSection={<IconTrash size={16} />}
+                  onClick={() => {
+                    if (
+                      confirm(
+                        `Are you sure you want to delete "${selectedContent.title}"? This action cannot be undone.`
+                      )
+                    ) {
+                      handleDelete(selectedContent.id);
+                      navigateToMode('list');
+                    }
+                  }}
+                >
+                  Delete
+                </Button>
+              </Group>
+            )}
+          </Group>
+        </Group>
+
+        {/* Content based on mode */}
+        {mode === 'list' && (
+          <>
+            {console.log(
+              'Rendering ContentList with content:',
+              content,
+              'loading:',
+              loading
+            )}
+            <ContentList
+              content={content || []}
+              onView={handleView}
+              onEdit={handleEdit}
+              onViewBySlug={handleViewBySlug}
+              onCreate={handleCreate}
+              onDelete={handleDelete}
+            />
+          </>
         )}
 
-        {viewMode === 'list' && (
-          <ContentList
-            content={content}
-            pagination={pagination}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onCreate={handleCreate}
-            onPageChange={handlePageChange}
-            onSearch={handleSearch}
-            onFilter={handleFilter}
-            isLoading={isLoadingContent}
-          />
-        )}
-
-        {viewMode === 'create' && (
+        {mode === 'create' && (
           <Box>
             <ContentForm
+              ref={contentFormRef}
               onSubmit={handleSubmit}
               onCancel={handleCancel}
               isLoading={isSubmitting}
@@ -409,9 +482,16 @@ function ContentPageInner() {
           </Box>
         )}
 
-        {viewMode === 'edit' && selectedContent && (
+        {mode === 'view' && selectedContent && (
+          <Box>
+            <ContentDetail content={selectedContent} />
+          </Box>
+        )}
+
+        {mode === 'edit' && selectedContent && (
           <Box>
             <ContentForm
+              ref={contentFormRef}
               initialData={selectedContent}
               onSubmit={handleSubmit}
               onCancel={handleCancel}
@@ -421,41 +501,42 @@ function ContentPageInner() {
             />
           </Box>
         )}
-
-        {viewMode === 'detail' && selectedContent && (
-          <ContentDetail
-            content={selectedContent}
-            onEdit={() => handleEdit(selectedContent.id)}
-            onDelete={() => {
-              handleDelete(selectedContent.id);
-              setViewMode('list');
-            }}
-            onBack={() => setViewMode('list')}
-          />
-        )}
-
-        <Snackbar
-          open={notification.open}
-          autoHideDuration={6000}
-          onClose={handleCloseNotification}
-        >
-          <Alert
-            onClose={handleCloseNotification}
-            severity={notification.severity}
-            sx={{ width: '100%' }}
-          >
-            {notification.message}
-          </Alert>
-        </Snackbar>
       </Box>
-    </DashboardLayout>
-  );
-}
 
-export default function ContentPage() {
-  return (
-    <Suspense fallback={<LoadingSpinner />}>
-      <ContentPageInner />
-    </Suspense>
+      {/* Notification Alert */}
+      {notification.open && (
+        <Alert
+          color={
+            notification.severity === 'success'
+              ? 'green'
+              : notification.severity === 'error'
+                ? 'red'
+                : notification.severity === 'warning'
+                  ? 'yellow'
+                  : 'blue'
+          }
+          title={
+            notification.severity === 'success'
+              ? 'Success'
+              : notification.severity === 'error'
+                ? 'Error'
+                : notification.severity === 'warning'
+                  ? 'Warning'
+                  : 'Info'
+          }
+          withCloseButton
+          onClose={handleCloseNotification}
+          style={{
+            position: 'fixed',
+            top: 20,
+            right: 20,
+            zIndex: 1000,
+            minWidth: 300,
+          }}
+        >
+          {notification.message}
+        </Alert>
+      )}
+    </AppLayout>
   );
 }

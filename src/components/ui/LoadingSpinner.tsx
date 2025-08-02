@@ -1,25 +1,26 @@
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, Loader, Text, Stack } from '@mantine/core';
 
 interface LoadingSpinnerProps {
   message?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export function LoadingSpinner({ message = 'Loading...' }: LoadingSpinnerProps) {
+export function LoadingSpinner({ message = 'Loading...', size = 'md' }: LoadingSpinnerProps) {
   return (
     <Box
-      sx={{
+      style={{
+        minHeight: '100vh',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh',
-        gap: 2,
       }}
     >
-      <CircularProgress size={40} />
-      <Typography variant="body2" color="text.secondary">
-        {message}
-      </Typography>
+      <Stack align="center" gap="md">
+        <Loader size={size} />
+        <Text size="sm" c="dimmed">
+          {message}
+        </Text>
+      </Stack>
     </Box>
   );
 } 

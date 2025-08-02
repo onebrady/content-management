@@ -1,25 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   Box,
   Card,
-  CardContent,
-  TextField,
-  FormControl,
-  InputLabel,
+  TextInput,
   Select,
-  MenuItem,
   Button,
   Grid,
-  Chip,
-  Autocomplete,
+  Badge,
+  MultiSelect,
   Alert,
-  CircularProgress,
+  Loader,
   Divider,
-  Typography,
-} from '@mui/material';
-import { Save, Cancel, Add, AttachFile } from '@mui/icons-material';
+  Text,
+  Group,
+  Stack,
+  Title,
+  Paper,
+  Image,
+  ActionIcon,
+  Modal,
+  FileButton,
+} from '@mantine/core';
+import {
+  IconDeviceFloppy,
+  IconX,
+  IconPlus,
+  IconPaperclip,
+  IconPhoto,
+  IconEdit,
+  IconTrash,
+} from '@tabler/icons-react';
 import { TiptapEditor } from '@/components/editor/TiptapEditor';
 import { FileUpload } from '@/components/upload/FileUpload';
 import { FilePreview } from '@/components/upload/FilePreview';
@@ -42,373 +54,442 @@ interface UploadedFile {
   type: string;
 }
 
-export function ContentForm({
-  initialData,
-  onSubmit,
-  onCancel,
-  isLoading = false,
-  tags = [],
-  users = [],
-}: ContentFormProps) {
-  const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    title: '',
-    body: '',
-    type: ContentType.ARTICLE,
-    priority: Priority.MEDIUM,
-    dueDate: '',
-    assigneeId: '',
-    tags: [] as string[],
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [showFileUpload, setShowFileUpload] = useState(false);
-
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        title: initialData.title || '',
-        body: initialData.body || '',
-        type: initialData.type || ContentType.ARTICLE,
-        priority: initialData.priority || Priority.MEDIUM,
-        dueDate: initialData.dueDate
-          ? new Date(initialData.dueDate).toISOString().split('T')[0]
-          : '',
-        assigneeId: initialData.assigneeId || '',
-        tags: initialData.tags?.map((tag: any) => tag.id) || [],
-      });
-
-      // Set uploaded files if they exist
-      if (initialData.attachments) {
-        setUploadedFiles(initialData.attachments);
-      }
-    }
-  }, [initialData]);
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    }
-
-    if (!formData.body.trim()) {
-      newErrors.body = 'Content is required';
-    }
-
-    if (!formData.type) {
-      newErrors.type = 'Content type is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      // Ensure the body is properly formatted
-      const contentData = {
-        ...formData,
-        body: formData.body,
-        attachments: uploadedFiles,
-        // Ensure dates are properly formatted
-        dueDate: formData.dueDate
-          ? new Date(formData.dueDate).toISOString()
-          : null,
-        // Ensure arrays are properly formatted
-        tags: formData.tags || [],
-      };
-
-      console.log('Submitting content data:', contentData);
-      onSubmit(contentData);
-    } catch (error) {
-      console.error('Error preparing content data:', error);
-      setErrors((prev) => ({
-        ...prev,
-        submit: 'Failed to prepare content data. Please check your input.',
-      }));
-    }
-  };
-
-  const handleContentChange = (content: string) => {
-    setFormData((prev) => ({ ...prev, body: content }));
-    if (errors.body) {
-      setErrors((prev) => ({ ...prev, body: '' }));
-    }
-  };
-
-  const handleFileUploadComplete = (
-    files: Array<{ url: string; name: string; size: number }>
+export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
+  (
+    {
+      initialData,
+      onSubmit,
+      onCancel,
+      isLoading = false,
+      tags = [],
+      users = [],
+    },
+    ref
   ) => {
-    const newFiles = files.map((file) => ({
-      ...file,
-      type: file.name.split('.').pop() || 'application/octet-stream',
+    const { user } = useAuth();
+    const [formData, setFormData] = useState({
+      title: '',
+      body: '',
+      type: 'ARTICLE',
+      priority: 'MEDIUM',
+      dueDate: '',
+      assigneeId: '',
+      tags: [] as string[],
+      heroImage: '',
+    });
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+    const [showFileUpload, setShowFileUpload] = useState(false);
+    const [showHeroImageModal, setShowHeroImageModal] = useState(false);
+
+    // Expose submit method to parent component
+    useImperativeHandle(ref, () => ({
+      submit: () => {
+        if (validateForm()) {
+          const contentData = {
+            ...formData,
+            body: formData.body,
+            attachments: uploadedFiles,
+            dueDate: formData.dueDate
+              ? new Date(formData.dueDate).toISOString()
+              : null,
+            tags: formData.tags || [],
+            heroImage: formData.heroImage,
+          };
+          onSubmit(contentData);
+        }
+      },
     }));
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-  };
 
-  const handleFileUploadError = (error: string) => {
-    console.error('File upload error:', error);
-    // You could show a notification here
-  };
+    useEffect(() => {
+      if (initialData) {
+        setFormData({
+          title: initialData.title || '',
+          body: initialData.body || '',
+          type: initialData.type || 'ARTICLE',
+          priority: initialData.priority || 'MEDIUM',
+          dueDate: initialData.dueDate
+            ? new Date(initialData.dueDate).toISOString().split('T')[0]
+            : '',
+          assigneeId: initialData.assigneeId || '',
+          tags: initialData.tags?.map((tag: any) => tag.id) || [],
+          heroImage: initialData.heroImage || '',
+        });
+        setUploadedFiles(initialData.attachments || []);
+      }
+    }, [initialData]);
 
-  const handleRemoveFile = (index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
+    const validateForm = () => {
+      const newErrors: Record<string, string> = {};
 
-  return (
-    <Card>
-      <CardContent>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-          <Grid container spacing={3}>
-            {/* Title */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Title"
-                value={formData.title}
-                onChange={(e) => {
-                  setFormData((prev) => ({ ...prev, title: e.target.value }));
-                  if (errors.title) {
-                    setErrors((prev) => ({ ...prev, title: '' }));
-                  }
-                }}
-                error={!!errors.title}
-                helperText={errors.title}
-                required
-              />
-            </Grid>
+      if (!formData.title.trim()) {
+        newErrors.title = 'Title is required';
+      }
 
-            {/* Content Type and Priority */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth error={!!errors.type}>
-                <InputLabel>Content Type</InputLabel>
-                <Select
-                  value={formData.type}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, type: e.target.value }));
-                    if (errors.type) {
-                      setErrors((prev) => ({ ...prev, type: '' }));
-                    }
-                  }}
-                  label="Content Type"
-                >
-                  {Object.values(ContentType).map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type.replace('_', ' ')}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+      if (!formData.body.trim()) {
+        newErrors.body = 'Content is required';
+      }
 
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Priority</InputLabel>
-                <Select
-                  value={formData.priority}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      priority: e.target.value,
-                    }))
-                  }
-                  label="Priority"
-                >
-                  {Object.values(Priority).map((priority) => (
-                    <MenuItem key={priority} value={priority}>
-                      {priority}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
 
-            {/* Due Date and Assignee */}
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                type="date"
-                label="Due Date"
-                value={formData.dueDate}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, dueDate: e.target.value }))
-                }
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (validateForm()) {
+        const contentData = {
+          ...formData,
+          body: formData.body,
+          attachments: uploadedFiles,
+          dueDate: formData.dueDate
+            ? new Date(formData.dueDate).toISOString()
+            : null,
+          tags: formData.tags || [],
+          heroImage: formData.heroImage,
+        };
+        onSubmit(contentData);
+      }
+    };
 
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Assignee</InputLabel>
-                <Select
-                  value={formData.assigneeId}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      assigneeId: e.target.value,
-                    }))
-                  }
-                  label="Assignee"
-                >
-                  <MenuItem value="">No Assignee</MenuItem>
-                  {users.map((user) => (
-                    <MenuItem key={user.id} value={user.id}>
-                      {user.name} ({user.email})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+    const handleInputChange = (field: string, value: any) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: '' }));
+      }
+    };
 
-            {/* Tags */}
-            <Grid item xs={12}>
-              <Autocomplete
-                multiple
-                options={tags}
-                getOptionLabel={(option) => option.name}
-                value={tags.filter((tag) => formData.tags.includes(tag.id))}
-                onChange={(_, newValue) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    tags: newValue.map((tag) => tag.id),
-                  }));
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Tags"
-                    placeholder="Select tags..."
+    const handleContentChange = (content: string) => {
+      setFormData((prev) => ({ ...prev, body: content }));
+      if (errors.body) {
+        setErrors((prev) => ({ ...prev, body: '' }));
+      }
+    };
+
+    const handleFileUploadComplete = (
+      files: Array<{ url: string; name: string; size: number }>
+    ) => {
+      const newFiles = files.map((file) => ({
+        ...file,
+        type: file.name.split('.').pop() || 'unknown',
+      }));
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      setShowFileUpload(false);
+    };
+
+    const handleFileUploadError = (error: string) => {
+      console.error('File upload error:', error);
+      setShowFileUpload(false);
+    };
+
+    const handleRemoveFile = (index: number) => {
+      setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const handleHeroImageUpload = (file: File | null) => {
+      if (file) {
+        // For now, we'll use a placeholder URL. In a real implementation,
+        // you'd upload the file to your server and get back a URL
+        const imageUrl = URL.createObjectURL(file);
+        setFormData((prev) => ({ ...prev, heroImage: imageUrl }));
+        setShowHeroImageModal(false);
+      }
+    };
+
+    const handleRemoveHeroImage = () => {
+      setFormData((prev) => ({ ...prev, heroImage: '' }));
+    };
+
+    const tagOptions = tags.map((tag) => ({
+      value: tag.id,
+      label: tag.name,
+    }));
+
+    const userOptions = users.map((user) => ({
+      value: user.id,
+      label: `${user.name} (${user.email})`,
+    }));
+
+    return (
+      <Box component="form" onSubmit={handleSubmit}>
+        <Stack gap="lg">
+          {/* Basic Information */}
+          <Card withBorder>
+            <Card.Section p="md">
+              <Group justify="space-between" align="center" mb="md">
+                <Title order={4}>Basic Information</Title>
+                {/* Hero Image Section */}
+                <Group gap="xs">
+                  <Text size="sm" fw={500}>
+                    Hero Image
+                  </Text>
+                  {formData.heroImage ? (
+                    <Box
+                      pos="relative"
+                      style={{
+                        width: 80,
+                        height: 60,
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => setShowHeroImageModal(true)}
+                    >
+                      <Image
+                        src={formData.heroImage}
+                        alt="Hero"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                      <Box
+                        pos="absolute"
+                        top={0}
+                        left={0}
+                        right={0}
+                        bottom={0}
+                        bg="rgba(0,0,0,0.5)"
+                        style={{
+                          opacity: 0,
+                          transition: 'opacity 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        className="hero-image-overlay"
+                      >
+                        <ActionIcon
+                          variant="white"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowHeroImageModal(true);
+                          }}
+                        >
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <FileButton
+                      onChange={handleHeroImageUpload}
+                      accept="image/*"
+                    >
+                      {(props) => (
+                        <ActionIcon
+                          {...props}
+                          variant="light"
+                          size="lg"
+                          color="blue"
+                        >
+                          <IconPhoto size={20} />
+                        </ActionIcon>
+                      )}
+                    </FileButton>
+                  )}
+                </Group>
+              </Group>
+
+              <Grid>
+                <Grid.Col span={{ base: 12, md: 8 }}>
+                  <TextInput
+                    label="Title"
+                    placeholder="Enter content title"
+                    value={formData.title}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    error={errors.title}
+                    required
                   />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 4 }}>
+                  <Select
+                    label="Type"
+                    value={formData.type}
+                    onChange={(value) => handleInputChange('type', value)}
+                    data={[
+                      { value: 'ARTICLE', label: 'Article' },
+                      { value: 'BLOG_POST', label: 'Blog Post' },
+                      { value: 'NEWS', label: 'News' },
+                      { value: 'DOCUMENT', label: 'Document' },
+                    ]}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Select
+                    label="Priority"
+                    value={formData.priority}
+                    onChange={(value) => handleInputChange('priority', value)}
+                    data={[
+                      { value: 'LOW', label: 'Low' },
+                      { value: 'MEDIUM', label: 'Medium' },
+                      { value: 'HIGH', label: 'High' },
+                      { value: 'URGENT', label: 'Urgent' },
+                    ]}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <TextInput
+                    label="Due Date"
+                    type="date"
+                    value={formData.dueDate}
+                    onChange={(e) =>
+                      handleInputChange('dueDate', e.target.value)
+                    }
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Select
+                    label="Assignee"
+                    placeholder="Select assignee"
+                    value={formData.assigneeId}
+                    onChange={(value) => handleInputChange('assigneeId', value)}
+                    data={userOptions}
+                    clearable
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <MultiSelect
+                    label="Tags"
+                    placeholder="Select tags"
+                    value={formData.tags}
+                    onChange={(value) => handleInputChange('tags', value)}
+                    data={tagOptions}
+                    searchable
+                  />
+                </Grid.Col>
+              </Grid>
+            </Card.Section>
+          </Card>
+
+          {/* Content Editor */}
+          <Card withBorder>
+            <Card.Section p="md">
+              <Title order={4} mb="md">
+                Content
+              </Title>
+              <Box>
+                <TiptapEditor
+                  content={formData.body}
+                  onChange={handleContentChange}
+                />
+                {errors.body && (
+                  <Text size="sm" c="red" mt="xs">
+                    {errors.body}
+                  </Text>
                 )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip
-                      label={option.name}
-                      {...getTagProps({ index })}
-                      key={option.id}
-                    />
-                  ))
-                }
-              />
-            </Grid>
-
-            {/* Rich Text Editor */}
-            <Grid item xs={12}>
-              <Box sx={{ mb: 2 }}>
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  Use the rich text editor below to create your content. You can
-                  format text, add headings, lists, links, and images.
-                </Alert>
               </Box>
-              <TiptapEditor
-                content={formData.body}
-                onChange={handleContentChange}
-                placeholder="Start writing your content..."
-                editable={true}
-              />
-              {errors.body && (
-                <Alert severity="error" sx={{ mt: 1 }}>
-                  {errors.body}
-                </Alert>
-              )}
-            </Grid>
+            </Card.Section>
+          </Card>
 
-            {/* File Attachments */}
-            <Grid item xs={12}>
-              <Box sx={{ mb: 2 }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2,
-                  }}
+          {/* Attachments */}
+          <Card withBorder>
+            <Card.Section p="md">
+              <Group justify="space-between" align="center" mb="md">
+                <Title order={4}>Attachments</Title>
+                <Button
+                  variant="outlined"
+                  leftSection={<IconPaperclip size={16} />}
+                  onClick={() => setShowFileUpload(true)}
                 >
-                  <Typography variant="h6">File Attachments</Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AttachFile />}
-                    onClick={() => setShowFileUpload(!showFileUpload)}
-                  >
-                    {showFileUpload ? 'Hide Upload' : 'Add Files'}
-                  </Button>
-                </Box>
+                  Add Files
+                </Button>
+              </Group>
 
-                {showFileUpload && (
+              {uploadedFiles.length > 0 && (
+                <Stack gap="sm">
+                  {uploadedFiles.map((file, index) => (
+                    <FilePreview
+                      key={index}
+                      files={[file]}
+                      onRemove={() => handleRemoveFile(index)}
+                    />
+                  ))}
+                </Stack>
+              )}
+
+              {showFileUpload && (
+                <Paper p="md" withBorder>
                   <FileUpload
                     onUploadComplete={handleFileUploadComplete}
                     onUploadError={handleFileUploadError}
-                    maxFiles={10}
-                    maxFileSize={10 * 1024 * 1024} // 10MB
-                    acceptedFileTypes={[
-                      'image/*',
-                      'application/pdf',
-                      'text/*',
-                      'video/*',
-                      'audio/*',
-                      'application/msword',
-                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                      'application/vnd.ms-excel',
-                      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    ]}
-                    disabled={isLoading}
                   />
-                )}
-              </Box>
-
-              {/* File Preview */}
-              {uploadedFiles.length > 0 && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Attached Files ({uploadedFiles.length})
-                  </Typography>
-                  <FilePreview
-                    files={uploadedFiles}
-                    onRemove={handleRemoveFile}
-                    showActions={true}
-                    maxFiles={10}
-                  />
-                </Box>
+                </Paper>
               )}
-            </Grid>
+            </Card.Section>
+          </Card>
 
-            {/* Action Buttons */}
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                <Button
-                  variant="outlined"
-                  onClick={onCancel}
-                  disabled={isLoading}
-                  startIcon={<Cancel />}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={isLoading}
-                  startIcon={
-                    isLoading ? <CircularProgress size={20} /> : <Save />
-                  }
-                >
-                  {isLoading
-                    ? 'Saving...'
-                    : initialData
-                      ? 'Update Content'
-                      : 'Create Content'}
-                </Button>
+          {/* Action Buttons */}
+          <Group justify="flex-end" gap="sm">
+            <Button
+              variant="outlined"
+              leftSection={<IconX size={16} />}
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="filled"
+              leftSection={<IconDeviceFloppy size={16} />}
+              disabled={isLoading}
+              loading={isLoading}
+            >
+              Save Changes
+            </Button>
+          </Group>
+        </Stack>
+
+        {/* Hero Image Modal */}
+        <Modal
+          opened={showHeroImageModal}
+          onClose={() => setShowHeroImageModal(false)}
+          title="Edit Hero Image"
+          size="md"
+        >
+          <Stack gap="md">
+            {formData.heroImage && (
+              <Box>
+                <Text size="sm" fw={500} mb="xs">
+                  Current Image
+                </Text>
+                <Image
+                  src={formData.heroImage}
+                  alt="Hero"
+                  style={{ maxHeight: 200, objectFit: 'cover' }}
+                />
               </Box>
-            </Grid>
-          </Grid>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-}
+            )}
+
+            <Group justify="space-between">
+              <FileButton onChange={handleHeroImageUpload} accept="image/*">
+                {(props) => (
+                  <Button
+                    {...props}
+                    variant="light"
+                    leftSection={<IconPhoto size={16} />}
+                  >
+                    {formData.heroImage ? 'Replace Image' : 'Upload Image'}
+                  </Button>
+                )}
+              </FileButton>
+
+              {formData.heroImage && (
+                <Button
+                  variant="light"
+                  color="red"
+                  leftSection={<IconTrash size={16} />}
+                  onClick={handleRemoveHeroImage}
+                >
+                  Remove
+                </Button>
+              )}
+            </Group>
+          </Stack>
+        </Modal>
+      </Box>
+    );
+  }
+);
+
+ContentForm.displayName = 'ContentForm';

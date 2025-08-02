@@ -3,14 +3,16 @@
 import {
   Box,
   Avatar,
-  Typography,
-  Chip,
+  Text,
+  Badge,
   Card,
-  CardContent,
   Grid,
   Divider,
-} from '@mui/material';
-import { Person, Email, Business, Security } from '@mui/icons-material';
+  Group,
+  Stack,
+  Title,
+} from '@mantine/core';
+import { IconUser, IconMail, IconBuilding, IconShield } from '@tabler/icons-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export function UserProfile() {
@@ -23,15 +25,15 @@ export function UserProfile() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'error';
+        return 'red';
       case 'MODERATOR':
-        return 'warning';
+        return 'orange';
       case 'CONTRIBUTOR':
-        return 'info';
+        return 'blue';
       case 'VIEWER':
-        return 'default';
+        return 'gray';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -51,84 +53,68 @@ export function UserProfile() {
   };
 
   return (
-    <Card>
-      <CardContent>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <Card withBorder>
+      <Card.Section p="md">
+        <Grid>
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Stack align="center" gap="md">
               <Avatar
-                sx={{
-                  width: 80,
-                  height: 80,
-                  mb: 2,
-                  bgcolor: 'primary.main',
-                }}
+                size="xl"
+                radius="xl"
+                color="blue"
               >
-                <Person sx={{ fontSize: 40 }} />
+                <IconUser size={40} />
               </Avatar>
-              <Typography variant="h5" component="h2" gutterBottom>
-                {user.name}
-              </Typography>
-              <Chip
-                label={user.role}
-                color={getRoleColor(user.role)}
-                size="small"
-                sx={{ mb: 1 }}
-              />
-              <Typography variant="body2" color="text.secondary" textAlign="center">
-                {getRoleDescription(user.role)}
-              </Typography>
-            </Box>
-          </Grid>
+              <Stack gap="xs" align="center">
+                <Title order={3}>{user.name}</Title>
+                <Badge color={getRoleColor(user.role)} variant="light">
+                  {user.role}
+                </Badge>
+                <Text size="sm" c="dimmed" ta="center">
+                  {getRoleDescription(user.role)}
+                </Text>
+              </Stack>
+            </Stack>
+          </Grid.Col>
 
-          <Grid item xs={12} md={8}>
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                User Information
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
+          <Grid.Col span={{ base: 12, md: 8 }}>
+            <Stack gap="md">
+              <Title order={4}>User Information</Title>
+              <Divider />
 
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Email fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      Email:
-                    </Typography>
-                    <Typography variant="body2">{user.email}</Typography>
-                  </Box>
-                </Grid>
+              <Stack gap="sm">
+                <Group>
+                  <IconMail size={16} />
+                  <Text size="sm" c="dimmed">
+                    Email:
+                  </Text>
+                  <Text size="sm">{user.email}</Text>
+                </Group>
 
                 {user.department && (
-                  <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Business fontSize="small" color="action" />
-                      <Typography variant="body2" color="text.secondary">
-                        Department:
-                      </Typography>
-                      <Typography variant="body2">{user.department}</Typography>
-                    </Box>
-                  </Grid>
+                  <Group>
+                    <IconBuilding size={16} />
+                    <Text size="sm" c="dimmed">
+                      Department:
+                    </Text>
+                    <Text size="sm">{user.department}</Text>
+                  </Group>
                 )}
 
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Security fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      Role:
-                    </Typography>
-                    <Chip
-                      label={user.role}
-                      color={getRoleColor(user.role)}
-                      size="small"
-                    />
-                  </Box>
-                </Grid>
-              </Grid>
-            </Box>
-          </Grid>
+                <Group>
+                  <IconShield size={16} />
+                  <Text size="sm" c="dimmed">
+                    Role:
+                  </Text>
+                  <Badge color={getRoleColor(user.role)} variant="light" size="sm">
+                    {user.role}
+                  </Badge>
+                </Group>
+              </Stack>
+            </Stack>
+          </Grid.Col>
         </Grid>
-      </CardContent>
+      </Card.Section>
     </Card>
   );
 } 

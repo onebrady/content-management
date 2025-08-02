@@ -8,6 +8,7 @@ import { PERMISSIONS } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { ContentType, ContentStatus, Priority } from '@prisma/client';
 import { createContentVersion } from '@/lib/versioning';
+import { generateUniqueSlug } from '@/lib/slug';
 
 // GET /api/content/[id] - Get single content
 export const GET = createProtectedHandler(async (req) => {
@@ -113,7 +114,11 @@ export const PUT = createProtectedHandler(async (req) => {
   }
 
   try {
+    console.log('PUT /api/content/[id] - Request received for ID:', id);
+    console.log('User:', req.user);
+
     const body = await req.json();
+    console.log('Request body:', body);
     const {
       title,
       body: contentBody,
@@ -123,6 +128,7 @@ export const PUT = createProtectedHandler(async (req) => {
       assigneeId,
       tags,
       status,
+      heroImage,
     } = body;
 
     // Check if content exists
@@ -152,15 +158,41 @@ export const PUT = createProtectedHandler(async (req) => {
       body.changeDescription || 'Content updated'
     );
 
+    // Generate new slug if title changed
+    let slug = existingContent.slug;
+    if (title !== existingContent.title) {
+      const existingSlugs = await prisma.content.findMany({
+        where: { id: { not: id } },
+        select: { slug: true },
+      });
+      slug = generateUniqueSlug(
+        title,
+        existingSlugs.map((c) => c.slug)
+      );
+    }
+
+    console.log('Updating content with data:', {
+      title,
+      slug,
+      body: contentBody,
+      type,
+      priority,
+      status,
+      tags,
+      heroImage,
+    });
+
     // Update content
     const updatedContent = await prisma.content.update({
       where: { id },
       data: {
         title,
-        body: contentBody || undefined,
+        slug,
+        body: contentBody, // Always update the body, even if empty
         type,
         priority,
         dueDate: dueDate ? new Date(dueDate) : null,
+        heroImage: heroImage || null,
         assigneeId: assigneeId || null,
         status,
         tags: tags

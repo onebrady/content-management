@@ -7,6 +7,7 @@ import {
 import { PERMISSIONS } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { ContentType, ContentStatus, Priority } from '@prisma/client';
+import { generateUniqueSlug } from '@/lib/slug';
 
 // GET /api/content - List all content
 export const GET = createProtectedHandler(async (req) => {
@@ -64,6 +65,7 @@ export const GET = createProtectedHandler(async (req) => {
             },
           },
           tags: true,
+          attachments: true,
           _count: {
             select: {
               comments: true,
@@ -100,7 +102,24 @@ export const GET = createProtectedHandler(async (req) => {
 // POST /api/content - Create new content
 export const POST = createProtectedHandler(async (req) => {
   try {
+    console.log('POST /api/content - Request received');
+    console.log('User:', req.user);
+
+    // Test database connection
+    try {
+      await prisma.$connect();
+      console.log('Database connection successful');
+    } catch (dbError) {
+      console.error('Database connection failed:', dbError);
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
+
     const requestData = await req.json();
+    console.log('Request data:', requestData);
+
     const {
       title,
       body: contentBody,
@@ -109,24 +128,49 @@ export const POST = createProtectedHandler(async (req) => {
       dueDate,
       assigneeId,
       tags,
+      heroImage,
     } = requestData;
 
     // Validate required fields
     if (!title || !contentBody || !type) {
+      console.log('Validation failed:', { title, contentBody, type });
       return NextResponse.json(
         { error: 'Title, body, and type are required' },
         { status: 400 }
       );
     }
 
+    // Generate unique slug
+    const existingSlugs = await prisma.content.findMany({
+      select: { slug: true },
+    });
+    const slug = generateUniqueSlug(
+      title,
+      existingSlugs.map((c) => c.slug)
+    );
+
+    console.log('Creating content with data:', {
+      title,
+      slug,
+      type,
+      priority,
+      dueDate,
+      authorId: req.user!.id,
+      assigneeId,
+      tags,
+      heroImage,
+    });
+
     // Create content
     const content = await prisma.content.create({
       data: {
         title,
+        slug,
         body: contentBody, // Store the HTML content directly
         type,
         priority: priority || Priority.MEDIUM,
         dueDate: dueDate ? new Date(dueDate) : null,
+        heroImage: heroImage || null,
         authorId: req.user!.id,
         assigneeId: assigneeId || null,
         tags: tags
@@ -156,11 +200,12 @@ export const POST = createProtectedHandler(async (req) => {
       },
     });
 
+    console.log('Content created successfully:', content);
     return NextResponse.json(content, { status: 201 });
   } catch (error) {
     console.error('Error creating content:', error);
     return NextResponse.json(
-      { error: 'Failed to create content' },
+      { error: 'Failed to create content', details: error.message },
       { status: 500 }
     );
   }

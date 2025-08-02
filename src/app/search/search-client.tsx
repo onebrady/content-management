@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import React from 'react';
 import {
   Box,
   Container,
@@ -22,13 +23,14 @@ import { PERMISSIONS } from '@/lib/permissions';
 export default function SearchClient({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  searchParams: Promise<{ q?: string }>;
 }) {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Initialize search with query params if available
-  const initialQuery = searchParams.q || '';
+  // Unwrap searchParams using React.use()
+  const unwrappedSearchParams = React.use(searchParams);
+  const initialQuery = unwrappedSearchParams.q || '';
 
   const {
     filters,

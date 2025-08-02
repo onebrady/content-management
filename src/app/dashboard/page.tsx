@@ -6,63 +6,35 @@ import { useEffect, useState } from 'react';
 import {
   Box,
   Card,
-  CardContent,
-  Typography,
+  Text,
   Button,
   Grid,
   Paper,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemButton,
-  CircularProgress,
-} from '@mui/material';
-import {
-  Add,
-  Approval,
-  People,
-  Settings,
-  TrendingUp,
-  Article,
-  Notifications,
-} from '@mui/icons-material';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+  Group,
+  Title,
+  Stack,
+  Loader,
+  ThemeIcon,
+} from '@mantine/core';
+import { IconBell } from '@tabler/icons-react';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { UserProfile } from '@/components/user/UserProfile';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useNavigation } from '@/hooks/useNavigation';
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const { analytics, loading: analyticsLoading } = useAnalytics();
+  const { quickActions, dashboardStats } = useNavigation();
   const router = useRouter();
-  const [stats, setStats] = useState([
-    {
-      title: 'Total Content',
+  const [stats, setStats] = useState(
+    dashboardStats.map(stat => ({
+      ...stat,
       value: '0',
-      icon: <Article />,
-      color: 'primary.main',
-    },
-    {
-      title: 'Pending Approvals',
-      value: '0',
-      icon: <Approval />,
-      color: 'warning.main',
-    },
-    {
-      title: 'Active Users',
-      value: '0',
-      icon: <People />,
-      color: 'success.main',
-    },
-    {
-      title: 'Recent Activity',
-      value: '0',
-      icon: <TrendingUp />,
-      color: 'info.main',
-    },
-  ]);
+    }))
+  );
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -75,38 +47,30 @@ export default function DashboardPage() {
       // Update stats with real data
       setStats([
         {
-          title: 'Total Content',
-          value: analytics.totalContent.toString(),
-          icon: <Article />,
-          color: 'primary.main',
+          ...dashboardStats[0], // Total Content
+          value: analytics.totalContent?.toString() || '0',
         },
         {
-          title: 'Pending Approvals',
+          ...dashboardStats[1], // Pending Approvals
           value:
             analytics.contentByStatus
-              .find((status) => status.status === 'PENDING')
-              ?.count.toString() || '0',
-          icon: <Approval />,
-          color: 'warning.main',
+              ?.find((status) => status.status === 'PENDING')
+              ?.count?.toString() || '0',
         },
         {
-          title: 'Active Users',
-          value: analytics.totalUsers.toString(),
-          icon: <People />,
-          color: 'success.main',
+          ...dashboardStats[2], // Active Users
+          value: analytics.totalUsers?.toString() || '0',
         },
         {
-          title: 'Recent Activity',
+          ...dashboardStats[3], // Recent Activity
           value: (
-            analytics.recentActivity.newContent +
-            analytics.recentActivity.updatedContent
+            (analytics.recentActivity?.newContent || 0) +
+            (analytics.recentActivity?.updatedContent || 0)
           ).toString(),
-          icon: <TrendingUp />,
-          color: 'info.main',
         },
       ]);
     }
-  }, [analytics]);
+  }, [analytics, dashboardStats]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -116,218 +80,192 @@ export default function DashboardPage() {
     return null;
   }
 
-  const quickActions = [
-    {
-      title: 'Create Content',
-      description: 'Create new articles, blog posts, and documents',
-      icon: <Add />,
-      href: '/content/create',
-      roles: ['CONTRIBUTOR', 'MODERATOR', 'ADMIN'],
-    },
-    {
-      title: 'Review Approvals',
-      description: 'Review and approve pending content',
-      icon: <Approval />,
-      href: '/approvals',
-      roles: ['MODERATOR', 'ADMIN'],
-    },
-    {
-      title: 'Manage Users',
-      description: 'Manage user roles and permissions',
-      icon: <People />,
-      href: '/admin/users',
-      roles: ['ADMIN'],
-    },
-    {
-      title: 'System Settings',
-      description: 'Configure system settings and preferences',
-      icon: <Settings />,
-      href: '/admin/settings',
-      roles: ['ADMIN'],
-    },
-  ];
-
   return (
-    <DashboardLayout>
-      <Box sx={{ p: 3 }}>
+    <AppLayout>
+      <Box p="md">
         <Breadcrumbs />
 
-        <Typography variant="h4" component="h1" gutterBottom>
+        <Title order={1} mb="lg">
           Dashboard
-        </Typography>
+        </Title>
 
-        <Grid container spacing={3}>
+        <Grid>
           {/* User Profile */}
-          <Grid item xs={12}>
+          <Grid.Col span={12}>
             <UserProfile />
-          </Grid>
+          </Grid.Col>
 
           {/* Quick Stats */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
+          <Grid.Col span={12}>
+            <Title order={3} mb="md">
               Overview
-            </Typography>
-            <Grid container spacing={2}>
+            </Title>
+            <Grid>
               {stats.map((stat) => (
-                <Grid item xs={12} sm={6} md={3} key={stat.title}>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      minHeight: '100px',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        p: 1,
-                        borderRadius: 1,
-                        bgcolor: stat.color,
-                        color: 'white',
-                      }}
-                    >
-                      {stat.icon}
-                    </Box>
-                    <Box>
-                      {analyticsLoading ? (
-                        <CircularProgress size={24} />
-                      ) : (
-                        <>
-                          <Typography variant="h4" component="div">
-                            {stat.value}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {stat.title}
-                          </Typography>
-                        </>
-                      )}
-                    </Box>
+                <Grid.Col span={{ base: 12, sm: 6, md: 3 }} key={stat.title}>
+                  <Paper p="md" withBorder>
+                    <Group>
+                      <ThemeIcon size="lg" color={stat.color} variant="light">
+                        <stat.icon size={20} />
+                      </ThemeIcon>
+                      <div>
+                        {analyticsLoading ? (
+                          <Loader size="sm" />
+                        ) : (
+                          <>
+                            <Text size="xl" fw={700}>
+                              {stat.value}
+                            </Text>
+                            <Text size="sm" c="dimmed">
+                              {stat.title}
+                            </Text>
+                          </>
+                        )}
+                      </div>
+                    </Group>
                   </Paper>
-                </Grid>
+                </Grid.Col>
               ))}
             </Grid>
-          </Grid>
+          </Grid.Col>
 
           {/* Quick Actions */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Quick Actions
-                </Typography>
-                <List>
-                  {quickActions
-                    .filter((action) => action.roles.includes(user?.role || ''))
-                    .map((action) => (
-                      <ListItem key={action.title} disablePadding>
-                        <ListItemButton
-                          onClick={() => router.push(action.href)}
-                          sx={{ borderRadius: 1, mb: 1 }}
-                        >
-                          <ListItemIcon>{action.icon}</ListItemIcon>
-                          <ListItemText
-                            primary={action.title}
-                            secondary={action.description}
-                          />
-                        </ListItemButton>
-                      </ListItem>
-                    ))}
-                </List>
-              </CardContent>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Card withBorder>
+              <Card.Section p="md">
+                <Title order={3}>Quick Actions</Title>
+              </Card.Section>
+              <Card.Section p="md">
+                <Stack gap="xs">
+                  {quickActions.map((action) => (
+                    <Button
+                      key={action.title}
+                      variant="light"
+                      leftSection={<action.icon size={16} />}
+                      onClick={() => router.push(action.href)}
+                      justify="start"
+                      fullWidth
+                    >
+                      <div style={{ textAlign: 'left' }}>
+                        <Text size="sm" fw={500}>
+                          {action.title}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {action.description}
+                        </Text>
+                      </div>
+                    </Button>
+                  ))}
+                </Stack>
+              </Card.Section>
             </Card>
-          </Grid>
+          </Grid.Col>
 
           {/* Recent Activity */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Recent Activity
-                </Typography>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Card withBorder>
+              <Card.Section p="md">
+                <Title order={3}>Recent Activity</Title>
+              </Card.Section>
+              <Card.Section p="md">
                 {analyticsLoading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                    <CircularProgress size={24} />
+                  <Box ta="center" p="md">
+                    <Loader size="md" />
                   </Box>
                 ) : analytics ? (
-                  <List>
-                    {analytics.recentActivity.newContent > 0 && (
-                      <ListItem>
-                        <ListItemIcon>
-                          <Article />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={`${analytics.recentActivity.newContent} new content items created`}
-                          secondary="Last 30 days"
-                        />
-                      </ListItem>
+                  <Stack gap="xs">
+                    {(analytics.recentActivity?.newContent || 0) > 0 && (
+                      <Group>
+                        <ThemeIcon color="blue" variant="light">
+                          <IconBell size={16} />
+                        </ThemeIcon>
+                        <div>
+                          <Text size="sm">
+                            {analytics.recentActivity.newContent} new content items created
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            Last 30 days
+                          </Text>
+                        </div>
+                      </Group>
                     )}
-                    {analytics.recentActivity.updatedContent > 0 && (
-                      <ListItem>
-                        <ListItemIcon>
-                          <Article />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={`${analytics.recentActivity.updatedContent} content items updated`}
-                          secondary="Last 30 days"
-                        />
-                      </ListItem>
+                    {(analytics.recentActivity?.updatedContent || 0) > 0 && (
+                      <Group>
+                        <ThemeIcon color="blue" variant="light">
+                          <IconBell size={16} />
+                        </ThemeIcon>
+                        <div>
+                          <Text size="sm">
+                            {analytics.recentActivity.updatedContent} content items updated
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            Last 30 days
+                          </Text>
+                        </div>
+                      </Group>
                     )}
-                    {analytics.recentActivity.newComments > 0 && (
-                      <ListItem>
-                        <ListItemIcon>
-                          <Notifications />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={`${analytics.recentActivity.newComments} new comments added`}
-                          secondary="Last 30 days"
-                        />
-                      </ListItem>
+                    {(analytics.recentActivity?.newComments || 0) > 0 && (
+                      <Group>
+                        <ThemeIcon color="yellow" variant="light">
+                          <IconBell size={16} />
+                        </ThemeIcon>
+                        <div>
+                          <Text size="sm">
+                            {analytics.recentActivity.newComments} new comments added
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            Last 30 days
+                          </Text>
+                        </div>
+                      </Group>
                     )}
-                    {analytics.recentActivity.newApprovals > 0 && (
-                      <ListItem>
-                        <ListItemIcon>
-                          <Approval />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={`${analytics.recentActivity.newApprovals} content approvals processed`}
-                          secondary="Last 30 days"
-                        />
-                      </ListItem>
+                    {(analytics.recentActivity?.newApprovals || 0) > 0 && (
+                      <Group>
+                        <ThemeIcon color="green" variant="light">
+                          <IconBell size={16} />
+                        </ThemeIcon>
+                        <div>
+                          <Text size="sm">
+                            {analytics.recentActivity.newApprovals} content approvals processed
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            Last 30 days
+                          </Text>
+                        </div>
+                      </Group>
                     )}
-                    {analytics.totalUsers > 0 && (
-                      <ListItem>
-                        <ListItemIcon>
-                          <People />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={`${analytics.totalUsers} active users`}
-                          secondary="Total"
-                        />
-                      </ListItem>
+                    {(analytics.totalUsers || 0) > 0 && (
+                      <Group>
+                        <ThemeIcon color="cyan" variant="light">
+                          <IconBell size={16} />
+                        </ThemeIcon>
+                        <div>
+                          <Text size="sm">
+                            {analytics.totalUsers} active users
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            Total
+                          </Text>
+                        </div>
+                      </Group>
                     )}
-                    {analytics.recentActivity.newContent === 0 &&
-                      analytics.recentActivity.updatedContent === 0 &&
-                      analytics.recentActivity.newComments === 0 &&
-                      analytics.recentActivity.newApprovals === 0 && (
-                        <ListItem>
-                          <ListItemText
-                            primary="No recent activity"
-                            secondary="Last 30 days"
-                          />
-                        </ListItem>
+                    {(!analytics.recentActivity?.newContent || analytics.recentActivity.newContent === 0) &&
+                      (!analytics.recentActivity?.updatedContent || analytics.recentActivity.updatedContent === 0) &&
+                      (!analytics.recentActivity?.newComments || analytics.recentActivity.newComments === 0) &&
+                      (!analytics.recentActivity?.newApprovals || analytics.recentActivity.newApprovals === 0) && (
+                        <Text size="sm" c="dimmed">
+                          No recent activity
+                        </Text>
                       )}
-                  </List>
+                  </Stack>
                 ) : (
-                  <Typography color="text.secondary">
-                    Unable to load recent activity
-                  </Typography>
+                  <Text c="dimmed">Unable to load recent activity</Text>
                 )}
-              </CardContent>
+              </Card.Section>
             </Card>
-          </Grid>
+          </Grid.Col>
         </Grid>
       </Box>
-    </DashboardLayout>
+    </AppLayout>
   );
 }
