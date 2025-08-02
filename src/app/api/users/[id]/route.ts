@@ -88,14 +88,19 @@ export const PUT = createProtectedHandler(async (req, { params }) => {
 // DELETE /api/users/[id] - Delete a user
 export const DELETE = createProtectedHandler(async (req, { params }) => {
   try {
+    console.log('DELETE /api/users/[id] called with params:', params);
     const { id } = params;
 
     // Check if user exists
+    console.log('Looking for user with ID:', id);
     const existingUser = await prisma.user.findUnique({
       where: { id },
     });
 
+    console.log('Existing user found:', existingUser);
+
     if (!existingUser) {
+      console.log('User not found, returning 404');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 

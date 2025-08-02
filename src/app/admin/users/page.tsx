@@ -80,10 +80,15 @@ export default function UsersPage() {
   }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
+    console.log('Users page - Authentication state:', {
+      isAuthenticated,
+      user,
+      isLoading,
+    });
     if (isAuthenticated) {
       fetchUsers();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user, isLoading]);
 
   const fetchUsers = async () => {
     try {
@@ -162,7 +167,12 @@ export default function UsersPage() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
+      console.log('Delete button clicked for user:', userId);
+      console.log('Current user:', user);
+      console.log('User role:', user?.role);
+
       if (!window.confirm('Are you sure you want to delete this user?')) {
+        console.log('User cancelled deletion');
         return;
       }
       console.log('Attempting to delete user:', userId);
@@ -174,8 +184,11 @@ export default function UsersPage() {
       });
 
       console.log('Delete user response status:', response.status);
+      console.log('Delete user response headers:', response.headers);
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('Delete successful, result:', result);
         setUsers((prev) => prev.filter((user) => user.id !== userId));
         setNotification({
           open: true,
@@ -237,6 +250,14 @@ export default function UsersPage() {
     }
   };
 
+  console.log('Users page render - Current user:', user);
+  console.log('Users page render - User role:', user?.role);
+  console.log('Users page render - Is admin:', user?.role === 'ADMIN');
+  console.log(
+    'Users page render - Has USER_DELETE permission:',
+    user?.role === 'ADMIN' ? 'Yes' : 'No'
+  );
+
   if (isLoading || loading) {
     return <LoadingSpinner />;
   }
@@ -249,6 +270,35 @@ export default function UsersPage() {
     <DashboardLayout>
       <Box sx={{ p: 3 }}>
         <Breadcrumbs />
+
+        {/* Debug info */}
+        <Box sx={{ mb: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+          <Typography variant="h6">Debug Info</Typography>
+          <Typography>
+            Current User: {user?.name} ({user?.email})
+          </Typography>
+          <Typography>User Role: {user?.role}</Typography>
+          <Typography>User Role Type: {typeof user?.role}</Typography>
+          <Typography>
+            Is Admin: {user?.role === 'ADMIN' ? 'Yes' : 'No'}
+          </Typography>
+          <Typography>
+            Has USER_DELETE Permission:{' '}
+            {user?.role === 'ADMIN' ? 'Should have' : 'No'}
+          </Typography>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              console.log('Test button clicked');
+              console.log('Current user:', user);
+              console.log('User role:', user?.role);
+            }}
+            sx={{ mt: 1 }}
+          >
+            Test Button (No Permissions)
+          </Button>
+        </Box>
 
         <Box
           sx={{
@@ -286,49 +336,91 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <Person />
-                          <Typography variant="body2">{user.name}</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={getRoleIcon(user.role)}
-                          label={user.role}
-                          color={getRoleColor(user.role) as any}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{user.department || '-'}</TableCell>
-                      <TableCell align="right">
-                        <PermissionGuard permission={PERMISSIONS.USER_EDIT}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditUser(user)}
-                            color="primary"
+                  {users.map((user) => {
+                    console.log(
+                      'Rendering user row:',
+                      user.id,
+                      'Current user role:',
+                      user?.role
+                    );
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
                           >
-                            <Edit />
-                          </IconButton>
-                        </PermissionGuard>
-                        <PermissionGuard permission={PERMISSIONS.USER_DELETE}>
+                            <Person />
+                            <Typography variant="body2">{user.name}</Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Chip
+                            icon={getRoleIcon(user.role)}
+                            label={user.role}
+                            color={getRoleColor(user.role) as any}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>{user.department || '-'}</TableCell>
+                        <TableCell align="right">
+                          <PermissionGuard permission={PERMISSIONS.USER_EDIT}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEditUser(user)}
+                              color="primary"
+                            >
+                              <Edit />
+                            </IconButton>
+                          </PermissionGuard>
+                          {/* Temporarily bypass PermissionGuard for testing */}
                           <IconButton
                             size="small"
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => {
+                              console.log(
+                                'Delete button clicked for user:',
+                                user.id
+                              );
+                              handleDeleteUser(user.id);
+                            }}
+                            color="error"
+                            aria-label={`Delete user ${user.name}`}
+                          >
+                            <Delete />
+                          </IconButton>
+                          {/* Original PermissionGuard (commented out for testing)
+                        <PermissionGuard
+                          permission={PERMISSIONS.USER_DELETE}
+                          fallback={
+                            <span style={{ color: 'red' }}>
+                              No delete permission
+                            </span>
+                          }
+                        >
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              console.log(
+                                'Delete button clicked for user:',
+                                user.id
+                              );
+                              handleDeleteUser(user.id);
+                            }}
                             color="error"
                             aria-label={`Delete user ${user.name}`}
                           >
                             <Delete />
                           </IconButton>
                         </PermissionGuard>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        */}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>

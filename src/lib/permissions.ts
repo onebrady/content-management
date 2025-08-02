@@ -1,5 +1,10 @@
 import { UserRole } from '@/types/database';
 
+console.log(
+  'Permissions file - UserRole enum values:',
+  Object.values(UserRole)
+);
+
 // Permission constants
 export const PERMISSIONS = {
   // Content permissions
@@ -79,10 +84,22 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   ],
 };
 
+console.log('ROLE_PERMISSIONS mapping:', ROLE_PERMISSIONS);
+console.log('ADMIN permissions:', ROLE_PERMISSIONS[UserRole.ADMIN]);
+console.log('USER_DELETE permission:', PERMISSIONS.USER_DELETE);
+console.log('ADMIN has USER_DELETE:', ROLE_PERMISSIONS[UserRole.ADMIN].includes(PERMISSIONS.USER_DELETE));
+
 // Permission checking utilities
 export function hasPermission(userRole: UserRole, permission: string): boolean {
   const rolePermissions = ROLE_PERMISSIONS[userRole] || [];
-  return rolePermissions.includes(permission);
+  const hasPerm = rolePermissions.includes(permission);
+  console.log('hasPermission check:', {
+    userRole,
+    permission,
+    rolePermissions,
+    hasPerm,
+  });
+  return hasPerm;
 }
 
 export function hasAnyPermission(
