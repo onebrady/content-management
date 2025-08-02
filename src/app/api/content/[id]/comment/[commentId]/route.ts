@@ -150,7 +150,7 @@ export const PUT = createProtectedHandler(async (req) => {
 }, requirePermission(PERMISSIONS.CONTENT_COMMENT));
 
 // DELETE /api/content/[id]/comment/[commentId] - Delete a comment
-export const DELETE = createProtectedHandler(async (req) => {
+export const DELETE = createProtectedHandler(async (req, context) => {
   const pathParts = req.nextUrl.pathname.split('/');
   const contentId = pathParts[3];
   const commentId = pathParts[5];

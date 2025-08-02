@@ -110,13 +110,13 @@ export function requireMinimumRole(minimumRole: UserRole) {
 }
 
 export function createProtectedHandler(
-  handler: (req: AuthenticatedRequest) => Promise<NextResponse>,
+  handler: (req: AuthenticatedRequest, context: any) => Promise<NextResponse>,
   permissionCheck: (req: NextRequest) => Promise<AuthenticatedRequest>
 ) {
-  return async (req: NextRequest) => {
+  return async (req: NextRequest, context: any) => {
     try {
       const authenticatedReq = await permissionCheck(req);
-      return await handler(authenticatedReq);
+      return await handler(authenticatedReq, context);
     } catch (error) {
       if (error instanceof Error && error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

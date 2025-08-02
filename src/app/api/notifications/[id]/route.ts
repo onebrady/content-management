@@ -111,7 +111,7 @@ export const PATCH = createProtectedHandler(async (req) => {
 });
 
 // DELETE /api/notifications/[id] - Delete a notification
-export const DELETE = createProtectedHandler(async (req) => {
+export const DELETE = createProtectedHandler(async (req, context) => {
   const notificationId = req.nextUrl.pathname.split('/').pop();
 
   if (!notificationId) {

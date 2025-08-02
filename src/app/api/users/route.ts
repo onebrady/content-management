@@ -4,7 +4,7 @@ import { PERMISSIONS } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/users - Get all users (limited fields)
-export const GET = createProtectedHandler(async (req) => {
+export const GET = createProtectedHandler(async (req, context) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -30,7 +30,7 @@ export const GET = createProtectedHandler(async (req) => {
 }, requirePermission(PERMISSIONS.USER_VIEW));
 
 // POST /api/users - Create a new user
-export const POST = createProtectedHandler(async (req) => {
+export const POST = createProtectedHandler(async (req, context) => {
   try {
     const body = await req.json();
     const { name, email, role, department } = body;

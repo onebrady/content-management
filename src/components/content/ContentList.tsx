@@ -182,7 +182,7 @@ export function ContentList({
       {/* Search and Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Grid container spacing={2} alignItems="center">
+          <Grid container spacing={3} alignItems="center">
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
@@ -194,55 +194,82 @@ export function ContentList({
                     <Search sx={{ mr: 1, color: 'text.secondary' }} />
                   ),
                 }}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    fontSize: '1rem',
+                    minHeight: '48px',
+                  },
+                }}
               />
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid item xs={12} sm={6} md={2.5}>
               <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
+                <InputLabel sx={{ fontSize: '1rem' }}>Status</InputLabel>
                 <Select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
                   label="Status"
+                  sx={{
+                    fontSize: '1rem',
+                    minHeight: '48px',
+                    '& .MuiSelect-select': {
+                      fontSize: '1rem',
+                    },
+                  }}
                 >
-                  <MenuItem value="">All Status</MenuItem>
+                  <MenuItem value="" sx={{ fontSize: '1rem' }}>All Status</MenuItem>
                   {Object.values(ContentStatus).map((status) => (
-                    <MenuItem key={status} value={status}>
+                    <MenuItem key={status} value={status} sx={{ fontSize: '1rem' }}>
                       {status.replace('_', ' ')}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid item xs={12} sm={6} md={2.5}>
               <FormControl fullWidth>
-                <InputLabel>Type</InputLabel>
+                <InputLabel sx={{ fontSize: '1rem' }}>Type</InputLabel>
                 <Select
                   value={filters.type}
                   onChange={(e) => handleFilterChange('type', e.target.value)}
                   label="Type"
+                  sx={{
+                    fontSize: '1rem',
+                    minHeight: '48px',
+                    '& .MuiSelect-select': {
+                      fontSize: '1rem',
+                    },
+                  }}
                 >
-                  <MenuItem value="">All Types</MenuItem>
+                  <MenuItem value="" sx={{ fontSize: '1rem' }}>All Types</MenuItem>
                   {Object.values(ContentType).map((type) => (
-                    <MenuItem key={type} value={type}>
+                    <MenuItem key={type} value={type} sx={{ fontSize: '1rem' }}>
                       {type.replace('_', ' ')}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid item xs={12} sm={6} md={2.5}>
               <FormControl fullWidth>
-                <InputLabel>Priority</InputLabel>
+                <InputLabel sx={{ fontSize: '1rem' }}>Priority</InputLabel>
                 <Select
                   value={filters.priority}
                   onChange={(e) =>
                     handleFilterChange('priority', e.target.value)
                   }
                   label="Priority"
+                  sx={{
+                    fontSize: '1rem',
+                    minHeight: '48px',
+                    '& .MuiSelect-select': {
+                      fontSize: '1rem',
+                    },
+                  }}
                 >
-                  <MenuItem value="">All Priorities</MenuItem>
+                  <MenuItem value="" sx={{ fontSize: '1rem' }}>All Priorities</MenuItem>
                   {Object.values(Priority).map((priority) => (
-                    <MenuItem key={priority} value={priority}>
+                    <MenuItem key={priority} value={priority} sx={{ fontSize: '1rem' }}>
                       {priority}
                     </MenuItem>
                   ))}

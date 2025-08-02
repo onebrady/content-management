@@ -211,6 +211,12 @@ export function SearchFilters({
               </InputAdornment>
             ) : null,
           }}
+          sx={{
+            '& .MuiInputBase-root': {
+              fontSize: '1rem',
+              minHeight: '48px',
+            },
+          }}
         />
         <Button variant="contained" type="submit" sx={{ minWidth: 100 }}>
           Search
@@ -228,9 +234,11 @@ export function SearchFilters({
       <Collapse in={showAdvanced}>
         <Grid container spacing={3} sx={{ mb: 3 }}>
           {/* Status Filter */}
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <FormControl fullWidth>
-              <InputLabel id="status-filter-label">Status</InputLabel>
+              <InputLabel id="status-filter-label" sx={{ fontSize: '1rem' }}>
+                Status
+              </InputLabel>
               <Select
                 labelId="status-filter-label"
                 id="status-filter"
@@ -245,9 +253,20 @@ export function SearchFilters({
                     ))}
                   </Box>
                 )}
+                sx={{
+                  fontSize: '1rem',
+                  minHeight: '48px',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                  },
+                }}
               >
                 {Object.values(ContentStatus).map((status) => (
-                  <MenuItem key={status} value={status}>
+                  <MenuItem
+                    key={status}
+                    value={status}
+                    sx={{ fontSize: '1rem' }}
+                  >
                     {status}
                   </MenuItem>
                 ))}
@@ -256,9 +275,11 @@ export function SearchFilters({
           </Grid>
 
           {/* Content Type Filter */}
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <FormControl fullWidth>
-              <InputLabel id="type-filter-label">Content Type</InputLabel>
+              <InputLabel id="type-filter-label" sx={{ fontSize: '1rem' }}>
+                Content Type
+              </InputLabel>
               <Select
                 labelId="type-filter-label"
                 id="type-filter"
@@ -273,9 +294,16 @@ export function SearchFilters({
                     ))}
                   </Box>
                 )}
+                sx={{
+                  fontSize: '1rem',
+                  minHeight: '48px',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                  },
+                }}
               >
                 {Object.values(ContentType).map((type) => (
-                  <MenuItem key={type} value={type}>
+                  <MenuItem key={type} value={type} sx={{ fontSize: '1rem' }}>
                     {type}
                   </MenuItem>
                 ))}
@@ -284,9 +312,11 @@ export function SearchFilters({
           </Grid>
 
           {/* Priority Filter */}
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <FormControl fullWidth>
-              <InputLabel id="priority-filter-label">Priority</InputLabel>
+              <InputLabel id="priority-filter-label" sx={{ fontSize: '1rem' }}>
+                Priority
+              </InputLabel>
               <Select
                 labelId="priority-filter-label"
                 id="priority-filter"
@@ -301,9 +331,20 @@ export function SearchFilters({
                     ))}
                   </Box>
                 )}
+                sx={{
+                  fontSize: '1rem',
+                  minHeight: '48px',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                  },
+                }}
               >
                 {Object.values(Priority).map((priority) => (
-                  <MenuItem key={priority} value={priority}>
+                  <MenuItem
+                    key={priority}
+                    value={priority}
+                    sx={{ fontSize: '1rem' }}
+                  >
                     {priority}
                   </MenuItem>
                 ))}
@@ -312,9 +353,11 @@ export function SearchFilters({
           </Grid>
 
           {/* Tags Filter */}
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <FormControl fullWidth>
-              <InputLabel id="tags-filter-label">Tags</InputLabel>
+              <InputLabel id="tags-filter-label" sx={{ fontSize: '1rem' }}>
+                Tags
+              </InputLabel>
               <Select
                 labelId="tags-filter-label"
                 id="tags-filter"
@@ -329,9 +372,20 @@ export function SearchFilters({
                     ))}
                   </Box>
                 )}
+                sx={{
+                  fontSize: '1rem',
+                  minHeight: '48px',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                  },
+                }}
               >
                 {tags.map((tag) => (
-                  <MenuItem key={tag.id} value={tag.name}>
+                  <MenuItem
+                    key={tag.id}
+                    value={tag.name}
+                    sx={{ fontSize: '1rem' }}
+                  >
                     {tag.name}
                   </MenuItem>
                 ))}
@@ -340,9 +394,11 @@ export function SearchFilters({
           </Grid>
 
           {/* Author Filter */}
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <FormControl fullWidth>
-              <InputLabel id="author-filter-label">Author</InputLabel>
+              <InputLabel id="author-filter-label" sx={{ fontSize: '1rem' }}>
+                Author
+              </InputLabel>
               <Select
                 labelId="author-filter-label"
                 id="author-filter"
@@ -350,10 +406,23 @@ export function SearchFilters({
                 onChange={handleAuthorChange}
                 input={<OutlinedInput label="Author" />}
                 displayEmpty
+                sx={{
+                  fontSize: '1rem',
+                  minHeight: '48px',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                  },
+                }}
               >
-                <MenuItem value="">Any Author</MenuItem>
+                <MenuItem value="" sx={{ fontSize: '1rem' }}>
+                  Any Author
+                </MenuItem>
                 {users.map((user) => (
-                  <MenuItem key={user.id} value={user.id}>
+                  <MenuItem
+                    key={user.id}
+                    value={user.id}
+                    sx={{ fontSize: '1rem' }}
+                  >
                     {user.name}
                   </MenuItem>
                 ))}
@@ -362,9 +431,11 @@ export function SearchFilters({
           </Grid>
 
           {/* Assignee Filter */}
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <FormControl fullWidth>
-              <InputLabel id="assignee-filter-label">Assignee</InputLabel>
+              <InputLabel id="assignee-filter-label" sx={{ fontSize: '1rem' }}>
+                Assignee
+              </InputLabel>
               <Select
                 labelId="assignee-filter-label"
                 id="assignee-filter"
@@ -372,10 +443,23 @@ export function SearchFilters({
                 onChange={handleAssigneeChange}
                 input={<OutlinedInput label="Assignee" />}
                 displayEmpty
+                sx={{
+                  fontSize: '1rem',
+                  minHeight: '48px',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                  },
+                }}
               >
-                <MenuItem value="">Any Assignee</MenuItem>
+                <MenuItem value="" sx={{ fontSize: '1rem' }}>
+                  Any Assignee
+                </MenuItem>
                 {users.map((user) => (
-                  <MenuItem key={user.id} value={user.id}>
+                  <MenuItem
+                    key={user.id}
+                    value={user.id}
+                    sx={{ fontSize: '1rem' }}
+                  >
                     {user.name}
                   </MenuItem>
                 ))}
@@ -384,7 +468,7 @@ export function SearchFilters({
           </Grid>
 
           {/* Date Range Filter */}
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
@@ -393,7 +477,16 @@ export function SearchFilters({
                     value={filters.startDate || null}
                     onChange={handleStartDateChange}
                     slotProps={{
-                      textField: { fullWidth: true, size: 'medium' },
+                      textField: {
+                        fullWidth: true,
+                        size: 'medium',
+                        sx: {
+                          '& .MuiInputBase-root': {
+                            fontSize: '1rem',
+                            minHeight: '48px',
+                          },
+                        },
+                      },
                     }}
                   />
                 </Grid>
@@ -403,7 +496,16 @@ export function SearchFilters({
                     value={filters.endDate || null}
                     onChange={handleEndDateChange}
                     slotProps={{
-                      textField: { fullWidth: true, size: 'medium' },
+                      textField: {
+                        fullWidth: true,
+                        size: 'medium',
+                        sx: {
+                          '& .MuiInputBase-root': {
+                            fontSize: '1rem',
+                            minHeight: '48px',
+                          },
+                        },
+                      },
                     }}
                   />
                 </Grid>

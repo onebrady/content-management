@@ -133,9 +133,11 @@ export function ApprovalFilters({
       {/* Advanced Filters */}
       <Collapse in={showAdvanced}>
         <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} sm={6} md={4}>
             <FormControl fullWidth>
-              <InputLabel id="status-filter-label">Status</InputLabel>
+              <InputLabel id="status-filter-label" sx={{ fontSize: '1rem' }}>
+                Status
+              </InputLabel>
               <Select
                 labelId="status-filter-label"
                 id="status-filter"
@@ -150,18 +152,32 @@ export function ApprovalFilters({
                     ))}
                   </Box>
                 )}
+                sx={{
+                  fontSize: '1rem',
+                  minHeight: '48px',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                  },
+                }}
               >
                 {Object.values(ApprovalStatus).map((status) => (
-                  <MenuItem key={status} value={status}>
+                  <MenuItem
+                    key={status}
+                    value={status}
+                    sx={{ fontSize: '1rem' }}
+                  >
                     {status}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} sm={6} md={4}>
             <FormControl fullWidth>
-              <InputLabel id="content-type-filter-label">
+              <InputLabel
+                id="content-type-filter-label"
+                sx={{ fontSize: '1rem' }}
+              >
                 Content Type
               </InputLabel>
               <Select
@@ -178,16 +194,23 @@ export function ApprovalFilters({
                     ))}
                   </Box>
                 )}
+                sx={{
+                  fontSize: '1rem',
+                  minHeight: '48px',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                  },
+                }}
               >
                 {Object.values(ContentType).map((type) => (
-                  <MenuItem key={type} value={type}>
+                  <MenuItem key={type} value={type} sx={{ fontSize: '1rem' }}>
                     {type}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} sm={6} md={4}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
@@ -196,7 +219,16 @@ export function ApprovalFilters({
                     value={filters.dateRange[0]}
                     onChange={(date) => handleDateRangeChange(0, date)}
                     slotProps={{
-                      textField: { fullWidth: true, size: 'medium' },
+                      textField: {
+                        fullWidth: true,
+                        size: 'medium',
+                        sx: {
+                          '& .MuiInputBase-root': {
+                            fontSize: '1rem',
+                            minHeight: '48px',
+                          },
+                        },
+                      },
                     }}
                   />
                 </Grid>
@@ -206,7 +238,16 @@ export function ApprovalFilters({
                     value={filters.dateRange[1]}
                     onChange={(date) => handleDateRangeChange(1, date)}
                     slotProps={{
-                      textField: { fullWidth: true, size: 'medium' },
+                      textField: {
+                        fullWidth: true,
+                        size: 'medium',
+                        sx: {
+                          '& .MuiInputBase-root': {
+                            fontSize: '1rem',
+                            minHeight: '48px',
+                          },
+                        },
+                      },
                     }}
                   />
                 </Grid>

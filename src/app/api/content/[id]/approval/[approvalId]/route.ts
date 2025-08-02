@@ -151,7 +151,7 @@ export const PUT = createProtectedHandler(async (req) => {
 }, requirePermission(PERMISSIONS.CONTENT_APPROVE));
 
 // DELETE /api/content/[id]/approval/[approvalId] - Delete an approval
-export const DELETE = createProtectedHandler(async (req) => {
+export const DELETE = createProtectedHandler(async (req, context) => {
   const pathParts = req.nextUrl.pathname.split('/');
   const contentId = pathParts[3];
   const approvalId = pathParts[5];

@@ -208,7 +208,7 @@ export const PUT = createProtectedHandler(async (req) => {
 }, requirePermission(PERMISSIONS.CONTENT_EDIT));
 
 // DELETE /api/content/[id] - Delete content
-export const DELETE = createProtectedHandler(async (req) => {
+export const DELETE = createProtectedHandler(async (req, context) => {
   const id = req.nextUrl.pathname.split('/').pop();
 
   if (!id) {
