@@ -30,7 +30,7 @@ export default function DashboardPage() {
   const { quickActions, dashboardStats } = useNavigation();
   const router = useRouter();
   const [stats, setStats] = useState(
-    dashboardStats.map(stat => ({
+    dashboardStats.map((stat) => ({
       ...stat,
       value: '0',
     }))
@@ -54,7 +54,7 @@ export default function DashboardPage() {
           ...dashboardStats[1], // Pending Approvals
           value:
             analytics.contentByStatus
-              ?.find((status) => status.status === 'PENDING')
+              ?.find((status) => status.status === 'IN_REVIEW')
               ?.count?.toString() || '0',
         },
         {
@@ -181,7 +181,8 @@ export default function DashboardPage() {
                         </ThemeIcon>
                         <div>
                           <Text size="sm">
-                            {analytics.recentActivity.newContent} new content items created
+                            {analytics.recentActivity.newContent} new content
+                            items created
                           </Text>
                           <Text size="xs" c="dimmed">
                             Last 30 days
@@ -196,7 +197,8 @@ export default function DashboardPage() {
                         </ThemeIcon>
                         <div>
                           <Text size="sm">
-                            {analytics.recentActivity.updatedContent} content items updated
+                            {analytics.recentActivity.updatedContent} content
+                            items updated
                           </Text>
                           <Text size="xs" c="dimmed">
                             Last 30 days
@@ -211,7 +213,8 @@ export default function DashboardPage() {
                         </ThemeIcon>
                         <div>
                           <Text size="sm">
-                            {analytics.recentActivity.newComments} new comments added
+                            {analytics.recentActivity.newComments} new comments
+                            added
                           </Text>
                           <Text size="xs" c="dimmed">
                             Last 30 days
@@ -226,7 +229,8 @@ export default function DashboardPage() {
                         </ThemeIcon>
                         <div>
                           <Text size="sm">
-                            {analytics.recentActivity.newApprovals} content approvals processed
+                            {analytics.recentActivity.newApprovals} content
+                            approvals processed
                           </Text>
                           <Text size="xs" c="dimmed">
                             Last 30 days
@@ -249,10 +253,14 @@ export default function DashboardPage() {
                         </div>
                       </Group>
                     )}
-                    {(!analytics.recentActivity?.newContent || analytics.recentActivity.newContent === 0) &&
-                      (!analytics.recentActivity?.updatedContent || analytics.recentActivity.updatedContent === 0) &&
-                      (!analytics.recentActivity?.newComments || analytics.recentActivity.newComments === 0) &&
-                      (!analytics.recentActivity?.newApprovals || analytics.recentActivity.newApprovals === 0) && (
+                    {(!analytics.recentActivity?.newContent ||
+                      analytics.recentActivity.newContent === 0) &&
+                      (!analytics.recentActivity?.updatedContent ||
+                        analytics.recentActivity.updatedContent === 0) &&
+                      (!analytics.recentActivity?.newComments ||
+                        analytics.recentActivity.newComments === 0) &&
+                      (!analytics.recentActivity?.newApprovals ||
+                        analytics.recentActivity.newApprovals === 0) && (
                         <Text size="sm" c="dimmed">
                           No recent activity
                         </Text>

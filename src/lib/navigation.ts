@@ -169,10 +169,10 @@ export const dashboardStats = [
     key: 'totalContent',
   },
   {
-    title: 'Pending Approvals',
+    title: 'In Review',
     icon: IconCheck,
     color: 'orange',
-    key: 'pendingApprovals',
+    key: 'pendingApprovals', // Keep the key the same for backward compatibility
   },
   {
     title: 'Active Users',
