@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Box, Alert, Button, Loader, Group, Stack, Title } from '@mantine/core';
 import {
@@ -59,7 +59,8 @@ interface Content {
 
 type ContentMode = 'list' | 'create' | 'view' | 'edit';
 
-export default function ContentPage() {
+// Wrapper component that uses searchParams
+function ContentPageClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -538,5 +539,22 @@ export default function ContentPage() {
         </Alert>
       )}
     </AppLayout>
+  );
+}
+
+// Export the page with Suspense boundary
+export default function ContentPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout>
+          <Box p="md" ta="center">
+            <Loader size="lg" />
+          </Box>
+        </AppLayout>
+      }
+    >
+      <ContentPageClient />
+    </Suspense>
   );
 }

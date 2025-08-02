@@ -83,9 +83,12 @@ async function main() {
   ]);
 
   // Create test content
-  const content = await prisma.content.create({
-    data: {
+  const content = await prisma.content.upsert({
+    where: { slug: 'welcome-to-content-management-tool' },
+    update: {}, // Don't update if it already exists
+    create: {
       title: 'Welcome to Content Management Tool',
+      slug: 'welcome-to-content-management-tool', // Added required slug field
       body: {
         type: 'doc',
         content: [
@@ -116,12 +119,18 @@ async function main() {
       tags: {
         connect: [{ name: 'Technology' }, { name: 'Product' }],
       },
+      heroImage: null, // Added heroImage field with null value
     },
   });
 
   // Create test comments
-  await prisma.comment.create({
-    data: {
+  await prisma.comment.upsert({
+    where: {
+      id: 'seed-comment-1', // Using a predictable ID for upsert
+    },
+    update: {}, // Don't update if it already exists
+    create: {
+      id: 'seed-comment-1', // Using a predictable ID for upsert
       commentText: 'This is a great article!',
       contentId: content.id,
       userId: moderator.id,
