@@ -13,16 +13,44 @@ export async function POST(request: NextRequest) {
 
     console.log('Manual migration triggered via API');
 
-    // Run migrations
-    execSync('npx prisma migrate deploy', {
-      stdio: 'inherit',
-      env: { ...process.env },
-    });
+    // Run migrations with retry logic
+    const maxRetries = 3;
+    let lastError;
 
-    return NextResponse.json({
-      success: true,
-      message: 'Migrations completed successfully',
-    });
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Migration attempt ${attempt}/${maxRetries}...`);
+
+        execSync('npx prisma migrate deploy', {
+          stdio: 'inherit',
+          env: { ...process.env },
+          timeout: 30000, // 30 seconds timeout
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: 'Migrations completed successfully',
+        });
+      } catch (error) {
+        lastError = error;
+        console.error(`Migration attempt ${attempt} failed:`, error);
+
+        if (attempt < maxRetries) {
+          console.log(`Retrying in 5 seconds...`);
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+        }
+      }
+    }
+
+    // If we get here, all attempts failed
+    return NextResponse.json(
+      {
+        error: 'Migration failed after all retries',
+        details:
+          lastError instanceof Error ? lastError.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   } catch (error) {
     console.error('Migration error:', error);
     return NextResponse.json(
