@@ -265,9 +265,13 @@ export function VersionHistory({
               }
             >
               <ListItemText
+                primaryTypographyProps={{ component: 'div' }}
+                secondaryTypographyProps={{ component: 'div' }}
                 primary={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle1">{version.title}</Typography>
+                    <Typography variant="subtitle1" component="span">
+                      {version.title}
+                    </Typography>
                     <Chip
                       label={`v${version.versionNumber}`}
                       size="small"
@@ -289,12 +293,17 @@ export function VersionHistory({
                 }
                 secondary={
                   <Box sx={{ mt: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      component="span"
+                    >
                       {version.changeDescription || 'No description provided'}
                     </Typography>
                     <Typography
                       variant="caption"
                       color="text.secondary"
+                      component="span"
                       sx={{ display: 'block', mt: 0.5 }}
                     >
                       Created by {version.createdBy.name}{' '}

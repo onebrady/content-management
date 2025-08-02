@@ -6,6 +6,15 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seed...');
 
+  // Skip seeding in production unless explicitly allowed
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.DISABLE_SEED_PRODUCTION === 'true'
+  ) {
+    console.log('⏭️ Skipping seed in production environment');
+    return;
+  }
+
   // Create test users
   const admin = await prisma.user.upsert({
     where: { email: 'admin@example.com' },
