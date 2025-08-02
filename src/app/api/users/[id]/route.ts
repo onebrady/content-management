@@ -119,8 +119,20 @@ export const DELETE = createProtectedHandler(async (req, { params }) => {
     });
 
     return NextResponse.json({ message: 'User deleted successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting user:', error);
+
+    // Check for specific Prisma error for foreign key constraint violation
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        {
+          error:
+            'This user cannot be deleted because they are still linked to other records (e.g., content they authored). Please reassign or delete their content before deleting the user.',
+        },
+        { status: 409 } // 409 Conflict
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to delete user' },
       { status: 500 }
