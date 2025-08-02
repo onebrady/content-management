@@ -5,6 +5,11 @@ import { SessionProvider } from '@/components/providers/SessionProvider';
 import { MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
 
+// Import migration handler for production
+if (process.env.NODE_ENV === 'production') {
+  import('@/lib/db-migration');
+}
+
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
