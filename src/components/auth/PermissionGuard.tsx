@@ -34,45 +34,17 @@ export function PermissionGuard({
   let hasAccess = false;
 
   if (permission) {
-    console.log(
-      'PermissionGuard: User role type:',
-      typeof user.role,
-      'Value:',
-      user.role
-    );
-    console.log(
-      'PermissionGuard: UserRole enum values:',
-      Object.values(UserRole)
-    );
     hasAccess = hasPermission(user.role as UserRole, permission);
-    console.log('PermissionGuard: Checking permission', {
-      permission,
-      userRole: user.role,
-      hasAccess,
-    });
   } else if (permissions) {
     if (requireAll) {
       hasAccess = hasAllPermissions(user.role as UserRole, permissions);
     } else {
       hasAccess = hasAnyPermission(user.role as UserRole, permissions);
     }
-    console.log('PermissionGuard: Checking permissions', {
-      permissions,
-      userRole: user.role,
-      hasAccess,
-    });
   } else {
     // If no permission specified, show content
     hasAccess = true;
-    console.log('PermissionGuard: No permission specified, allowing access');
   }
-
-  console.log('PermissionGuard: Final decision', {
-    hasAccess,
-    userRole: user.role,
-    permission,
-    permissions,
-  });
 
   return hasAccess ? <>{children}</> : <>{fallback}</>;
 }

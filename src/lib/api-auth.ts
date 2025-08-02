@@ -41,22 +41,15 @@ export async function authenticateRequest(
 
 export function requirePermission(permission: string) {
   return async (req: NextRequest) => {
-    console.log('requirePermission called with permission:', permission);
     const authenticatedReq = await authenticateRequest(req);
-    console.log('Authenticated user:', authenticatedReq.user);
 
-    const hasPerm = hasPermission(authenticatedReq.user!.role, permission);
-    console.log('Permission check result:', { permission, userRole: authenticatedReq.user!.role, hasPermission: hasPerm });
-
-    if (!hasPerm) {
-      console.log('Insufficient permissions, returning 403');
+    if (!hasPermission(authenticatedReq.user!.role, permission)) {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }
       );
     }
 
-    console.log('Permission check passed');
     return authenticatedReq;
   };
 }

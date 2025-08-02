@@ -113,19 +113,9 @@ export const authOptions: NextAuthOptions = {
             });
 
             if (dbUser) {
-              console.log(
-                'Session callback - dbUser role:',
-                dbUser.role,
-                'Type:',
-                typeof dbUser.role
-              );
               session.user.id = dbUser.id;
               session.user.role = dbUser.role;
               session.user.department = dbUser.department;
-              console.log(
-                'Session callback - session.user.role after setting:',
-                session.user.role
-              );
             }
           }
         }

@@ -4,8 +4,9 @@ import { PERMISSIONS } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/users/[id] - Get a specific user
-export const GET = createProtectedHandler(async (req, { params }) => {
+export const GET = createProtectedHandler(async (req, context) => {
   try {
+    const { params } = context;
     const { id } = params;
 
     const user = await prisma.user.findUnique({
@@ -34,8 +35,9 @@ export const GET = createProtectedHandler(async (req, { params }) => {
 }, requirePermission(PERMISSIONS.USER_VIEW));
 
 // PUT /api/users/[id] - Update a user
-export const PUT = createProtectedHandler(async (req, { params }) => {
+export const PUT = createProtectedHandler(async (req, context) => {
   try {
+    const { params } = context;
     const { id } = params;
     const body = await req.json();
     const { name, email, role, department } = body;
@@ -86,21 +88,17 @@ export const PUT = createProtectedHandler(async (req, { params }) => {
 }, requirePermission(PERMISSIONS.USER_EDIT));
 
 // DELETE /api/users/[id] - Delete a user
-export const DELETE = createProtectedHandler(async (req, { params }) => {
+export const DELETE = createProtectedHandler(async (req, context) => {
   try {
-    console.log('DELETE /api/users/[id] called with params:', params);
+    const { params } = context;
     const { id } = params;
 
     // Check if user exists
-    console.log('Looking for user with ID:', id);
     const existingUser = await prisma.user.findUnique({
       where: { id },
     });
 
-    console.log('Existing user found:', existingUser);
-
     if (!existingUser) {
-      console.log('User not found, returning 404');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
