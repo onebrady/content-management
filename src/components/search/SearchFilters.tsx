@@ -3,28 +3,26 @@
 import { useState, useEffect } from 'react';
 import {
   Box,
-  TextField,
-  InputAdornment,
-  IconButton,
+  TextInput,
   Button,
   Collapse,
   Grid,
-  FormControl,
-  InputLabel,
   Select,
-  MenuItem,
-  Chip,
-  OutlinedInput,
-  Typography,
-} from '@mui/material';
+  Badge,
+  Text,
+  Group,
+  Stack,
+  useMantineColorScheme,
+  ActionIcon,
+  Tooltip,
+} from '@mantine/core';
 import {
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  FilterList as FilterIcon,
-} from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+  IconSearch,
+  IconX,
+  IconFilter,
+  IconCalendar,
+} from '@tabler/icons-react';
+import { DatePickerInput } from '@mantine/dates';
 import { ContentStatus, ContentType, Priority } from '@prisma/client';
 import { SearchFilters as SearchFiltersType } from '@/lib/search';
 import { getAllTags, getAllUsers } from '@/lib/search';
@@ -44,6 +42,9 @@ export function SearchFilters({
   const [searchQuery, setSearchQuery] = useState(filters.query || '');
   const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
   const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+  const { colorScheme } = useMantineColorScheme();
+
+  const isDark = colorScheme === 'dark';
 
   // Fetch tags and users for filters
   useEffect(() => {
@@ -70,53 +71,41 @@ export function SearchFilters({
   };
 
   // Handle status filter change
-  const handleStatusChange = (event: any) => {
-    const {
-      target: { value },
-    } = event;
+  const handleStatusChange = (value: string | null) => {
     onFilterChange({
-      status: typeof value === 'string' ? value.split(',') : value,
+      status: value ? [value] : [],
     });
   };
 
   // Handle content type filter change
-  const handleTypeChange = (event: any) => {
-    const {
-      target: { value },
-    } = event;
+  const handleTypeChange = (value: string | null) => {
     onFilterChange({
-      types: typeof value === 'string' ? value.split(',') : value,
+      types: value ? [value] : [],
     });
   };
 
   // Handle priority filter change
-  const handlePriorityChange = (event: any) => {
-    const {
-      target: { value },
-    } = event;
+  const handlePriorityChange = (value: string | null) => {
     onFilterChange({
-      priorities: typeof value === 'string' ? value.split(',') : value,
+      priorities: value ? [value] : [],
     });
   };
 
   // Handle tags filter change
-  const handleTagsChange = (event: any) => {
-    const {
-      target: { value },
-    } = event;
+  const handleTagsChange = (value: string | null) => {
     onFilterChange({
-      tags: typeof value === 'string' ? value.split(',') : value,
+      tags: value ? [value] : [],
     });
   };
 
   // Handle author filter change
-  const handleAuthorChange = (event: any) => {
-    onFilterChange({ author: event.target.value });
+  const handleAuthorChange = (value: string | null) => {
+    onFilterChange({ author: value || undefined });
   };
 
   // Handle assignee filter change
-  const handleAssigneeChange = (event: any) => {
-    onFilterChange({ assignee: event.target.value });
+  const handleAssigneeChange = (value: string | null) => {
+    onFilterChange({ assignee: value || undefined });
   };
 
   // Handle date range change
@@ -129,12 +118,12 @@ export function SearchFilters({
   };
 
   // Handle sort change
-  const handleSortByChange = (event: any) => {
-    onFilterChange({ sortBy: event.target.value });
+  const handleSortByChange = (value: string | null) => {
+    onFilterChange({ sortBy: value || 'updatedAt' });
   };
 
-  const handleSortOrderChange = (event: any) => {
-    onFilterChange({ sortOrder: event.target.value });
+  const handleSortOrderChange = (value: string | null) => {
+    onFilterChange({ sortOrder: value || 'desc' });
   };
 
   // Clear search query
@@ -185,46 +174,41 @@ export function SearchFilters({
   };
 
   return (
-    <Box sx={{ width: '100%', mb: 4 }}>
+    <Box w="100%" mb="xl">
       {/* Search Bar */}
       <Box
         component="form"
         onSubmit={handleSearchSubmit}
-        sx={{ mb: 3, display: 'flex', gap: 2 }}
+        mb="lg"
+        style={{ display: 'flex', gap: 16 }}
       >
-        <TextField
-          fullWidth
+        <TextInput
           placeholder="Search by title or content..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery ? (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={handleClearSearch}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ) : null,
-          }}
-          sx={{
-            '& .MuiInputBase-root': {
-              fontSize: '1rem',
-              minHeight: '48px',
-            },
-          }}
+          onChange={(e) => setSearchQuery(e.currentTarget.value)}
+          leftSection={<IconSearch size={16} />}
+          rightSection={
+            searchQuery ? (
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                onClick={handleClearSearch}
+              >
+                <IconX size={14} />
+              </ActionIcon>
+            ) : null
+          }
+          style={{ flex: 1 }}
+          size="md"
         />
-        <Button variant="contained" type="submit" sx={{ minWidth: 100 }}>
+        <Button type="submit" size="md" style={{ minWidth: 100 }}>
           Search
         </Button>
         <Button
-          variant="outlined"
-          startIcon={<FilterIcon />}
+          variant="light"
+          leftSection={<IconFilter size={16} />}
           onClick={() => setShowAdvanced(!showAdvanced)}
+          size="md"
         >
           {showAdvanced ? 'Hide Filters' : 'Show Filters'}
         </Button>
@@ -232,348 +216,184 @@ export function SearchFilters({
 
       {/* Advanced Filters */}
       <Collapse in={showAdvanced}>
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid gutter="md" mb="lg">
           {/* Status Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <FormControl fullWidth>
-              <InputLabel id="status-filter-label" sx={{ fontSize: '1rem' }}>
-                Status
-              </InputLabel>
-              <Select
-                labelId="status-filter-label"
-                id="status-filter"
-                multiple
-                value={filters.status || []}
-                onChange={handleStatusChange}
-                input={<OutlinedInput label="Status" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip key={value} label={value} size="small" />
-                    ))}
-                  </Box>
-                )}
-                sx={{
-                  fontSize: '1rem',
-                  minHeight: '48px',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                {Object.values(ContentStatus).map((status) => (
-                  <MenuItem
-                    key={status}
-                    value={status}
-                    sx={{ fontSize: '1rem' }}
-                  >
-                    {status}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+            <Select
+              label="Status"
+              placeholder="Select status"
+              data={Object.values(ContentStatus).map((status) => ({
+                value: status,
+                label: status,
+              }))}
+              value={filters.status?.[0] || null}
+              onChange={handleStatusChange}
+              clearable
+              size="md"
+            />
+          </Grid.Col>
 
           {/* Content Type Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <FormControl fullWidth>
-              <InputLabel id="type-filter-label" sx={{ fontSize: '1rem' }}>
-                Content Type
-              </InputLabel>
-              <Select
-                labelId="type-filter-label"
-                id="type-filter"
-                multiple
-                value={filters.types || []}
-                onChange={handleTypeChange}
-                input={<OutlinedInput label="Content Type" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip key={value} label={value} size="small" />
-                    ))}
-                  </Box>
-                )}
-                sx={{
-                  fontSize: '1rem',
-                  minHeight: '48px',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                {Object.values(ContentType).map((type) => (
-                  <MenuItem key={type} value={type} sx={{ fontSize: '1rem' }}>
-                    {type}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+            <Select
+              label="Content Type"
+              placeholder="Select type"
+              data={Object.values(ContentType).map((type) => ({
+                value: type,
+                label: type,
+              }))}
+              value={filters.types?.[0] || null}
+              onChange={handleTypeChange}
+              clearable
+              size="md"
+            />
+          </Grid.Col>
 
           {/* Priority Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <FormControl fullWidth>
-              <InputLabel id="priority-filter-label" sx={{ fontSize: '1rem' }}>
-                Priority
-              </InputLabel>
-              <Select
-                labelId="priority-filter-label"
-                id="priority-filter"
-                multiple
-                value={filters.priorities || []}
-                onChange={handlePriorityChange}
-                input={<OutlinedInput label="Priority" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip key={value} label={value} size="small" />
-                    ))}
-                  </Box>
-                )}
-                sx={{
-                  fontSize: '1rem',
-                  minHeight: '48px',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                {Object.values(Priority).map((priority) => (
-                  <MenuItem
-                    key={priority}
-                    value={priority}
-                    sx={{ fontSize: '1rem' }}
-                  >
-                    {priority}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+            <Select
+              label="Priority"
+              placeholder="Select priority"
+              data={Object.values(Priority).map((priority) => ({
+                value: priority,
+                label: priority,
+              }))}
+              value={filters.priorities?.[0] || null}
+              onChange={handlePriorityChange}
+              clearable
+              size="md"
+            />
+          </Grid.Col>
 
           {/* Tags Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <FormControl fullWidth>
-              <InputLabel id="tags-filter-label" sx={{ fontSize: '1rem' }}>
-                Tags
-              </InputLabel>
-              <Select
-                labelId="tags-filter-label"
-                id="tags-filter"
-                multiple
-                value={filters.tags || []}
-                onChange={handleTagsChange}
-                input={<OutlinedInput label="Tags" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip key={value} label={value} size="small" />
-                    ))}
-                  </Box>
-                )}
-                sx={{
-                  fontSize: '1rem',
-                  minHeight: '48px',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                {tags.map((tag) => (
-                  <MenuItem
-                    key={tag.id}
-                    value={tag.name}
-                    sx={{ fontSize: '1rem' }}
-                  >
-                    {tag.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+            <Select
+              label="Tags"
+              placeholder="Select tags"
+              data={tags.map((tag) => ({
+                value: tag.name,
+                label: tag.name,
+              }))}
+              value={filters.tags?.[0] || null}
+              onChange={handleTagsChange}
+              clearable
+              size="md"
+            />
+          </Grid.Col>
 
           {/* Author Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <FormControl fullWidth>
-              <InputLabel id="author-filter-label" sx={{ fontSize: '1rem' }}>
-                Author
-              </InputLabel>
-              <Select
-                labelId="author-filter-label"
-                id="author-filter"
-                value={filters.author || ''}
-                onChange={handleAuthorChange}
-                input={<OutlinedInput label="Author" />}
-                displayEmpty
-                sx={{
-                  fontSize: '1rem',
-                  minHeight: '48px',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                <MenuItem value="" sx={{ fontSize: '1rem' }}>
-                  Any Author
-                </MenuItem>
-                {users.map((user) => (
-                  <MenuItem
-                    key={user.id}
-                    value={user.id}
-                    sx={{ fontSize: '1rem' }}
-                  >
-                    {user.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+            <Select
+              label="Author"
+              placeholder="Any Author"
+              data={[
+                { value: '', label: 'Any Author' },
+                ...users.map((user) => ({
+                  value: user.id,
+                  label: user.name,
+                })),
+              ]}
+              value={filters.author || ''}
+              onChange={handleAuthorChange}
+              clearable
+              size="md"
+            />
+          </Grid.Col>
 
           {/* Assignee Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <FormControl fullWidth>
-              <InputLabel id="assignee-filter-label" sx={{ fontSize: '1rem' }}>
-                Assignee
-              </InputLabel>
-              <Select
-                labelId="assignee-filter-label"
-                id="assignee-filter"
-                value={filters.assignee || ''}
-                onChange={handleAssigneeChange}
-                input={<OutlinedInput label="Assignee" />}
-                displayEmpty
-                sx={{
-                  fontSize: '1rem',
-                  minHeight: '48px',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                <MenuItem value="" sx={{ fontSize: '1rem' }}>
-                  Any Assignee
-                </MenuItem>
-                {users.map((user) => (
-                  <MenuItem
-                    key={user.id}
-                    value={user.id}
-                    sx={{ fontSize: '1rem' }}
-                  >
-                    {user.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+            <Select
+              label="Assignee"
+              placeholder="Any Assignee"
+              data={[
+                { value: '', label: 'Any Assignee' },
+                ...users.map((user) => ({
+                  value: user.id,
+                  label: user.name,
+                })),
+              ]}
+              value={filters.assignee || ''}
+              onChange={handleAssigneeChange}
+              clearable
+              size="md"
+            />
+          </Grid.Col>
 
           {/* Date Range Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <DatePicker
-                    label="From Date"
-                    value={filters.startDate || null}
-                    onChange={handleStartDateChange}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        size: 'medium',
-                        sx: {
-                          '& .MuiInputBase-root': {
-                            fontSize: '1rem',
-                            minHeight: '48px',
-                          },
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <DatePicker
-                    label="To Date"
-                    value={filters.endDate || null}
-                    onChange={handleEndDateChange}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        size: 'medium',
-                        sx: {
-                          '& .MuiInputBase-root': {
-                            fontSize: '1rem',
-                            minHeight: '48px',
-                          },
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-              </Grid>
-            </LocalizationProvider>
-          </Grid>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+            <Group gap="sm">
+              <DatePickerInput
+                label="From Date"
+                placeholder="Select date"
+                value={filters.startDate}
+                onChange={handleStartDateChange}
+                clearable
+                size="md"
+                style={{ flex: 1 }}
+                leftSection={<IconCalendar size={16} />}
+              />
+              <DatePickerInput
+                label="To Date"
+                placeholder="Select date"
+                value={filters.endDate}
+                onChange={handleEndDateChange}
+                clearable
+                size="md"
+                style={{ flex: 1 }}
+                leftSection={<IconCalendar size={16} />}
+              />
+            </Group>
+          </Grid.Col>
 
           {/* Sort Options */}
-          <Grid item xs={12} md={6} lg={3}>
-            <Grid container spacing={2}>
-              <Grid item xs={8}>
-                <FormControl fullWidth>
-                  <InputLabel id="sort-by-label">Sort By</InputLabel>
-                  <Select
-                    labelId="sort-by-label"
-                    id="sort-by"
-                    value={filters.sortBy || 'updatedAt'}
-                    onChange={handleSortByChange}
-                    input={<OutlinedInput label="Sort By" />}
-                  >
-                    <MenuItem value="updatedAt">Last Updated</MenuItem>
-                    <MenuItem value="createdAt">Created Date</MenuItem>
-                    <MenuItem value="title">Title</MenuItem>
-                    <MenuItem value="status">Status</MenuItem>
-                    <MenuItem value="priority">Priority</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={4}>
-                <FormControl fullWidth>
-                  <InputLabel id="sort-order-label">Order</InputLabel>
-                  <Select
-                    labelId="sort-order-label"
-                    id="sort-order"
-                    value={filters.sortOrder || 'desc'}
-                    onChange={handleSortOrderChange}
-                    input={<OutlinedInput label="Order" />}
-                  >
-                    <MenuItem value="desc">Desc</MenuItem>
-                    <MenuItem value="asc">Asc</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-          </Grid>
+          <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+            <Group gap="sm">
+              <Select
+                label="Sort By"
+                placeholder="Sort by"
+                data={[
+                  { value: 'updatedAt', label: 'Last Updated' },
+                  { value: 'createdAt', label: 'Created Date' },
+                  { value: 'title', label: 'Title' },
+                  { value: 'status', label: 'Status' },
+                  { value: 'priority', label: 'Priority' },
+                ]}
+                value={filters.sortBy || 'updatedAt'}
+                onChange={handleSortByChange}
+                size="md"
+                style={{ flex: 2 }}
+              />
+              <Select
+                label="Order"
+                placeholder="Order"
+                data={[
+                  { value: 'desc', label: 'Desc' },
+                  { value: 'asc', label: 'Asc' },
+                ]}
+                value={filters.sortOrder || 'desc'}
+                onChange={handleSortOrderChange}
+                size="md"
+                style={{ flex: 1 }}
+              />
+            </Group>
+          </Grid.Col>
         </Grid>
 
         {/* Filter Summary and Reset Button */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 2,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
+        <Group justify="space-between" align="center" mb="md">
+          <Text size="sm" c="dimmed">
             {getFilterSummary()}
-          </Typography>
+          </Text>
           <Button
-            variant="text"
-            color="primary"
+            variant="subtle"
+            color="red"
             onClick={onResetFilters}
-            startIcon={<ClearIcon />}
+            leftSection={<IconX size={16} />}
+            size="sm"
           >
             Reset All Filters
           </Button>
-        </Box>
+        </Group>
       </Collapse>
     </Box>
   );

@@ -3,30 +3,31 @@
 import { useState } from 'react';
 import {
   Box,
-  Typography,
+  Text,
   Paper,
   Grid,
   Card,
-  CardContent,
-  CardActions,
   Button,
-  Chip,
-  IconButton,
+  Badge,
+  ActionIcon,
   Pagination,
   Divider,
-  CircularProgress,
+  Loader,
   Alert,
   Tooltip,
-} from '@mui/material';
+  Group,
+  Stack,
+  useMantineColorScheme,
+} from '@mantine/core';
 import {
-  Visibility as ViewIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Person as PersonIcon,
-  Schedule as ScheduleIcon,
-  Comment as CommentIcon,
-  Attachment as AttachmentIcon,
-} from '@mui/icons-material';
+  IconEye,
+  IconEdit,
+  IconTrash,
+  IconUser,
+  IconClock,
+  IconMessage,
+  IconPaperclip,
+} from '@tabler/icons-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ContentStatus, ContentType, Priority } from '@prisma/client';
 import { SearchPagination } from '@/lib/search';
@@ -55,6 +56,9 @@ export function SearchResults({
   onDeleteContent,
 }: SearchResultsProps) {
   const { user } = useAuth();
+  const { colorScheme } = useMantineColorScheme();
+
+  const isDark = colorScheme === 'dark';
 
   // Check permissions
   const canEdit = user && CONTENT_PERMISSIONS.canEdit(user.role);
@@ -64,17 +68,17 @@ export function SearchResults({
   const getStatusColor = (status: ContentStatus) => {
     switch (status) {
       case ContentStatus.DRAFT:
-        return 'default';
+        return 'gray';
       case ContentStatus.IN_REVIEW:
-        return 'info';
+        return 'blue';
       case ContentStatus.APPROVED:
-        return 'success';
+        return 'green';
       case ContentStatus.REJECTED:
-        return 'error';
+        return 'red';
       case ContentStatus.PUBLISHED:
-        return 'primary';
+        return 'blue';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -82,15 +86,15 @@ export function SearchResults({
   const getPriorityColor = (priority: Priority) => {
     switch (priority) {
       case Priority.LOW:
-        return 'success';
+        return 'green';
       case Priority.MEDIUM:
-        return 'info';
+        return 'blue';
       case Priority.HIGH:
-        return 'warning';
+        return 'orange';
       case Priority.URGENT:
-        return 'error';
+        return 'red';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -104,24 +108,21 @@ export function SearchResults({
   };
 
   // Handle page change
-  const handlePageChange = (
-    event: React.ChangeEvent<unknown>,
-    value: number
-  ) => {
-    onPageChange(value);
+  const handlePageChange = (page: number) => {
+    onPageChange(page);
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
+      <Box style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+        <Loader size="lg" />
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mb: 2 }}>
+      <Alert color="red" mb="md">
         {error}
       </Alert>
     );
@@ -129,101 +130,108 @@ export function SearchResults({
 
   if (results.length === 0) {
     return (
-      <Paper sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary">
+      <Paper p="xl" ta="center">
+        <Text size="lg" c="dimmed" mb="xs">
           No results found
-        </Typography>
-        <Typography color="text.secondary" sx={{ mt: 1 }}>
+        </Text>
+        <Text c="dimmed">
           Try adjusting your search or filters to find what you're looking for.
-        </Typography>
+        </Text>
       </Paper>
     );
   }
 
   return (
     <Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+      <Text size="sm" c="dimmed" mb="md">
         Showing {results.length} of {pagination.total} results
-      </Typography>
+      </Text>
 
-      <Grid container spacing={3}>
+      <Stack gap="md">
         {results.map((content) => (
-          <Grid item xs={12} key={content.id}>
-            <Card variant="outlined">
-              <CardContent>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    mb: 2,
-                  }}
-                >
-                  <Typography variant="h6" component="div">
-                    {content.title}
-                  </Typography>
-                  <Box>
-                    <Chip
-                      label={content.status}
-                      size="small"
-                      color={getStatusColor(content.status)}
-                      sx={{ mr: 1 }}
-                    />
-                    <Chip
-                      label={content.priority}
-                      size="small"
-                      color={getPriorityColor(content.priority)}
-                    />
-                  </Box>
-                </Box>
+          <Card
+            key={content.id}
+            withBorder
+            shadow="sm"
+            style={{
+              backgroundColor: isDark
+                ? 'var(--mantine-color-dark-6)'
+                : 'var(--mantine-color-white)',
+              borderColor: isDark
+                ? 'var(--mantine-color-dark-4)'
+                : 'var(--mantine-color-gray-3)',
+            }}
+          >
+            <Card.Section p="md">
+              <Group justify="space-between" align="flex-start" mb="md">
+                <Text size="lg" fw={500} style={{ flex: 1 }}>
+                  {content.title}
+                </Text>
+                <Group gap="xs">
+                  <Badge
+                    size="sm"
+                    color={getStatusColor(content.status)}
+                    variant="light"
+                  >
+                    {content.status}
+                  </Badge>
+                  <Badge
+                    size="sm"
+                    color={getPriorityColor(content.priority)}
+                    variant="light"
+                  >
+                    {content.priority}
+                  </Badge>
+                </Group>
+              </Group>
 
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {content.tags.map((tag: any) => (
-                    <Chip
-                      key={tag.id}
-                      label={tag.name}
-                      size="small"
-                      variant="outlined"
-                    />
-                  ))}
-                </Box>
+              <Group gap="xs" mb="md" wrap="wrap">
+                {content.tags.map((tag: any) => (
+                  <Badge key={tag.id} size="sm" variant="outline" color="gray">
+                    {tag.name}
+                  </Badge>
+                ))}
+              </Group>
 
-                <Box sx={{ display: 'flex', gap: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PersonIcon fontSize="small" color="action" />
-                    <Typography variant="body2">
-                      {content.author?.name || 'Unknown'}
-                    </Typography>
-                  </Box>
+              <Group gap="lg" wrap="wrap">
+                <Group gap={4}>
+                  <IconUser size={14} />
+                  <Text size="sm" c="dimmed">
+                    {content.author?.name || 'Unknown'}
+                  </Text>
+                </Group>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <ScheduleIcon fontSize="small" color="action" />
-                    <Typography variant="body2">
-                      {formatDate(content.updatedAt)}
-                    </Typography>
-                  </Box>
+                <Group gap={4}>
+                  <IconClock size={14} />
+                  <Text size="sm" c="dimmed">
+                    {formatDate(content.updatedAt)}
+                  </Text>
+                </Group>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CommentIcon fontSize="small" color="action" />
-                    <Typography variant="body2">
-                      {content._count?.comments || 0} comments
-                    </Typography>
-                  </Box>
+                <Group gap={4}>
+                  <IconMessage size={14} />
+                  <Text size="sm" c="dimmed">
+                    {content._count?.comments || 0} comments
+                  </Text>
+                </Group>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AttachmentIcon fontSize="small" color="action" />
-                    <Typography variant="body2">
-                      {content._count?.attachments || 0} attachments
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
+                <Group gap={4}>
+                  <IconPaperclip size={14} />
+                  <Text size="sm" c="dimmed">
+                    {content._count?.attachments || 0} attachments
+                  </Text>
+                </Group>
+              </Group>
+            </Card.Section>
 
-              <Divider />
+            <Divider />
 
-              <CardActions>
+            <Card.Section p="md">
+              <Group gap="xs">
                 <Button
-                  size="small"
-                  startIcon={<ViewIcon />}
+                  size="sm"
+                  variant="light"
+                  leftSection={<IconEye size={14} />}
                   onClick={() => onViewContent(content.id)}
                 >
                   View
@@ -231,8 +239,9 @@ export function SearchResults({
 
                 {canEdit && (
                   <Button
-                    size="small"
-                    startIcon={<EditIcon />}
+                    size="sm"
+                    variant="light"
+                    leftSection={<IconEdit size={14} />}
                     onClick={() => onEditContent(content.id)}
                   >
                     Edit
@@ -241,27 +250,30 @@ export function SearchResults({
 
                 {canDelete && (
                   <Button
-                    size="small"
-                    color="error"
-                    startIcon={<DeleteIcon />}
+                    size="sm"
+                    variant="light"
+                    color="red"
+                    leftSection={<IconTrash size={14} />}
                     onClick={() => onDeleteContent(content.id)}
                   >
                     Delete
                   </Button>
                 )}
-              </CardActions>
-            </Card>
-          </Grid>
+              </Group>
+            </Card.Section>
+          </Card>
         ))}
-      </Grid>
+      </Stack>
 
       {pagination.totalPages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Box
+          style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}
+        >
           <Pagination
-            count={pagination.totalPages}
-            page={pagination.page}
+            total={pagination.totalPages}
+            value={pagination.page}
             onChange={handlePageChange}
-            color="primary"
+            color="blue"
           />
         </Box>
       )}

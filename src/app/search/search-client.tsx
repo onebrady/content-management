@@ -6,19 +6,19 @@ import React from 'react';
 import {
   Box,
   Container,
-  Typography,
+  Text,
   Paper,
-  Breadcrumbs,
-  Link,
-  Divider,
-} from '@mui/material';
-import { Home as HomeIcon } from '@mui/icons-material';
+  Title,
+  useMantineColorScheme,
+} from '@mantine/core';
 import { SearchFilters } from '@/components/search/SearchFilters';
 import { SearchResults } from '@/components/search/SearchResults';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { useSearch } from '@/hooks/useSearch';
 import { useAuth } from '@/hooks/useAuth';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { PERMISSIONS } from '@/lib/permissions';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export default function SearchClient({
   searchParams,
@@ -27,6 +27,7 @@ export default function SearchClient({
 }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { colorScheme } = useMantineColorScheme();
 
   // Unwrap searchParams using React.use()
   const unwrappedSearchParams = React.use(searchParams);
@@ -59,46 +60,58 @@ export default function SearchClient({
     router.push(`/content/${id}?action=delete`);
   };
 
+  const isDark = colorScheme === 'dark';
+
   return (
     <PermissionGuard permission={PERMISSIONS.CONTENT_VIEW}>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* Breadcrumbs */}
-        <Breadcrumbs sx={{ mb: 3 }}>
-          <Link
-            underline="hover"
-            color="inherit"
-            href="/dashboard"
-            sx={{ display: 'flex', alignItems: 'center' }}
-          >
-            <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
-            Dashboard
-          </Link>
-          <Typography color="text.primary">Search</Typography>
-        </Breadcrumbs>
-
-        <Typography variant="h4" component="h1" sx={{ mb: 4 }}>
-          Search Content
-        </Typography>
-
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <SearchFilters
-            filters={filters}
-            onFilterChange={updateFilters}
-            onResetFilters={resetFilters}
+      <AppLayout>
+        <Container size="xl" py="xl">
+          {/* Breadcrumbs */}
+          <Breadcrumbs
+            items={[
+              { label: '', href: '/dashboard' },
+              { label: 'Search', href: '/search' },
+            ]}
+            showHomeIcon={true}
+            homeLabel=""
           />
-        </Paper>
 
-        <SearchResults
-          results={results}
-          pagination={pagination}
-          loading={loading}
-          error={error}
-          onPageChange={setPage}
-          onViewContent={handleViewContent}
-          onEditContent={handleEditContent}
-          onDeleteContent={handleDeleteContent}
-        />
-      </Container>
+          <Title order={1} mb="xl">
+            Search Content
+          </Title>
+
+          <Paper
+            p="lg"
+            mb="xl"
+            withBorder
+            style={{
+              backgroundColor: isDark
+                ? 'var(--mantine-color-dark-6)'
+                : 'var(--mantine-color-white)',
+              borderColor: isDark
+                ? 'var(--mantine-color-dark-4)'
+                : 'var(--mantine-color-gray-3)',
+            }}
+          >
+            <SearchFilters
+              filters={filters}
+              onFilterChange={updateFilters}
+              onResetFilters={resetFilters}
+            />
+          </Paper>
+
+          <SearchResults
+            results={results}
+            pagination={pagination}
+            loading={loading}
+            error={error}
+            onPageChange={setPage}
+            onViewContent={handleViewContent}
+            onEditContent={handleEditContent}
+            onDeleteContent={handleDeleteContent}
+          />
+        </Container>
+      </AppLayout>
     </PermissionGuard>
   );
 }
