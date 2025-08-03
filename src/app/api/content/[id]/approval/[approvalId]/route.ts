@@ -148,7 +148,7 @@ export const PUT = createProtectedHandler(async (req) => {
       { status: 500 }
     );
   }
-}, requirePermission(PERMISSIONS.CONTENT_APPROVE));
+}, requirePermission(PERMISSIONS.APPROVAL_APPROVE));
 
 // DELETE /api/content/[id]/approval/[approvalId] - Delete an approval
 export const DELETE = createProtectedHandler(async (req, context) => {
@@ -210,7 +210,7 @@ export const DELETE = createProtectedHandler(async (req, context) => {
       { status: 500 }
     );
   }
-}, requirePermission(PERMISSIONS.CONTENT_APPROVE));
+}, requirePermission(PERMISSIONS.APPROVAL_APPROVE));
 
 // Helper function to update content status based on approvals
 async function updateContentStatus(contentId: string) {

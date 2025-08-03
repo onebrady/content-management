@@ -2,7 +2,11 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { SessionProvider } from '@/components/providers/SessionProvider';
-import { MantineProvider, ColorSchemeScript } from '@mantine/core';
+import {
+  MantineProvider,
+  ColorSchemeScript,
+  mantineHtmlProps,
+} from '@mantine/core';
 import { DatesProvider } from '@mantine/dates';
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
@@ -26,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" {...mantineHtmlProps}>
       <head>
         <ColorSchemeScript />
       </head>

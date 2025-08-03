@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import {
   Box,
   Tabs,
-  Tab,
-  Typography,
+  Text,
   Divider,
-  CircularProgress,
+  Loader,
   Alert,
-} from '@mui/material';
+  useMantineColorScheme,
+} from '@mantine/core';
 import { ApprovalStats } from './ApprovalStats';
 import { ApprovalList } from './ApprovalList';
 import { ApprovalFilters } from './ApprovalFilters';
@@ -26,7 +26,8 @@ export interface ApprovalFilters {
 
 export function ApprovalDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState(0);
+  const { colorScheme } = useMantineColorScheme();
+  const [activeTab, setActiveTab] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [approvals, setApprovals] = useState<any[]>([]);
@@ -36,6 +37,8 @@ export function ApprovalDashboard() {
     rejected: 0,
     total: 0,
   });
+
+  const isDark = colorScheme === 'dark';
 
   // Filter state
   const [filters, setFilters] = useState<ApprovalFilters>({
@@ -76,10 +79,10 @@ export function ApprovalDashboard() {
         }
 
         // Add tab-specific filters
-        if (activeTab === 1) {
+        if (activeTab === 'assigned') {
           // Assigned to me
           params.append('assignedTo', user?.id || '');
-        } else if (activeTab === 2) {
+        } else if (activeTab === 'my-approvals') {
           // My approvals
           params.append('approvedBy', user?.id || '');
         }
@@ -105,40 +108,54 @@ export function ApprovalDashboard() {
     fetchApprovals();
   }, [activeTab, filters, user?.id]);
 
-  // Handle tab change
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-
   // Handle filter change
   const handleFilterChange = (newFilters: Partial<ApprovalFilters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box w="100%">
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box
+        style={{
+          borderBottom: `1px solid ${
+            isDark
+              ? 'var(--mantine-color-dark-4)'
+              : 'var(--mantine-color-gray-3)'
+          }`,
+        }}
+      >
         <Tabs
           value={activeTab}
-          onChange={handleTabChange}
-          aria-label="approval dashboard tabs"
+          onChange={(value) => setActiveTab(value || 'all')}
+          variant="pills"
+          color="blue"
         >
-          <Tab label="All Approvals" />
-          <Tab label="Pending Review" />
-          <Tab label="My Approvals" />
+          <Tabs.List>
+            <Tabs.Tab value="all">All Approvals</Tabs.Tab>
+            <Tabs.Tab value="pending">Pending Review</Tabs.Tab>
+            <Tabs.Tab value="assigned">Assigned to Me</Tabs.Tab>
+            <Tabs.Tab value="my-approvals">My Approvals</Tabs.Tab>
+          </Tabs.List>
         </Tabs>
       </Box>
 
       {/* Stats */}
-      <Box sx={{ p: 3 }}>
+      <Box p="lg">
         <ApprovalStats stats={stats} loading={loading} />
       </Box>
 
       <Divider />
 
       {/* Filters */}
-      <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
+      <Box
+        p="lg"
+        style={{
+          backgroundColor: isDark
+            ? 'var(--mantine-color-dark-6)'
+            : 'var(--mantine-color-white)',
+        }}
+      >
         <ApprovalFilters
           filters={filters}
           onFilterChange={handleFilterChange}
@@ -148,20 +165,24 @@ export function ApprovalDashboard() {
       <Divider />
 
       {/* Content */}
-      <Box sx={{ p: 0 }}>
+      <Box p={0}>
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress />
+          <Box
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              padding: 32,
+            }}
+          >
+            <Loader size="lg" />
           </Box>
         ) : error ? (
-          <Alert severity="error" sx={{ m: 2 }}>
+          <Alert color="red" m="md">
             {error}
           </Alert>
         ) : approvals.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography color="text.secondary">
-              No approvals found matching your criteria
-            </Typography>
+          <Box p="xl" ta="center">
+            <Text c="dimmed">No approvals found matching your criteria</Text>
           </Box>
         ) : (
           <ApprovalList

@@ -154,4 +154,4 @@ export const GET = createProtectedHandler(async (req) => {
       { status: 500 }
     );
   }
-}, requirePermission(PERMISSIONS.CONTENT_APPROVE));
+}, requirePermission(PERMISSIONS.APPROVAL_APPROVE));

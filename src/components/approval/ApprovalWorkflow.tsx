@@ -3,21 +3,39 @@
 import { useState } from 'react';
 import {
   Box,
-  Typography,
+  Text,
   Stepper,
-  Step,
-  StepLabel,
-  StepContent,
   Paper,
   Alert,
-} from '@mui/material';
+  useMantineColorScheme,
+} from '@mantine/core';
 import { ContentStatus } from '@prisma/client';
+import { ApprovalActionButtons } from './ApprovalActionButtons';
 
 interface ApprovalWorkflowProps {
   currentStatus: ContentStatus;
+  contentId: string;
+  onApprove?: (contentId: string, comments?: string) => Promise<void>;
+  onReject?: (contentId: string, comments?: string) => Promise<void>;
+  onSubmitForReview?: (contentId: string) => Promise<void>;
+  onPublish?: (contentId: string) => Promise<void>;
+  onReturnToDraft?: (contentId: string, reason: string) => Promise<void>;
+  loading?: boolean;
 }
 
-export function ApprovalWorkflow({ currentStatus }: ApprovalWorkflowProps) {
+export function ApprovalWorkflow({
+  currentStatus,
+  contentId,
+  onApprove,
+  onReject,
+  onSubmitForReview,
+  onPublish,
+  onReturnToDraft,
+  loading = false,
+}: ApprovalWorkflowProps) {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+
   // Define workflow steps
   const steps = [
     {
@@ -56,49 +74,69 @@ export function ApprovalWorkflow({ currentStatus }: ApprovalWorkflowProps) {
   const activeStep = getCurrentStepIndex();
 
   return (
-    <Box sx={{ maxWidth: 400 }}>
-      <Typography variant="h6" gutterBottom>
+    <Box>
+      <Text size="lg" fw={600} mb="md">
         Approval Workflow
-      </Typography>
+      </Text>
 
       {currentStatus === 'REJECTED' && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert color="red" mb="md">
           This content has been rejected and needs revision before resubmission.
         </Alert>
       )}
 
-      <Stepper activeStep={activeStep} orientation="vertical">
+      <Stepper
+        active={activeStep}
+        orientation="vertical"
+        size="sm"
+        color={isDark ? 'blue' : 'indigo'}
+      >
         {steps.map((step, index) => (
-          <Step
+          <Stepper.Step
             key={step.label}
-            completed={
+            label={step.label}
+            description={step.description}
+            completed={(
               index < activeStep ||
               (currentStatus === 'PUBLISHED' && index === 3)
-            }
+            ).toString()}
           >
-            <StepLabel>
-              <Typography
-                variant="subtitle1"
-                fontWeight={index === activeStep ? 'bold' : 'normal'}
-              >
-                {step.label}
-              </Typography>
-            </StepLabel>
-            <StepContent>
-              <Typography>{step.description}</Typography>
+            <Box mt="xs">
+              <Text size="sm" c="dimmed">
+                {step.description}
+              </Text>
               {currentStatus === 'REJECTED' && index === 1 && (
-                <Alert severity="warning" sx={{ mt: 1 }}>
+                <Alert color="yellow" mt="xs" size="sm">
                   Content was rejected and needs revision.
                 </Alert>
               )}
-            </StepContent>
-          </Step>
+            </Box>
+          </Stepper.Step>
         ))}
       </Stepper>
 
+      {/* Action Buttons */}
+      <Paper withBorder p="md" mt="lg">
+        <Text size="sm" fw={500} mb="sm">
+          Available Actions
+        </Text>
+        <ApprovalActionButtons
+          contentId={contentId}
+          currentStatus={currentStatus}
+          onApprove={onApprove}
+          onReject={onReject}
+          onSubmitForReview={onSubmitForReview}
+          onPublish={onPublish}
+          onReturnToDraft={onReturnToDraft}
+          loading={loading}
+        />
+      </Paper>
+
       {activeStep === steps.length && (
-        <Paper square elevation={0} sx={{ p: 3 }}>
-          <Typography>All steps completed - content is published.</Typography>
+        <Paper withBorder p="md" mt="md">
+          <Text size="sm" c="dimmed">
+            All steps completed - content is published.
+          </Text>
         </Paper>
       )}
     </Box>

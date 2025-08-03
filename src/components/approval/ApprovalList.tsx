@@ -4,39 +4,31 @@ import { useState } from 'react';
 import {
   Box,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Chip,
-  IconButton,
+  Text,
+  Badge,
+  ActionIcon,
+  Pagination,
+  Divider,
+  Loader,
+  Alert,
   Tooltip,
   Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  TextField,
-  Typography,
+  Modal,
+  Textarea,
   Checkbox,
-} from '@mui/material';
+  Group,
+  Stack,
+  useMantineColorScheme,
+} from '@mantine/core';
 import {
-  MoreVert as MoreIcon,
-  CheckCircle as ApproveIcon,
-  Cancel as RejectIcon,
-  Visibility as ViewIcon,
-  ArrowBack as ReturnIcon,
-} from '@mui/icons-material';
+  IconDotsVertical,
+  IconCheck,
+  IconX,
+  IconEye,
+  IconArrowBack,
+} from '@tabler/icons-react';
 import { BulkApprovalActions } from './BulkApprovalActions';
-import { visuallyHidden } from '@mui/utils';
 import { useRouter } from 'next/navigation';
 import { ApprovalStatus, ContentStatus } from '@prisma/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -73,22 +65,24 @@ const headCells: HeadCell[] = [
 
 export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
   const router = useRouter();
+  const { colorScheme } = useMantineColorScheme();
   const [order, setOrder] = useState<Order>('desc');
   const [orderBy, setOrderBy] = useState<string>('updatedAt');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [actionMenuAnchorEl, setActionMenuAnchorEl] =
-    useState<null | HTMLElement>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [actionMenuOpened, setActionMenuOpened] = useState<string | null>(null);
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
-  const [dialogOpen, setDialogOpen] = useState<{
-    open: boolean;
+  const [modalOpened, setModalOpened] = useState<{
+    opened: boolean;
     type: 'approve' | 'reject' | 'return';
   }>({
-    open: false,
+    opened: false,
     type: 'approve',
   });
   const [comments, setComments] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
+
+  const isDark = colorScheme === 'dark';
 
   const handleRequestSort = (property: string) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -96,15 +90,13 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
     setOrderBy(property);
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+  const handleChangePageSize = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setPage(1);
   };
 
   // Selection handlers
@@ -144,30 +136,26 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
     onStatusChange();
   };
 
-  const handleActionMenuOpen = (
-    event: React.MouseEvent<HTMLElement>,
+  const handleActionMenuToggle = (approvalId: string) => {
+    setActionMenuOpened(actionMenuOpened === approvalId ? null : approvalId);
+  };
+
+  const handleOpenModal = (
+    type: 'approve' | 'reject' | 'return',
     approval: any
   ) => {
-    setActionMenuAnchorEl(event.currentTarget);
     setSelectedApproval(approval);
-  };
-
-  const handleActionMenuClose = () => {
-    setActionMenuAnchorEl(null);
-  };
-
-  const handleOpenDialog = (type: 'approve' | 'reject' | 'return') => {
-    setDialogOpen({
-      open: true,
+    setModalOpened({
+      opened: true,
       type,
     });
-    handleActionMenuClose();
+    setActionMenuOpened(null);
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen({
-      ...dialogOpen,
-      open: false,
+  const handleCloseModal = () => {
+    setModalOpened({
+      ...modalOpened,
+      opened: false,
     });
     setComments('');
   };
@@ -195,7 +183,7 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
       }
 
       onStatusChange();
-      handleCloseDialog();
+      handleCloseModal();
     } catch (error) {
       console.error('Error approving content:', error);
     }
@@ -224,7 +212,7 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
       }
 
       onStatusChange();
-      handleCloseDialog();
+      handleCloseModal();
     } catch (error) {
       console.error('Error rejecting content:', error);
     }
@@ -253,7 +241,7 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
       }
 
       onStatusChange();
-      handleCloseDialog();
+      handleCloseModal();
     } catch (error) {
       console.error('Error returning content to draft:', error);
     }
@@ -267,13 +255,13 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
   const getStatusColor = (status: ApprovalStatus) => {
     switch (status) {
       case ApprovalStatus.APPROVED:
-        return 'success';
+        return 'green';
       case ApprovalStatus.REJECTED:
-        return 'error';
+        return 'red';
       case ApprovalStatus.PENDING:
-        return 'warning';
+        return 'orange';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -281,16 +269,16 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
   const getContentStatusColor = (status: ContentStatus) => {
     switch (status) {
       case ContentStatus.APPROVED:
-        return 'success';
+        return 'green';
       case ContentStatus.REJECTED:
-        return 'error';
+        return 'red';
       case ContentStatus.IN_REVIEW:
-        return 'warning';
+        return 'orange';
       case ContentStatus.PUBLISHED:
-        return 'info';
+        return 'blue';
       case ContentStatus.DRAFT:
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -347,53 +335,62 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
     return 0;
   }
 
-  // Avoid a layout jump when reaching the last page with empty rows
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - approvals.length) : 0;
+  // Calculate pagination
+  const totalPages = Math.ceil(approvals.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
 
   const visibleRows = stableSort(
     approvals,
     getComparator(order, orderBy)
-  ).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  ).slice(startIndex, endIndex);
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box w="100%">
       {/* Bulk Actions */}
       {selected.length > 0 && (
-        <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1, mb: 2 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="subtitle1">
+        <Box
+          p="md"
+          mb="md"
+          style={{
+            backgroundColor: isDark
+              ? 'var(--mantine-color-blue-9)'
+              : 'var(--mantine-color-blue-1)',
+            borderRadius: 8,
+          }}
+        >
+          <Group justify="space-between" align="center">
+            <Text size="sm" fw={500}>
               {selected.length} {selected.length === 1 ? 'item' : 'items'}{' '}
               selected
-            </Typography>
+            </Text>
             <BulkApprovalActions
               selectedApprovals={selected}
               onActionComplete={handleBulkActionComplete}
             />
-          </Box>
+          </Group>
         </Box>
       )}
 
-      <TableContainer>
-        <Table sx={{ minWidth: 750 }} aria-labelledby="approvalTable">
-          <TableHead>
-            <TableRow>
+      {/* Table */}
+      <Table.ScrollContainer minWidth={750}>
+        <Table
+          highlightOnHover
+          withTableBorder
+          withColumnBorders
+          style={{
+            backgroundColor: isDark
+              ? 'var(--mantine-color-dark-6)'
+              : 'var(--mantine-color-white)',
+          }}
+        >
+          <Table.Thead>
+            <Table.Tr>
               {headCells.map((headCell) => (
-                <TableCell
-                  key={headCell.id}
-                  align={headCell.numeric ? 'right' : 'left'}
-                  sortDirection={orderBy === headCell.id ? order : false}
-                  sx={{ fontWeight: 'bold' }}
-                >
+                <Table.Th key={headCell.id} style={{ fontWeight: 'bold' }}>
                   {headCell.id === 'select' ? (
                     <Checkbox
-                      color="primary"
+                      color="blue"
                       indeterminate={
                         selected.length > 0 &&
                         selected.length < visibleRows.length
@@ -403,263 +400,263 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
                         selected.length === visibleRows.length
                       }
                       onChange={handleSelectAllClick}
-                      inputProps={{
-                        'aria-label': 'select all approvals',
-                      }}
                     />
                   ) : headCell.sortable ? (
-                    <TableSortLabel
-                      active={orderBy === headCell.id}
-                      direction={orderBy === headCell.id ? order : 'asc'}
+                    <Button
+                      variant="subtle"
+                      size="xs"
                       onClick={() => handleRequestSort(headCell.id)}
+                      rightSection={
+                        orderBy === headCell.id
+                          ? order === 'desc'
+                            ? '↓'
+                            : '↑'
+                          : null
+                      }
                     >
                       {headCell.label}
-                      {orderBy === headCell.id ? (
-                        <Box component="span" sx={visuallyHidden}>
-                          {order === 'desc'
-                            ? 'sorted descending'
-                            : 'sorted ascending'}
-                        </Box>
-                      ) : null}
-                    </TableSortLabel>
+                    </Button>
                   ) : (
                     headCell.label
                   )}
-                </TableCell>
+                </Table.Th>
               ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
             {visibleRows.map((row) => {
               const isItemSelected = isSelected(row.id);
 
               return (
-                <TableRow
-                  hover
+                <Table.Tr
                   key={row.id}
-                  selected={isItemSelected}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  style={{
+                    backgroundColor: isItemSelected
+                      ? isDark
+                        ? 'var(--mantine-color-blue-9)'
+                        : 'var(--mantine-color-blue-1)'
+                      : undefined,
+                  }}
                 >
-                  <TableCell padding="checkbox">
+                  <Table.Td>
                     <Checkbox
-                      color="primary"
+                      color="blue"
                       checked={isItemSelected}
-                      onClick={(event) => handleSelectClick(event, row.id)}
-                      inputProps={{
-                        'aria-labelledby': `approval-${row.id}`,
-                      }}
+                      onChange={(event) => handleSelectClick(event, row.id)}
                     />
-                  </TableCell>
-                  <TableCell component="th" scope="row">
-                    <Typography variant="body2" fontWeight="medium">
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm" fw={500}>
                       {row.content?.title || 'Unknown Content'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={row.content?.type || 'Unknown'}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {row.content?.author?.name || 'Unknown'}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={row.status}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge size="sm" variant="outline" color="gray">
+                      {row.content?.type || 'Unknown'}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>{row.content?.author?.name || 'Unknown'}</Table.Td>
+                  <Table.Td>
+                    <Badge
+                      size="sm"
                       color={getStatusColor(row.status)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={row.content?.status}
+                      variant="light"
+                    >
+                      {row.status}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge
+                      size="sm"
                       color={getContentStatusColor(row.content?.status)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{formatDate(row.updatedAt)}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex' }}>
-                      <Tooltip title="View Content">
-                        <IconButton
-                          size="small"
+                      variant="light"
+                    >
+                      {row.content?.status}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>{formatDate(row.updatedAt)}</Table.Td>
+                  <Table.Td>
+                    <Group gap="xs">
+                      <Tooltip label="View Content">
+                        <ActionIcon
+                          size="sm"
+                          variant="light"
                           onClick={() => handleViewContent(row.content?.id)}
                         >
-                          <ViewIcon fontSize="small" />
-                        </IconButton>
+                          <IconEye size={14} />
+                        </ActionIcon>
                       </Tooltip>
-                      <Tooltip title="Actions">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => handleActionMenuOpen(e, row)}
-                        >
-                          <MoreIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
+                      <Menu
+                        opened={actionMenuOpened === row.id}
+                        onClose={() => setActionMenuOpened(null)}
+                      >
+                        <Menu.Target>
+                          <ActionIcon
+                            size="sm"
+                            variant="light"
+                            onClick={() => handleActionMenuToggle(row.id)}
+                          >
+                            <IconDotsVertical size={14} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item
+                            leftSection={<IconCheck size={14} />}
+                            onClick={() => handleOpenModal('approve', row)}
+                            color="green"
+                          >
+                            Approve
+                          </Menu.Item>
+                          <Menu.Item
+                            leftSection={<IconX size={14} />}
+                            onClick={() => handleOpenModal('reject', row)}
+                            color="red"
+                          >
+                            Reject
+                          </Menu.Item>
+                          <Menu.Item
+                            leftSection={<IconArrowBack size={14} />}
+                            onClick={() => handleOpenModal('return', row)}
+                          >
+                            Return to Draft
+                          </Menu.Item>
+                          <Menu.Divider />
+                          <Menu.Item
+                            leftSection={<IconEye size={14} />}
+                            onClick={() => {
+                              handleViewContent(row.content?.id);
+                              setActionMenuOpened(null);
+                            }}
+                          >
+                            View Details
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
               );
             })}
-            {emptyRows > 0 && (
-              <TableRow style={{ height: 53 * emptyRows }}>
-                <TableCell colSpan={8} />
-              </TableRow>
-            )}
-          </TableBody>
+          </Table.Tbody>
         </Table>
-      </TableContainer>
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={approvals.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
+      </Table.ScrollContainer>
 
-      {/* Action Menu */}
-      <Menu
-        anchorEl={actionMenuAnchorEl}
-        open={Boolean(actionMenuAnchorEl)}
-        onClose={handleActionMenuClose}
-      >
-        <MenuItem onClick={() => handleOpenDialog('approve')}>
-          <ListItemIcon>
-            <ApproveIcon fontSize="small" color="success" />
-          </ListItemIcon>
-          <ListItemText>Approve</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleOpenDialog('reject')}>
-          <ListItemIcon>
-            <RejectIcon fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>Reject</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleOpenDialog('return')}>
-          <ListItemIcon>
-            <ReturnIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Return to Draft</ListItemText>
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            if (selectedApproval) {
-              handleViewContent(selectedApproval.content?.id);
-            }
-            handleActionMenuClose();
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: 32,
           }}
         >
-          <ListItemIcon>
-            <ViewIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>View Details</ListItemText>
-        </MenuItem>
-      </Menu>
+          <Pagination
+            total={totalPages}
+            value={page}
+            onChange={handleChangePage}
+            color="blue"
+          />
+        </Box>
+      )}
 
-      {/* Approval Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'approve'}
-        onClose={handleCloseDialog}
+      {/* Approval Modal */}
+      <Modal
+        opened={modalOpened.opened && modalOpened.type === 'approve'}
+        onClose={handleCloseModal}
+        title="Approve Content"
+        size="md"
       >
-        <DialogTitle>Approve Content</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
             You are approving "{selectedApproval?.content?.title}". Please
             provide any comments (optional).
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
+          </Text>
+          <Textarea
             label="Comments"
-            fullWidth
-            multiline
-            rows={4}
+            placeholder="Add your comments here..."
             value={comments}
-            onChange={(e) => setComments(e.target.value)}
+            onChange={(e) => setComments(e.currentTarget.value)}
+            rows={4}
+            autosize
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleApprove} color="success" variant="contained">
-            Approve
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="light" onClick={handleCloseModal}>
+              Cancel
+            </Button>
+            <Button color="green" onClick={handleApprove}>
+              Approve
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-      {/* Reject Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'reject'}
-        onClose={handleCloseDialog}
+      {/* Reject Modal */}
+      <Modal
+        opened={modalOpened.opened && modalOpened.type === 'reject'}
+        onClose={handleCloseModal}
+        title="Reject Content"
+        size="md"
       >
-        <DialogTitle>Reject Content</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
             You are rejecting "{selectedApproval?.content?.title}". Please
             provide a reason for rejection.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
+          </Text>
+          <Textarea
             label="Reason for Rejection"
-            fullWidth
-            multiline
-            rows={4}
+            placeholder="Enter rejection reason..."
             value={comments}
-            onChange={(e) => setComments(e.target.value)}
+            onChange={(e) => setComments(e.currentTarget.value)}
+            rows={4}
+            autosize
             required
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button
-            onClick={handleReject}
-            color="error"
-            variant="contained"
-            disabled={!comments.trim()}
-          >
-            Reject
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="light" onClick={handleCloseModal}>
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={handleReject}
+              disabled={!comments.trim()}
+            >
+              Reject
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-      {/* Return to Draft Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'return'}
-        onClose={handleCloseDialog}
+      {/* Return to Draft Modal */}
+      <Modal
+        opened={modalOpened.opened && modalOpened.type === 'return'}
+        onClose={handleCloseModal}
+        title="Return to Draft"
+        size="md"
       >
-        <DialogTitle>Return to Draft</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
             You are returning "{selectedApproval?.content?.title}" to draft
             state. Please provide a reason.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
+          </Text>
+          <Textarea
             label="Reason"
-            fullWidth
-            multiline
-            rows={4}
+            placeholder="Enter reason for returning to draft..."
             value={comments}
-            onChange={(e) => setComments(e.target.value)}
+            onChange={(e) => setComments(e.currentTarget.value)}
+            rows={4}
+            autosize
             required
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button
-            onClick={handleReturnToDraft}
-            variant="contained"
-            disabled={!comments.trim()}
-          >
-            Return to Draft
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="light" onClick={handleCloseModal}>
+              Cancel
+            </Button>
+            <Button onClick={handleReturnToDraft} disabled={!comments.trim()}>
+              Return to Draft
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Box>
   );
 }

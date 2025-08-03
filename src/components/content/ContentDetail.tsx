@@ -152,6 +152,7 @@ export function ContentDetail({
   const [activeTab, setActiveTab] = useState<string | null>('overview');
   const [showVersionCompare, setShowVersionCompare] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -420,9 +421,8 @@ export function ContentDetail({
 
         <Tabs.Panel value="approvals" pt="md">
           <ApprovalWorkflow
+            currentStatus={content.status}
             contentId={content.id}
-            approvals={content.approvals}
-            status={content.status}
             onApprove={onApprove}
             onReject={onReject}
             onSubmitForReview={onSubmitForReview}

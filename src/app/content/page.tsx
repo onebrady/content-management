@@ -272,8 +272,6 @@ function ContentPageClient() {
 
         if (selectedContent) {
           // Edit mode - refresh content list and redirect to view mode
-          // Removed success notification to avoid covering the save button
-
           // Optimistically update the content list with the new data
           setContent((prevContent) =>
             prevContent.map((item) =>
@@ -303,6 +301,156 @@ function ContentPageClient() {
       console.error('Error saving content:', error);
       showNotification(
         `Failed to ${selectedContent ? 'update' : 'create'} content`,
+        'error'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Add approval action handlers
+  const handleSubmitForReview = async (contentId: string) => {
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(`/api/content/${contentId}/workflow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'submit_for_review' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit content for review');
+      }
+
+      showNotification('Content submitted for review successfully!', 'success');
+      await fetchContentById(contentId); // Refresh the content
+    } catch (error) {
+      console.error('Error submitting for review:', error);
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to submit for review',
+        'error'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleApprove = async (contentId: string, comments?: string) => {
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(`/api/content/${contentId}/workflow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'approve',
+          comments,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to approve content');
+      }
+
+      showNotification('Content approved successfully!', 'success');
+      await fetchContentById(contentId); // Refresh the content
+    } catch (error) {
+      console.error('Error approving content:', error);
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to approve content',
+        'error'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async (contentId: string, comments?: string) => {
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(`/api/content/${contentId}/workflow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'reject',
+          comments,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reject content');
+      }
+
+      showNotification('Content rejected successfully!', 'success');
+      await fetchContentById(contentId); // Refresh the content
+    } catch (error) {
+      console.error('Error rejecting content:', error);
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to reject content',
+        'error'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePublish = async (contentId: string) => {
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(`/api/content/${contentId}/workflow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'publish' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to publish content');
+      }
+
+      showNotification('Content published successfully!', 'success');
+      await fetchContentById(contentId); // Refresh the content
+    } catch (error) {
+      console.error('Error publishing content:', error);
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to publish content',
+        'error'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReturnToDraft = async (contentId: string, reason: string) => {
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(`/api/content/${contentId}/workflow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'return_to_draft',
+          reason,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to return content to draft');
+      }
+
+      showNotification('Content returned to draft successfully!', 'success');
+      await fetchContentById(contentId); // Refresh the content
+    } catch (error) {
+      console.error('Error returning to draft:', error);
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to return to draft',
         'error'
       );
     } finally {
@@ -511,7 +659,18 @@ function ContentPageClient() {
 
         {mode === 'view' && selectedContent && (
           <Box>
-            <ContentDetail content={selectedContent} />
+            <ContentDetail
+              content={selectedContent}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onBack={handleBackToList}
+              onSubmitForReview={handleSubmitForReview}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              onPublish={handlePublish}
+              onReturnToDraft={handleReturnToDraft}
+              loading={isSubmitting}
+            />
           </Box>
         )}
 

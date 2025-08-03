@@ -159,7 +159,7 @@ export const POST = createProtectedHandler(async (req) => {
       { status: 500 }
     );
   }
-}, requirePermission(PERMISSIONS.CONTENT_APPROVE));
+}, requirePermission(PERMISSIONS.APPROVAL_APPROVE));
 
 // Helper function to update content status based on approvals
 async function updateContentStatus(contentId: string) {

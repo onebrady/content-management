@@ -4,27 +4,19 @@ import { useState } from 'react';
 import {
   Box,
   Grid,
-  TextField,
-  FormControl,
-  InputLabel,
+  TextInput,
   Select,
-  MenuItem,
-  Chip,
-  OutlinedInput,
-  IconButton,
-  InputAdornment,
+  Badge,
+  Text,
+  Group,
   Button,
   Collapse,
-  Typography,
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import {
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  Clear as ClearIcon,
-} from '@mui/icons-material';
+  ActionIcon,
+  Tooltip,
+  useMantineColorScheme,
+} from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
+import { IconSearch, IconFilter, IconX } from '@tabler/icons-react';
 import { ApprovalStatus, ContentType } from '@prisma/client';
 import { ApprovalFilters as FiltersType } from './ApprovalDashboard';
 
@@ -39,24 +31,21 @@ export function ApprovalFilters({
 }: ApprovalFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [searchQuery, setSearchQuery] = useState(filters.searchQuery);
+  const { colorScheme } = useMantineColorScheme();
+
+  const isDark = colorScheme === 'dark';
 
   // Handle status filter change
-  const handleStatusChange = (event: any) => {
-    const {
-      target: { value },
-    } = event;
+  const handleStatusChange = (value: string | null) => {
     onFilterChange({
-      status: typeof value === 'string' ? value.split(',') : value,
+      status: value ? [value] : [],
     });
   };
 
   // Handle content type filter change
-  const handleContentTypeChange = (event: any) => {
-    const {
-      target: { value },
-    } = event;
+  const handleContentTypeChange = (value: string | null) => {
     onFilterChange({
-      contentType: typeof value === 'string' ? value.split(',') : value,
+      contentType: value ? [value] : [],
     });
   };
 
@@ -85,46 +74,44 @@ export function ApprovalFilters({
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box w="100%">
       {/* Search Bar */}
       <Box
         component="form"
         onSubmit={handleSearchSubmit}
-        sx={{ mb: 3, display: 'flex', gap: 2 }}
+        mb="lg"
+        style={{ display: 'flex', gap: 16 }}
       >
-        <TextField
-          fullWidth
+        <TextInput
           placeholder="Search by title, author, or content..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery ? (
-              <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  onClick={() => {
-                    setSearchQuery('');
-                    onFilterChange({ searchQuery: '' });
-                  }}
-                >
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ) : null,
-          }}
+          onChange={(e) => setSearchQuery(e.currentTarget.value)}
+          leftSection={<IconSearch size={16} />}
+          rightSection={
+            searchQuery ? (
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                onClick={() => {
+                  setSearchQuery('');
+                  onFilterChange({ searchQuery: '' });
+                }}
+              >
+                <IconX size={14} />
+              </ActionIcon>
+            ) : null
+          }
+          style={{ flex: 1 }}
+          size="md"
         />
-        <Button variant="contained" type="submit" sx={{ minWidth: 100 }}>
+        <Button type="submit" size="md" style={{ minWidth: 100 }}>
           Search
         </Button>
         <Button
-          variant="outlined"
-          startIcon={<FilterIcon />}
+          variant="light"
+          leftSection={<IconFilter size={16} />}
           onClick={() => setShowAdvanced(!showAdvanced)}
+          size="md"
         >
           {showAdvanced ? 'Hide Filters' : 'Show Filters'}
         </Button>
@@ -132,151 +119,74 @@ export function ApprovalFilters({
 
       {/* Advanced Filters */}
       <Collapse in={showAdvanced}>
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth>
-              <InputLabel id="status-filter-label" sx={{ fontSize: '1rem' }}>
-                Status
-              </InputLabel>
-              <Select
-                labelId="status-filter-label"
-                id="status-filter"
-                multiple
-                value={filters.status}
-                onChange={handleStatusChange}
-                input={<OutlinedInput label="Status" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip key={value} label={value} size="small" />
-                    ))}
-                  </Box>
-                )}
-                sx={{
-                  fontSize: '1rem',
-                  minHeight: '48px',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                {Object.values(ApprovalStatus).map((status) => (
-                  <MenuItem
-                    key={status}
-                    value={status}
-                    sx={{ fontSize: '1rem' }}
-                  >
-                    {status}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth>
-              <InputLabel
-                id="content-type-filter-label"
-                sx={{ fontSize: '1rem' }}
-              >
-                Content Type
-              </InputLabel>
-              <Select
-                labelId="content-type-filter-label"
-                id="content-type-filter"
-                multiple
-                value={filters.contentType}
-                onChange={handleContentTypeChange}
-                input={<OutlinedInput label="Content Type" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip key={value} label={value} size="small" />
-                    ))}
-                  </Box>
-                )}
-                sx={{
-                  fontSize: '1rem',
-                  minHeight: '48px',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                {Object.values(ContentType).map((type) => (
-                  <MenuItem key={type} value={type} sx={{ fontSize: '1rem' }}>
-                    {type}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <DatePicker
-                    label="From Date"
-                    value={filters.dateRange[0]}
-                    onChange={(date) => handleDateRangeChange(0, date)}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        size: 'medium',
-                        sx: {
-                          '& .MuiInputBase-root': {
-                            fontSize: '1rem',
-                            minHeight: '48px',
-                          },
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <DatePicker
-                    label="To Date"
-                    value={filters.dateRange[1]}
-                    onChange={(date) => handleDateRangeChange(1, date)}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        size: 'medium',
-                        sx: {
-                          '& .MuiInputBase-root': {
-                            fontSize: '1rem',
-                            minHeight: '48px',
-                          },
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-              </Grid>
-            </LocalizationProvider>
-          </Grid>
+        <Grid gutter="md" mb="lg">
+          <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+            <Select
+              label="Status"
+              placeholder="Select status"
+              data={Object.values(ApprovalStatus).map((status) => ({
+                value: status,
+                label: status,
+              }))}
+              value={filters.status[0] || null}
+              onChange={handleStatusChange}
+              clearable
+              size="md"
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+            <Select
+              label="Content Type"
+              placeholder="Select content type"
+              data={Object.values(ContentType).map((type) => ({
+                value: type,
+                label: type,
+              }))}
+              value={filters.contentType[0] || null}
+              onChange={handleContentTypeChange}
+              clearable
+              size="md"
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+            <Group gap="sm">
+              <DatePickerInput
+                label="From Date"
+                placeholder="Select date"
+                value={filters.dateRange[0]}
+                onChange={(date) => handleDateRangeChange(0, date)}
+                clearable
+                size="md"
+                style={{ flex: 1 }}
+              />
+              <DatePickerInput
+                label="To Date"
+                placeholder="Select date"
+                value={filters.dateRange[1]}
+                onChange={(date) => handleDateRangeChange(1, date)}
+                clearable
+                size="md"
+                style={{ flex: 1 }}
+              />
+            </Group>
+          </Grid.Col>
         </Grid>
 
         {/* Filter Summary and Clear Button */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 2,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
+        <Group justify="space-between" align="center" mb="md">
+          <Text size="sm" c="dimmed">
             {getFilterSummary(filters)}
-          </Typography>
+          </Text>
           <Button
-            variant="text"
-            color="primary"
+            variant="subtle"
+            color="red"
             onClick={handleClearFilters}
-            startIcon={<ClearIcon />}
+            leftSection={<IconX size={16} />}
+            size="sm"
           >
             Clear All Filters
           </Button>
-        </Box>
+        </Group>
       </Collapse>
     </Box>
   );
