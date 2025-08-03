@@ -1,0 +1,56 @@
+---
+description: "Content management tool patterns with Mantine migration and pnpm workflow"
+globs: ["**/*.{ts,tsx}", "**/tiptap/**/*", "**/editor/**/*", "**/components/**/*"]
+alwaysApply: true
+---
+
+# Content Management Tool Standards
+
+## UI Library Migration (MUI → Mantine)
+- Use Context7 when implementing new Mantine components or migrating from MUI
+- Replace MUI components with Mantine equivalents during any feature updates
+- Use Mantine's theme system for consistent styling across the application
+- Prefer @mantine/hooks for common functionality (useLocalStorage, useMediaQuery, etc.)
+- Use @tabler/icons-react for all icons (Mantine-compatible)
+- Implement Mantine's responsive system for mobile-first layouts
+- Remove MUI imports and dependencies when components are fully migrated
+
+## Rich Text Editor (Tiptap + Mantine Integration)
+- Use Context7 when implementing Tiptap extensions or custom features
+- Always type custom Tiptap nodes and marks with proper TypeScript interfaces
+- Implement comprehensive HTML sanitization for user-generated content
+- Create reusable Tiptap extensions in `/lib/tiptap/extensions/`
+- Use Mantine components for editor toolbars, menus, and controls
+- Implement proper error boundaries around all rich text editors
+- Store rich text content in database with proper serialization
+- Handle image uploads within rich text using UploadThing integration
+
+## File Upload System (UploadThing + Mantine)
+- Always validate file types, sizes, and content before upload
+- Use Context7 for current UploadThing API patterns and best practices
+- Use Mantine components for upload progress indicators and file lists
+- Handle upload failures gracefully with Mantine notifications
+- Store file metadata in Neon database with proper relationships
+- Use Next.js Image component for uploaded images with optimization
+- Implement proper cleanup for unused uploaded files
+
+## Code Editor Integration (React Ace + Mantine)
+- Configure proper syntax highlighting for all supported languages
+- Implement comprehensive error handling for invalid code input
+- Use Mantine components for editor controls, settings, and themes
+- Use proper TypeScript typing for all Ace editor instances
+- Save editor state properly (undo/redo, cursor position, selected text)
+- Integrate with Mantine's theme system for consistent dark/light modes
+
+## Data Display and Management (Mantine Components)
+- Use Mantine Table component with custom pagination instead of MUI DataGrid
+- Implement proper pagination with Mantine Pagination component
+- Use Mantine modals, drawers, and overlays for data interaction flows
+- Create consistent loading states using Mantine Skeleton components
+- Use Mantine's built-in sorting and filtering capabilities
+- Implement proper empty states with Mantine's Empty component
+
+## Package Manager Integration (pnpm)
+- Use pnpm for all package management operations in documentation
+- Reference pnpm scripts in all development workflows
+- Update any npm/yarn references to pnpm in comments and docs

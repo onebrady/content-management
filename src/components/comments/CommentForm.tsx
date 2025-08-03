@@ -3,12 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Box,
-  TextField,
+  Textarea,
   Button,
-  CircularProgress,
-  Typography,
+  Loader,
+  Text,
   Paper,
-} from '@mui/material';
+  Group,
+  Alert,
+} from '@mantine/core';
+import { IconSend } from '@tabler/icons-react';
 
 interface CommentFormProps {
   onSubmit: (text: string) => void;
@@ -30,17 +33,17 @@ export function CommentForm({
   const [text, setText] = useState(initialValue);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const textFieldRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Focus the text field on mount if autoFocus is true
+  // Focus the textarea on mount if autoFocus is true
   useEffect(() => {
-    if (autoFocus && textFieldRef.current) {
-      textFieldRef.current.focus();
+    if (autoFocus && textareaRef.current) {
+      textareaRef.current.focus();
     }
   }, [autoFocus]);
 
   // Handle text change
-  const handleTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(event.target.value);
     if (error) {
       setError(null);
@@ -82,37 +85,32 @@ export function CommentForm({
     <Paper
       component="form"
       onSubmit={handleSubmit}
-      elevation={0}
-      sx={{
-        p: 2,
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 1,
-      }}
+      p="md"
+      withBorder
+      radius="md"
     >
-      <TextField
-        inputRef={textFieldRef}
-        fullWidth
-        multiline
-        minRows={2}
-        maxRows={6}
+      {error && (
+        <Alert color="red" mb="md" variant="light">
+          {error}
+        </Alert>
+      )}
+
+      <Textarea
+        ref={textareaRef}
         placeholder={placeholder}
         value={text}
         onChange={handleTextChange}
-        error={!!error}
-        helperText={error}
         disabled={submitting}
-        sx={{ mb: 2 }}
-        InputProps={{
-          sx: {
-            bgcolor: 'background.paper',
-          },
-        }}
+        minRows={2}
+        maxRows={6}
+        mb="md"
+        autosize
       />
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+
+      <Group justify="flex-end" gap="sm">
         {onCancel && (
           <Button
-            variant="outlined"
+            variant="outline"
             onClick={handleCancel}
             disabled={submitting}
           >
@@ -121,15 +119,14 @@ export function CommentForm({
         )}
         <Button
           type="submit"
-          variant="contained"
           disabled={submitting || !text.trim()}
-          startIcon={
-            submitting ? <CircularProgress size={16} color="inherit" /> : null
+          leftSection={
+            submitting ? <Loader size="xs" /> : <IconSend size={16} />
           }
         >
           {buttonText}
         </Button>
-      </Box>
+      </Group>
     </Paper>
   );
 }

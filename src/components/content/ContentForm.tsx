@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import {
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  useCallback,
+} from 'react';
 import {
   Box,
   Card,
@@ -22,6 +28,8 @@ import {
   ActionIcon,
   Modal,
   FileButton,
+  Progress,
+  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconDeviceFloppy,
@@ -31,12 +39,17 @@ import {
   IconPhoto,
   IconEdit,
   IconTrash,
+  IconUpload,
+  IconAlertCircle,
 } from '@tabler/icons-react';
 import { TiptapEditor } from '@/components/editor/TiptapEditor';
 import { FileUpload } from '@/components/upload/FileUpload';
 import { FilePreview } from '@/components/upload/FilePreview';
 import { useAuth } from '@/hooks/useAuth';
 import { ContentType, ContentStatus, Priority } from '@prisma/client';
+import { generateReactHelpers } from '@uploadthing/react';
+
+const { useUploadThing: useUploadThingHook } = generateReactHelpers();
 
 interface ContentFormProps {
   initialData?: any;
@@ -67,6 +80,9 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
     ref
   ) => {
     const { user } = useAuth();
+    const { colorScheme } = useMantineColorScheme();
+    const isDark = colorScheme === 'dark';
+    
     const [formData, setFormData] = useState({
       title: '',
       body: '',
@@ -81,6 +97,43 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
     const [showFileUpload, setShowFileUpload] = useState(false);
     const [showHeroImageModal, setShowHeroImageModal] = useState(false);
+
+    // Hero image upload states
+    const [heroImageUploading, setHeroImageUploading] = useState(false);
+    const [heroImageUploadProgress, setHeroImageUploadProgress] = useState(0);
+    const [heroImageError, setHeroImageError] = useState<string | null>(null);
+    const [heroImageLoading, setHeroImageLoading] = useState(false);
+
+    // UploadThing hook for hero image uploads
+    const {
+      startUpload: startHeroImageUpload,
+      isUploading: isHeroImageUploading,
+    } = useUploadThingHook('heroImage', {
+      onClientUploadComplete: (res: any) => {
+        setHeroImageUploading(false);
+        setHeroImageUploadProgress(0);
+        setHeroImageError(null);
+
+        if (res && res.length > 0) {
+          const uploadedFile = res[0];
+          setFormData((prev) => ({ ...prev, heroImage: uploadedFile.url }));
+          setShowHeroImageModal(false);
+
+          // Set image loading state - spinner will continue until image loads
+          setHeroImageLoading(true);
+        }
+      },
+      onUploadError: (error: any) => {
+        setHeroImageUploading(false);
+        setHeroImageUploadProgress(0);
+        setHeroImageLoading(false);
+        setHeroImageError(error.message);
+        console.error('Hero image upload error:', error);
+      },
+      onUploadProgress: (progress: number) => {
+        setHeroImageUploadProgress(progress);
+      },
+    });
 
     // Expose submit method to parent component
     useImperativeHandle(ref, () => ({
@@ -185,18 +238,52 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
       setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const handleHeroImageUpload = (file: File | null) => {
-      if (file) {
-        // For now, we'll use a placeholder URL. In a real implementation,
-        // you'd upload the file to your server and get back a URL
-        const imageUrl = URL.createObjectURL(file);
-        setFormData((prev) => ({ ...prev, heroImage: imageUrl }));
-        setShowHeroImageModal(false);
-      }
-    };
+    // Enhanced hero image upload handler with UploadThing integration
+    const handleHeroImageUpload = useCallback(
+      async (file: File | null) => {
+        if (!file) return;
+
+        // Validate file size (5MB limit)
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+          setHeroImageError('File size must be less than 5MB');
+          return;
+        }
+
+        // Validate file type
+        const allowedTypes = [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'image/avif',
+        ];
+        if (!allowedTypes.includes(file.type)) {
+          setHeroImageError(
+            'Please select a valid image file (JPEG, PNG, WebP, or AVIF)'
+          );
+          return;
+        }
+
+        setHeroImageUploading(true);
+        setHeroImageLoading(false);
+        setHeroImageError(null);
+
+        try {
+          await startHeroImageUpload([file]);
+        } catch (error) {
+          setHeroImageUploading(false);
+          setHeroImageError('Failed to upload image. Please try again.');
+          console.error('Hero image upload error:', error);
+        }
+      },
+      [startHeroImageUpload]
+    );
 
     const handleRemoveHeroImage = () => {
       setFormData((prev) => ({ ...prev, heroImage: '' }));
+      setHeroImageError(null);
+      setHeroImageLoading(false);
+      setHeroImageUploading(false);
     };
 
     const tagOptions = tags.map((tag) => ({
@@ -234,6 +321,26 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
                       }}
                       onClick={() => setShowHeroImageModal(true)}
                     >
+                      {/* Show loading spinner while image is loading */}
+                      {(heroImageUploading || heroImageLoading) && (
+                        <Box
+                          pos="absolute"
+                          top={0}
+                          left={0}
+                          right={0}
+                          bottom={0}
+                          bg="rgba(255,255,255,0.9)"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10,
+                          }}
+                        >
+                          <Loader size="sm" />
+                        </Box>
+                      )}
+
                       <Image
                         src={formData.heroImage}
                         alt="Hero"
@@ -241,6 +348,19 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
                           width: '100%',
                           height: '100%',
                           objectFit: 'cover',
+                          opacity: heroImageLoading ? 0.3 : 1,
+                          transition: 'opacity 0.3s',
+                        }}
+                        onLoad={() => {
+                          // Image loaded successfully - hide loading states
+                          setHeroImageLoading(false);
+                          setHeroImageUploading(false);
+                        }}
+                        onError={() => {
+                          // Image failed to load - hide loading states and show error
+                          setHeroImageLoading(false);
+                          setHeroImageUploading(false);
+                          setHeroImageError('Failed to load image');
                         }}
                       />
                       <Box
@@ -258,6 +378,12 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
                           justifyContent: 'center',
                         }}
                         className="hero-image-overlay"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = '1';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.opacity = '0';
+                        }}
                       >
                         <ActionIcon
                           variant="white"
@@ -266,6 +392,7 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
                             e.stopPropagation();
                             setShowHeroImageModal(true);
                           }}
+                          aria-label="Edit hero image"
                         >
                           <IconEdit size={16} />
                         </ActionIcon>
@@ -274,7 +401,8 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
                   ) : (
                     <FileButton
                       onChange={handleHeroImageUpload}
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/avif"
+                      disabled={heroImageUploading}
                     >
                       {(props) => (
                         <ActionIcon
@@ -282,6 +410,8 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
                           variant="light"
                           size="lg"
                           color="blue"
+                          loading={heroImageUploading || heroImageLoading}
+                          aria-label="Upload hero image"
                         >
                           <IconPhoto size={20} />
                         </ActionIcon>
@@ -290,6 +420,21 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
                   )}
                 </Group>
               </Group>
+
+              {/* Hero Image Error Display */}
+              {heroImageError && (
+                <Alert
+                  icon={<IconAlertCircle size={16} />}
+                  title="Hero Image Error"
+                  color="red"
+                  variant="light"
+                  mb="md"
+                  withCloseButton
+                  onClose={() => setHeroImageError(null)}
+                >
+                  {heroImageError}
+                </Alert>
+              )}
 
               <Grid>
                 <Grid.Col span={{ base: 12, md: 8 }}>
@@ -432,7 +577,7 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
               type="submit"
               variant="filled"
               leftSection={<IconDeviceFloppy size={16} />}
-              disabled={isLoading}
+              disabled={isLoading || heroImageUploading}
               loading={isLoading}
             >
               Save Changes
@@ -440,7 +585,7 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
           </Group>
         </Stack>
 
-        {/* Hero Image Modal */}
+        {/* Enhanced Hero Image Modal */}
         <Modal
           opened={showHeroImageModal}
           onClose={() => setShowHeroImageModal(false)}
@@ -448,7 +593,32 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
           size="md"
         >
           <Stack gap="md">
-            {formData.heroImage && (
+            {heroImageError && (
+              <Alert
+                icon={<IconAlertCircle size={16} />}
+                title="Upload Error"
+                color="red"
+                variant="light"
+              >
+                {heroImageError}
+              </Alert>
+            )}
+
+            {heroImageUploading && (
+              <Box>
+                <Text size="sm" fw={500} mb="xs">
+                  Uploading image...
+                </Text>
+                <Progress
+                  value={heroImageUploadProgress}
+                  size="sm"
+                  color="blue"
+                  animated
+                />
+              </Box>
+            )}
+
+            {formData.heroImage && !heroImageUploading && (
               <Box>
                 <Text size="sm" fw={500} mb="xs">
                   Current Image
@@ -462,19 +632,24 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
             )}
 
             <Group justify="space-between">
-              <FileButton onChange={handleHeroImageUpload} accept="image/*">
+              <FileButton
+                onChange={handleHeroImageUpload}
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                disabled={heroImageUploading}
+              >
                 {(props) => (
                   <Button
                     {...props}
                     variant="light"
-                    leftSection={<IconPhoto size={16} />}
+                    leftSection={<IconUpload size={16} />}
+                    loading={heroImageUploading}
                   >
                     {formData.heroImage ? 'Replace Image' : 'Upload Image'}
                   </Button>
                 )}
               </FileButton>
 
-              {formData.heroImage && (
+              {formData.heroImage && !heroImageUploading && (
                 <Button
                   variant="light"
                   color="red"
@@ -485,6 +660,10 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
                 </Button>
               )}
             </Group>
+
+            <Text size="xs" c="dimmed">
+              Supported formats: JPEG, PNG, WebP, AVIF (max 5MB)
+            </Text>
           </Stack>
         </Modal>
       </Box>

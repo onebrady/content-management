@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { SessionProvider } from '@/components/providers/SessionProvider';
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, ColorSchemeScript } from '@mantine/core';
+import { DatesProvider } from '@mantine/dates';
 import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
 
 // Import migration handler for production
 if (process.env.NODE_ENV === 'production') {
@@ -25,9 +27,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <ColorSchemeScript />
+      </head>
       <body className={inter.className}>
-        <MantineProvider>
-          <SessionProvider>{children}</SessionProvider>
+        <MantineProvider defaultColorScheme="auto">
+          <DatesProvider settings={{ consistentWeeks: true }}>
+            <SessionProvider>{children}</SessionProvider>
+          </DatesProvider>
         </MantineProvider>
       </body>
     </html>

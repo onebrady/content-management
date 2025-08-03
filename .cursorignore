@@ -1,0 +1,67 @@
+# Build outputs
+.next/
+dist/
+build/
+out/
+
+# Dependencies (pnpm specific)
+node_modules/
+.pnpm/
+.pnpm-store/
+
+# Environment and configs
+.env*
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.db
+*.sqlite
+/postgres-data/
+/neon-data/
+/docker/postgres-data/
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+.nyc_output/
+
+# Rich text editor uploads (if stored locally)
+/public/uploads/
+/public/temp/
+
+# Docker
+/docker/postgres-data/
+
+# Legacy UI libraries (MUI cache)
+/mui-cache/
+
+# IDE and OS
+.DS_Store
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+
+# Large files that shouldn't be indexed
+*.mp4
+*.mov
+*.avi
+*.pdf
+*.zip
+*.tar.gz
+
+# Neon specific
+.neon/
+neon-branches.json
+
+# Package manager
+.pnpm-debug.log*
+pnpm-debug.log*
+
+# AgentOS temporary files
+.agent-os/temp/

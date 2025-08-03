@@ -11,7 +11,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Box, Paper, Divider, Typography, Chip } from '@mui/material';
+import { Box, Paper, Divider, Text, Badge } from '@mantine/core';
 import { EditorToolbar } from './EditorToolbar';
 import { EditorMenuBar } from './EditorMenuBar';
 import { FloatingToolbar } from './FloatingToolbar';
@@ -133,12 +133,12 @@ export function TiptapEditor({
   }
 
   return (
-    <Paper elevation={1} className={className}>
+    <Paper shadow="xs" className={className}>
       <EditorMenuBar editor={editor} />
       <Divider />
       <EditorToolbar editor={editor} />
       <Divider />
-      <Box sx={{ p: 2, minHeight: 200, position: 'relative' }}>
+      <Box p="md" style={{ minHeight: 200, position: 'relative' }}>
         <EditorContent editor={editor} />
 
         {/* Floating Toolbar - appears when text is selected */}
@@ -178,31 +178,28 @@ export function TiptapEditor({
 
         {/* Document Stats */}
         <Box
-          sx={{
+          style={{
             position: 'absolute',
             bottom: 8,
             right: 8,
             display: 'flex',
-            gap: 1,
+            gap: 4,
             opacity: 0.7,
             '&:hover': { opacity: 1 },
           }}
         >
-          <Chip
-            label={`${
+          <Badge variant="outline" size="sm">
+            {
               editor
                 .getText()
                 .split(/\s+/)
                 .filter((word) => word.length > 0).length
-            } words`}
-            size="small"
-            variant="outlined"
-          />
-          <Chip
-            label={`${editor.getText().length} chars`}
-            size="small"
-            variant="outlined"
-          />
+            }{' '}
+            words
+          </Badge>
+          <Badge variant="outline" size="sm">
+            {editor.getText().length} chars
+          </Badge>
         </Box>
 
         {/* Document Outline */}

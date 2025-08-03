@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Text, Title, useMantineColorScheme } from '@mantine/core';
 import {
   LineChart,
   Line,
@@ -10,34 +10,42 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { TimeSeriesDataPoint } from '@/lib/analytics';
+import { ContentCreationData } from '@/lib/analytics';
 
 interface TimeSeriesChartProps {
-  data: TimeSeriesDataPoint[];
-  title: string;
-  color?: string;
+  data: ContentCreationData[];
+  title?: string;
 }
 
-export function TimeSeriesChart({ data, title, color }: TimeSeriesChartProps) {
-  const theme = useTheme();
-  const lineColor = color || theme.palette.primary.main;
+export function TimeSeriesChart({ data, title }: TimeSeriesChartProps) {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <Box
-          sx={{
-            backgroundColor: 'background.paper',
-            p: 1,
-            border: 1,
-            borderColor: 'divider',
-            borderRadius: 1,
+          style={{
+            backgroundColor: isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-white)',
+            padding: '8px',
+            border: `1px solid ${isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}`,
+            borderRadius: '4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
         >
-          <Typography variant="body2" color="text.primary">
-            {new Date(label).toLocaleDateString()}: {payload[0].value}
-          </Typography>
+          <Text size="sm" style={{ 
+            color: isDark ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-dark-9)' 
+          }}>
+            Date: {label}
+          </Text>
+          {payload.map((entry: any, index: number) => (
+            <Text key={index} size="sm" style={{ 
+              color: entry.color 
+            }}>
+              {entry.name}: {entry.value}
+            </Text>
+          ))}
         </Box>
       );
     }
@@ -45,41 +53,52 @@ export function TimeSeriesChart({ data, title, color }: TimeSeriesChartProps) {
     return null;
   };
 
-  // Format date for x-axis
-  const formatXAxis = (tickItem: string) => {
-    return new Date(tickItem).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
-    <Box sx={{ width: '100%', height: 300 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        {title}
-      </Typography>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={data}
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickFormatter={formatXAxis} minTickGap={30} />
-          <YAxis allowDecimals={false} />
-          <Tooltip content={<CustomTooltip />} />
-          <Line
-            type="monotone"
-            dataKey="count"
-            stroke={lineColor}
-            activeDot={{ r: 8 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <Box>
+      {title && (
+        <Title order={3} mb="md">
+          {title}
+        </Title>
+      )}
+      <Box style={{ width: '100%', height: 300 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke={isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}
+            />
+            <XAxis 
+              dataKey="date" 
+              tick={{ 
+                fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+              }}
+            />
+            <YAxis 
+              tick={{ 
+                fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+              }}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line 
+              type="monotone" 
+              dataKey="count" 
+              stroke={isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)'}
+              strokeWidth={2}
+              dot={{ 
+                fill: isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)',
+                strokeWidth: 2,
+                r: 4
+              }}
+              activeDot={{ 
+                r: 6,
+                stroke: isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)',
+                strokeWidth: 2,
+                fill: isDark ? 'var(--mantine-color-blue-3)' : 'var(--mantine-color-blue-1)'
+              }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </Box>
     </Box>
   );
 }

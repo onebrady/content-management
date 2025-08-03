@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Text, useMantineColorScheme } from '@mantine/core';
 import {
   PieChart,
   Pie,
@@ -16,15 +16,16 @@ interface StatusChartProps {
 }
 
 export function StatusChart({ data }: StatusChartProps) {
-  const theme = useTheme();
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
 
-  // Define colors for different statuses
+  // Define colors for different statuses using Mantine color system
   const COLORS = {
-    DRAFT: theme.palette.grey[500],
-    IN_REVIEW: theme.palette.info.main,
-    APPROVED: theme.palette.success.main,
-    REJECTED: theme.palette.error.main,
-    PUBLISHED: theme.palette.primary.main,
+    DRAFT: isDark ? 'var(--mantine-color-gray-5)' : 'var(--mantine-color-gray-6)',
+    IN_REVIEW: isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)',
+    APPROVED: isDark ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-green-6)',
+    REJECTED: isDark ? 'var(--mantine-color-red-5)' : 'var(--mantine-color-red-6)',
+    PUBLISHED: isDark ? 'var(--mantine-color-indigo-5)' : 'var(--mantine-color-indigo-6)',
   };
 
   // Custom tooltip
@@ -32,18 +33,19 @@ export function StatusChart({ data }: StatusChartProps) {
     if (active && payload && payload.length) {
       return (
         <Box
-          sx={{
-            backgroundColor: 'background.paper',
-            p: 1,
-            border: 1,
-            borderColor: 'divider',
-            borderRadius: 1,
+          style={{
+            backgroundColor: isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-white)',
+            padding: '8px',
+            border: `1px solid ${isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}`,
+            borderRadius: '4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
         >
-          <Typography variant="body2" color="text.primary">
-            {payload[0].name}: {payload[0].value} (
-            {payload[0].payload.percentage}%)
-          </Typography>
+          <Text size="sm" style={{ 
+            color: isDark ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-dark-9)' 
+          }}>
+            {payload[0].name}: {payload[0].value} ({payload[0].payload.percentage}%)
+          </Text>
         </Box>
       );
     }
@@ -60,7 +62,7 @@ export function StatusChart({ data }: StatusChartProps) {
   }));
 
   return (
-    <Box sx={{ width: '100%', height: 300 }}>
+    <Box style={{ width: '100%', height: 300 }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -79,7 +81,7 @@ export function StatusChart({ data }: StatusChartProps) {
                 key={`cell-${index}`}
                 fill={
                   COLORS[entry.name as keyof typeof COLORS] ||
-                  theme.palette.grey[300]
+                  (isDark ? 'var(--mantine-color-gray-4)' : 'var(--mantine-color-gray-3)')
                 }
               />
             ))}

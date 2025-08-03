@@ -8,11 +8,15 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  Typography,
-  IconButton,
+  Text,
+  ActionIcon,
   Tooltip,
-} from '@mui/material';
-import { Title, TextFields, NavigateNext } from '@mui/icons-material';
+} from '@mantine/core';
+import {
+  IconHeading,
+  IconTextResize,
+  IconChevronRight,
+} from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 
 interface DocumentOutlineProps {
@@ -70,11 +74,11 @@ export function DocumentOutline({ editor }: DocumentOutlineProps) {
   const getHeadingIcon = (level: number) => {
     switch (level) {
       case 1:
-        return <Title fontSize="small" />;
+        return <IconHeading size={16} />;
       case 2:
-        return <TextFields fontSize="small" />;
+        return <IconTextResize size={16} />;
       default:
-        return <TextFields fontSize="small" />;
+        return <IconTextResize size={16} />;
     }
   };
 
@@ -85,39 +89,34 @@ export function DocumentOutline({ editor }: DocumentOutlineProps) {
   if (!editor) return null;
 
   return (
-    <Box sx={{ position: 'relative' }}>
+    <Box style={{ position: 'relative' }}>
       {/* Toggle Button */}
-      <Tooltip title="Document Outline">
-        <IconButton
-          size="small"
+      <Tooltip label="Document Outline">
+        <ActionIcon
+          size="sm"
           onClick={() => setIsVisible(!isVisible)}
-          sx={{
+          style={{
             position: 'absolute',
             top: 8,
             right: 8,
             zIndex: 1,
-            backgroundColor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider',
-            '&:hover': {
-              backgroundColor: 'action.hover',
-            },
           }}
         >
-          <NavigateNext
-            sx={{
+          <IconChevronRight
+            size={16}
+            style={{
               transform: isVisible ? 'rotate(90deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s',
             }}
           />
-        </IconButton>
+        </ActionIcon>
       </Tooltip>
 
       {/* Outline Panel */}
       {isVisible && (
         <Paper
-          elevation={8}
-          sx={{
+          shadow="md"
+          style={{
             position: 'absolute',
             top: 40,
             right: 8,
@@ -125,50 +124,54 @@ export function DocumentOutline({ editor }: DocumentOutlineProps) {
             maxHeight: 400,
             overflow: 'auto',
             zIndex: 10,
-            border: '1px solid',
-            borderColor: 'divider',
           }}
         >
-          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="subtitle2" fontWeight={600}>
+          <Box
+            p="xs"
+            style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+          >
+            <Text size="sm" fw={600}>
               Document Outline
-            </Typography>
+            </Text>
           </Box>
-          <List dense>
+          <List size="sm">
             {headings.length === 0 ? (
               <ListItem>
-                <ListItemText
-                  primary="No headings found"
-                  secondary="Add headings to see document structure"
-                  primaryTypographyProps={{ variant: 'body2' }}
-                  secondaryTypographyProps={{ variant: 'caption' }}
-                />
+                <Text size="xs" c="dimmed">
+                  No headings found
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Add headings to see document structure
+                </Text>
               </ListItem>
             ) : (
               headings.map((heading, index) => (
-                <ListItem key={index} disablePadding>
-                  <ListItemButton
+                <ListItem key={index}>
+                  <Box
                     onClick={() => scrollToHeading(heading.pos)}
-                    sx={{
-                      pl: 2 + getHeadingIndent(heading.level),
-                      py: 0.5,
+                    style={{
+                      paddingLeft: 16 + getHeadingIndent(heading.level),
+                      paddingY: 4,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
                       '&:hover': {
-                        backgroundColor: 'action.hover',
+                        backgroundColor: 'var(--mantine-color-gray-1)',
                       },
                     }}
                   >
-                    <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                      {getHeadingIcon(heading.level)}
-                    </Box>
-                    <ListItemText
-                      primary={heading.text}
-                      primaryTypographyProps={{
-                        variant: 'body2',
+                    {getHeadingIcon(heading.level)}
+                    <Text
+                      size="xs"
+                      style={{
                         fontSize: heading.level === 1 ? '0.9rem' : '0.8rem',
                         fontWeight: heading.level === 1 ? 600 : 500,
                       }}
-                    />
-                  </ListItemButton>
+                    >
+                      {heading.text}
+                    </Text>
+                  </Box>
                 </ListItem>
               ))
             )}

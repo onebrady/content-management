@@ -1,13 +1,15 @@
 'use client';
 
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Text, useMantineColorScheme } from '@mantine/core';
 import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
-  Legend,
+  ResponsiveContainer,
+  Cell,
 } from 'recharts';
 import { ContentPriorityCount } from '@/lib/analytics';
 
@@ -16,33 +18,27 @@ interface PriorityChartProps {
 }
 
 export function PriorityChart({ data }: PriorityChartProps) {
-  const theme = useTheme();
-
-  // Define colors for different priorities
-  const COLORS = {
-    LOW: theme.palette.success.main,
-    MEDIUM: theme.palette.info.main,
-    HIGH: theme.palette.warning.main,
-    URGENT: theme.palette.error.main,
-  };
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <Box
-          sx={{
-            backgroundColor: 'background.paper',
-            p: 1,
-            border: 1,
-            borderColor: 'divider',
-            borderRadius: 1,
+          style={{
+            backgroundColor: isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-white)',
+            padding: '8px',
+            border: `1px solid ${isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}`,
+            borderRadius: '4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
         >
-          <Typography variant="body2" color="text.primary">
-            {payload[0].name}: {payload[0].value} (
-            {payload[0].payload.percentage}%)
-          </Typography>
+          <Text size="sm" style={{ 
+            color: isDark ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-dark-9)' 
+          }}>
+            {label}: {payload[0].value}
+          </Text>
         </Box>
       );
     }
@@ -50,42 +46,52 @@ export function PriorityChart({ data }: PriorityChartProps) {
     return null;
   };
 
-  // Calculate percentages
-  const total = data.reduce((sum, item) => sum + item.count, 0);
-  const chartData = data.map((item) => ({
-    name: item.priority,
-    value: item.count,
-    percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
-  }));
+  // Define colors for different priorities
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'LOW':
+        return isDark ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-green-6)';
+      case 'MEDIUM':
+        return isDark ? 'var(--mantine-color-yellow-5)' : 'var(--mantine-color-yellow-6)';
+      case 'HIGH':
+        return isDark ? 'var(--mantine-color-orange-5)' : 'var(--mantine-color-orange-6)';
+      case 'URGENT':
+        return isDark ? 'var(--mantine-color-red-5)' : 'var(--mantine-color-red-6)';
+      default:
+        return isDark ? 'var(--mantine-color-gray-5)' : 'var(--mantine-color-gray-6)';
+    }
+  };
 
   return (
-    <Box sx={{ width: '100%', height: 300 }}>
+    <Box style={{ width: '100%', height: 300 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-            nameKey="name"
-            label={({ name, percentage }) => `${name}: ${percentage}%`}
-          >
-            {chartData.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={
-                  COLORS[entry.name as keyof typeof COLORS] ||
-                  theme.palette.grey[300]
-                }
-              />
-            ))}
-          </Pie>
+        <BarChart data={data}>
+          <CartesianGrid 
+            strokeDasharray="3 3" 
+            stroke={isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}
+          />
+          <XAxis 
+            dataKey="priority" 
+            tick={{ 
+              fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+            }}
+          />
+          <YAxis 
+            tick={{ 
+              fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+            }}
+          />
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
-        </PieChart>
+          <Bar 
+            dataKey="count" 
+            fill={isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)'}
+            radius={[4, 4, 0, 0]}
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={getPriorityColor(entry.priority)} />
+            ))}
+          </Bar>
+        </BarChart>
       </ResponsiveContainer>
     </Box>
   );

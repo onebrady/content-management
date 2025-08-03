@@ -43,6 +43,47 @@ export const uploadRouter = {
       return { uploadedBy: metadata.userId, url: file.url };
     }),
 
+  // Hero image upload route - optimized for content hero images
+  heroImage: f({
+    image: {
+      maxFileSize: '5MB',
+      maxFileCount: 1,
+      // Optimize for common hero image formats
+      acceptedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
+    },
+  })
+    .middleware(async ({ req }) => {
+      // Check authentication
+      const session = await getServerSession(authOptions);
+      if (!session?.user) {
+        throw new Error('Unauthorized');
+      }
+
+      // Check permissions - allow content creation and editing
+      if (
+        !hasPermission(session.user.role as any, PERMISSIONS.CONTENT_CREATE) &&
+        !hasPermission(session.user.role as any, PERMISSIONS.CONTENT_EDIT)
+      ) {
+        throw new Error('Insufficient permissions');
+      }
+
+      // Return user info for use in onUploadComplete
+      return { userId: session.user.id, userRole: session.user.role };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // This code runs on your server after upload
+      console.log('Hero image upload complete for userId:', metadata.userId);
+      console.log('Hero image URL:', file.url);
+
+      // Return the file info for the hero image
+      return {
+        uploadedBy: metadata.userId,
+        url: file.url,
+        fileName: file.name,
+        fileSize: file.size,
+      };
+    }),
+
   // Add more file routes as needed
   profileImage: f({
     image: { maxFileSize: '2MB', maxFileCount: 1 },

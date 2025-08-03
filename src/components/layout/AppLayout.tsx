@@ -20,7 +20,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       }}
       padding="md"
     >
-      <AppShell.Navbar p="md">
+      <AppShell.Navbar>
         <NavbarNested />
       </AppShell.Navbar>
 

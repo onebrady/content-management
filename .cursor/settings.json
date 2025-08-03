@@ -1,0 +1,27 @@
+{
+  "cursor.general.enableYOLOMode": true,
+  "cursor.general.yoloModePrompt": "pnpm test, pnpm build, pnpm type-check, pnpm lint, pnpm db:generate, pnpm db:push, pnpm db:migrate, and creating files/directories are always allowed. Always test database migrations locally before production. Use Mantine components only (no new MUI). Run tests after all code changes. Use Context7 for current documentation.",
+  "cursor.chat.useProjectContext": true,
+  "cursor.editor.enableCodeLens": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+    "source.organizeImports": true
+  },
+  "typescript.preferences.inlayHints.parameterTypes.enabled": true,
+  "typescript.preferences.inlayHints.variableTypes.enabled": true,
+  "files.associations": {
+    "*.mantine": "typescript",
+    "*.neon": "sql"
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/coverage": true,
+    "**/playwright-report": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.next/**": true
+  }
+}

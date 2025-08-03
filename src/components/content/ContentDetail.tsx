@@ -19,6 +19,7 @@ import {
   Title,
   Paper,
   Image,
+  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconEdit,
@@ -116,7 +117,7 @@ interface ContentDetailProps {
         role: string;
       };
     }>;
-    _count: {
+    _count?: {
       comments: number;
       approvals: number;
       attachments: number;
@@ -145,9 +146,12 @@ export function ContentDetail({
   onReturnToDraft,
   loading = false,
 }: ContentDetailProps) {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const [activeTab, setActiveTab] = useState<string | null>('overview');
+  const [showVersionCompare, setShowVersionCompare] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -192,11 +196,11 @@ export function ContentDetail({
   };
 
   const canEdit = () => {
-    return user?.role === 'ADMIN' || user?.id === content.author.id;
+    return content.status === 'DRAFT' || content.status === 'REJECTED';
   };
 
   const canDelete = () => {
-    return user?.role === 'ADMIN' || user?.id === content.author.id;
+    return content.status === 'DRAFT';
   };
 
   const formatFileSize = (bytes: number) => {
@@ -290,16 +294,16 @@ export function ContentDetail({
             Content
           </Tabs.Tab>
           <Tabs.Tab value="comments" leftSection={<IconMessage size={16} />}>
-            Comments ({content._count.comments})
+            Comments ({content._count?.comments || 0})
           </Tabs.Tab>
           <Tabs.Tab value="approvals" leftSection={<IconCheck size={16} />}>
-            Approvals ({content._count.approvals})
+            Approvals ({content._count?.approvals || 0})
           </Tabs.Tab>
           <Tabs.Tab
             value="attachments"
             leftSection={<IconPaperclip size={16} />}
           >
-            Attachments ({content._count.attachments})
+            Attachments ({content._count?.attachments || 0})
           </Tabs.Tab>
           <Tabs.Tab value="history" leftSection={<IconHistory size={16} />}>
             History

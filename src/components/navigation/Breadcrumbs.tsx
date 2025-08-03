@@ -17,9 +17,25 @@ interface BreadcrumbItem {
 
 interface BreadcrumbsProps {
   items?: BreadcrumbItem[];
+  showHomeIcon?: boolean;
+  homeLabel?: string;
+  homeHref?: string;
+  separator?: React.ReactNode;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  color?: string;
+  className?: string;
 }
 
-export function Breadcrumbs({ items }: BreadcrumbsProps) {
+export function Breadcrumbs({
+  items,
+  showHomeIcon = true,
+  homeLabel = 'Dashboard',
+  homeHref = '/dashboard',
+  separator = <IconChevronRight size={16} />,
+  size = 'sm',
+  color = 'blue',
+  className,
+}: BreadcrumbsProps) {
   const pathname = usePathname();
 
   const generateBreadcrumbs = () => {
@@ -28,7 +44,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
       return items.map((item, index) => ({
         label: item.label,
         href: item.href,
-        icon: index === 0 ? <IconHome size={16} /> : null,
+        icon: index === 0 && showHomeIcon ? <IconHome size={16} /> : null,
       }));
     }
 
@@ -36,9 +52,9 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
     const paths = pathname.split('/').filter(Boolean);
     const breadcrumbs = [
       {
-        label: 'Home',
-        href: '/',
-        icon: <IconHome size={16} />,
+        label: homeLabel,
+        href: homeHref,
+        icon: showHomeIcon ? <IconHome size={16} /> : null,
       },
     ];
 
@@ -59,19 +75,15 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
   const breadcrumbs = generateBreadcrumbs();
 
   return (
-    <Box mb="md">
-      <MantineBreadcrumbs
-        separator={<IconChevronRight size={16} />}
-        separatorMargin="md"
-      >
+    <Box mb="md" className={className}>
+      <MantineBreadcrumbs separator={separator}>
         {breadcrumbs.map((breadcrumb, index) => {
           const isLast = index === breadcrumbs.length - 1;
 
           if (isLast) {
             return (
-              <Text key={breadcrumb.href} size="sm" c="dimmed">
-                {breadcrumb.icon}
-                {breadcrumb.label}
+              <Text key={breadcrumb.href} size={size} c="dimmed">
+                {breadcrumb.icon || breadcrumb.label}
               </Text>
             );
           }
@@ -81,11 +93,10 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
               key={breadcrumb.href}
               component={NextLink}
               href={breadcrumb.href}
-              size="sm"
-              c="blue"
+              size={size}
+              c={color}
             >
-              {breadcrumb.icon}
-              {breadcrumb.label}
+              {breadcrumb.icon || breadcrumb.label}
             </Anchor>
           );
         })}

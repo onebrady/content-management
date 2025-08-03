@@ -17,8 +17,10 @@ import {
   Group,
   Stack,
   Title,
-  Dialog,
   Modal,
+  AspectRatio,
+  Image,
+  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconSearch,
@@ -26,8 +28,8 @@ import {
   IconPlus,
   IconEye,
   IconEdit,
-  IconLink,
   IconTrash,
+  IconArticle,
 } from '@tabler/icons-react';
 import { ContentStatus, ContentType, Priority } from '@prisma/client';
 
@@ -35,6 +37,7 @@ interface Content {
   id: string;
   title: string;
   slug: string;
+  heroImage?: string; // Add hero image field
   status: string;
   type: string;
   priority: string;
@@ -64,7 +67,6 @@ interface ContentListProps {
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onViewBySlug: (slug: string) => void;
   onCreate: () => void;
 }
 
@@ -73,9 +75,11 @@ export function ContentList({
   onView,
   onEdit,
   onDelete,
-  onViewBySlug,
   onCreate,
 }: ContentListProps) {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -99,41 +103,91 @@ export function ContentList({
   useEffect(() => {
     const safeContent = Array.isArray(content) ? content : [];
     setFilteredContent(safeContent);
+
+    // Debug: Log content data to check for heroImage
+    console.log('ContentList received content:', safeContent);
+    safeContent.forEach((item, index) => {
+      console.log(`Content ${index}:`, {
+        id: item.id,
+        title: item.title,
+        heroImage: item.heroImage,
+        hasHeroImage: !!item.heroImage,
+        heroImageType: typeof item.heroImage,
+      });
+    });
   }, [content]);
 
   const handleFilterChange = (field: string, value: string) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  const getStatusColor = (status: string) => {
+  // Enhanced status badge with proper contrast
+  const getStatusBadgeProps = (status: string) => {
     switch (status) {
       case 'DRAFT':
-        return 'gray';
+        return {
+          color: 'gray',
+          variant: 'filled' as const,
+          style: { backgroundColor: '#495057', color: 'white' },
+        };
       case 'IN_REVIEW':
-        return 'yellow';
+        return {
+          color: 'yellow',
+          variant: 'filled' as const,
+          style: { backgroundColor: '#f59f00', color: 'black' },
+        };
       case 'APPROVED':
-        return 'green';
+        return {
+          color: 'green',
+          variant: 'filled' as const,
+          style: { backgroundColor: '#40c057', color: 'white' },
+        };
       case 'PUBLISHED':
-        return 'blue';
+        return {
+          color: 'blue',
+          variant: 'filled' as const,
+          style: { backgroundColor: '#339af0', color: 'white' },
+        };
       case 'REJECTED':
-        return 'red';
+        return {
+          color: 'red',
+          variant: 'filled' as const,
+          style: { backgroundColor: '#fa5252', color: 'white' },
+        };
       default:
-        return 'gray';
+        return { color: 'gray', variant: 'light' as const };
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  // Enhanced priority badge with proper contrast
+  const getPriorityBadgeProps = (priority: string) => {
     switch (priority) {
       case 'LOW':
-        return 'gray';
+        return {
+          color: 'gray',
+          variant: 'filled' as const,
+          style: { backgroundColor: '#868e96', color: 'white' },
+        };
       case 'MEDIUM':
-        return 'yellow';
+        return {
+          color: 'yellow',
+          variant: 'filled' as const,
+          style: { backgroundColor: '#fcc419', color: 'black' },
+        };
       case 'HIGH':
-        return 'orange';
+        return {
+          color: 'orange',
+          variant: 'filled' as const,
+          style: { backgroundColor: '#fd7e14', color: 'white' },
+        };
       case 'URGENT':
-        return 'red';
+        return {
+          color: 'red',
+          variant: 'filled' as const,
+          style: { backgroundColor: '#e03131', color: 'white' },
+        };
       default:
-        return 'gray';
+        return { color: 'gray', variant: 'light' as const };
     }
   };
 
@@ -158,6 +212,127 @@ export function ContentList({
 
   const handleDeleteCancel = () => {
     setDeleteDialog({ ...deleteDialog, open: false });
+  };
+
+  // Default image placeholder component
+  const DefaultImagePlaceholder = ({ title }: { title: string }) => (
+    <Box
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        padding: '20px',
+        textAlign: 'center',
+      }}
+    >
+      <IconArticle size={48} style={{ marginBottom: '12px' }} />
+      <Text
+        size="sm"
+        fw={600}
+        style={{
+          color: 'white',
+          textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          lineHeight: 1.2,
+        }}
+        lineClamp={2}
+      >
+        {title}
+      </Text>
+      <Text
+        size="xs"
+        style={{
+          color: 'rgba(255,255,255,0.8)',
+          marginTop: '4px',
+        }}
+      >
+        No hero image set
+      </Text>
+    </Box>
+  );
+
+  // Enhanced hero image rendering with default placeholder
+  const renderHeroImage = (item: Content) => {
+    console.log(`Rendering hero image for ${item.title}:`, item.heroImage);
+
+    return (
+      <Card.Section>
+        <AspectRatio ratio={2.04 / 1}>
+          <Box
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              backgroundColor: '#f8f9fa',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px 8px 0 0',
+            }}
+          >
+            {item.heroImage ? (
+              // Show hero image if available
+              <Image
+                src={item.heroImage}
+                alt={`Hero image for ${item.title}`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+                onError={(e) => {
+                  console.error(
+                    `Failed to load hero image for ${item.title}:`,
+                    item.heroImage
+                  );
+                  // Replace with placeholder on error
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  const placeholder = target.parentElement?.querySelector(
+                    '.placeholder-fallback'
+                  );
+                  if (placeholder) {
+                    (placeholder as HTMLElement).style.display = 'flex';
+                  }
+                }}
+                onLoad={() => {
+                  // Hide placeholder when image loads successfully
+                  const placeholder = document.querySelector(
+                    `.placeholder-fallback[data-content-id="${item.id}"]`
+                  );
+                  if (placeholder) {
+                    (placeholder as HTMLElement).style.display = 'none';
+                  }
+                }}
+              />
+            ) : null}
+
+            {/* Always render placeholder as fallback */}
+            <Box
+              className="placeholder-fallback"
+              data-content-id={item.id}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                display: item.heroImage ? 'none' : 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f8f9fa',
+              }}
+            >
+              <DefaultImagePlaceholder title={item.title} />
+            </Box>
+          </Box>
+        </AspectRatio>
+      </Card.Section>
+    );
   };
 
   return (
@@ -222,82 +397,203 @@ export function ContentList({
         </Grid>
       </Paper>
 
+      {/* Debug Info */}
+      <Paper
+        p="xs"
+        mb="md"
+        withBorder
+        style={{
+          backgroundColor: isDark
+            ? 'var(--mantine-color-dark-6)'
+            : 'var(--mantine-color-gray-0)',
+          borderColor: isDark
+            ? 'var(--mantine-color-dark-4)'
+            : 'var(--mantine-color-gray-3)',
+        }}
+      >
+        <Text size="xs" c="dimmed">
+          Debug: {filteredContent.length} content items loaded. Items with hero
+          images: {filteredContent.filter((item) => item.heroImage).length}
+        </Text>
+      </Paper>
+
       {/* Content Grid */}
       <Grid>
         {(filteredContent || []).map((item) => (
           <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={item.id}>
-            <Card withBorder shadow="sm">
+            <Card
+              withBorder
+              shadow="sm"
+              style={{
+                position: 'relative',
+                backgroundColor: isDark
+                  ? 'var(--mantine-color-dark-7)'
+                  : 'var(--mantine-color-white)',
+                borderColor: isDark
+                  ? 'var(--mantine-color-dark-4)'
+                  : 'var(--mantine-color-gray-3)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: isDark
+                    ? '0 8px 25px rgba(0,0,0,0.3)'
+                    : '0 8px 25px rgba(0,0,0,0.1)',
+                },
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = isDark
+                  ? '0 8px 25px rgba(0,0,0,0.3)'
+                  : '0 8px 25px rgba(0,0,0,0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
+              }}
+            >
+              {/* Hero Image Section */}
+              {renderHeroImage(item)}
+
+              {/* Card Content */}
               <Card.Section p="md">
-                <Group justify="space-between" align="flex-start">
-                  <Box style={{ flex: 1 }}>
-                    <Text fw={500} size="lg" mb="xs">
-                      {item.title}
-                    </Text>
-                    <Text size="sm" c="dimmed" mb="xs">
-                      by {item.author.name}
-                    </Text>
-                    <Group gap="xs" mb="xs">
-                      <Badge
-                        color={getStatusColor(item.status)}
-                        variant="light"
-                      >
-                        {item.status}
-                      </Badge>
-                      <Badge
-                        color={getPriorityColor(item.priority)}
-                        variant="light"
-                      >
-                        {item.priority}
-                      </Badge>
-                    </Group>
-                    <Text size="xs" c="dimmed">
-                      Created: {formatDate(item.createdAt)}
-                    </Text>
-                    {item.dueDate && (
-                      <Text size="xs" c="dimmed">
-                        Due: {formatDate(item.dueDate)}
-                      </Text>
-                    )}
-                  </Box>
+                {/* Top Row: Actions, Status, Priority */}
+                <Group justify="space-between" align="flex-start" mb="md">
+                  {/* Status and Priority Badges */}
                   <Group gap="xs">
-                    <Tooltip label="View">
+                    <Badge {...getStatusBadgeProps(item.status)}>
+                      {item.status}
+                    </Badge>
+                    <Badge {...getPriorityBadgeProps(item.priority)}>
+                      {item.priority}
+                    </Badge>
+                  </Group>
+
+                  {/* Action Buttons with High Contrast */}
+                  <Group gap="xs">
+                    <Tooltip label="View Article" withArrow>
                       <ActionIcon
-                        variant="light"
-                        color="blue"
+                        variant="filled"
+                        color="gray"
+                        size="md"
+                        style={{
+                          backgroundColor: '#6c757d',
+                          color: 'white',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        }}
                         onClick={() => onView(item.id)}
+                        aria-label={`View article: ${item.title}`}
                       >
-                        <IconEye size={16} />
+                        <IconEye size={18} />
                       </ActionIcon>
                     </Tooltip>
-                    <Tooltip label="Edit">
+                    <Tooltip label="Edit Article" withArrow>
                       <ActionIcon
-                        variant="light"
-                        color="yellow"
-                        onClick={() => onEdit(item.id)}
-                      >
-                        <IconEdit size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="View by Slug">
-                      <ActionIcon
-                        variant="light"
+                        variant="filled"
                         color="green"
-                        onClick={() => onViewBySlug(item.slug)}
+                        size="md"
+                        style={{
+                          backgroundColor: '#40c057',
+                          color: 'white',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        }}
+                        onClick={() => onEdit(item.id)}
+                        aria-label={`Edit article: ${item.title}`}
                       >
-                        <IconLink size={16} />
+                        <IconEdit size={18} />
                       </ActionIcon>
                     </Tooltip>
-                    <Tooltip label="Delete">
+                    <Tooltip label="Delete Article" withArrow>
                       <ActionIcon
-                        variant="light"
+                        variant="filled"
                         color="red"
+                        size="md"
+                        style={{
+                          backgroundColor: '#fa5252',
+                          color: 'white',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        }}
                         onClick={() => handleDeleteClick(item.id, item.title)}
+                        aria-label={`Delete article: ${item.title}`}
                       >
-                        <IconTrash size={16} />
+                        <IconTrash size={18} />
                       </ActionIcon>
                     </Tooltip>
                   </Group>
                 </Group>
+
+                {/* Article Information */}
+                <Stack gap="xs">
+                  <Text
+                    fw={700}
+                    size="lg"
+                    style={{
+                      color: isDark
+                        ? 'var(--mantine-color-gray-0)'
+                        : 'var(--mantine-color-dark-9)',
+                    }}
+                    lineClamp={2}
+                  >
+                    {item.title}
+                  </Text>
+
+                  <Text
+                    size="sm"
+                    style={{
+                      color: isDark
+                        ? 'var(--mantine-color-gray-4)'
+                        : 'var(--mantine-color-gray-6)',
+                    }}
+                  >
+                    by {item.author.name}
+                  </Text>
+
+                  <Text
+                    size="xs"
+                    style={{ color: 'var(--mantine-color-gray-5)' }}
+                  >
+                    Created: {formatDate(item.createdAt)}
+                  </Text>
+
+                  {item.dueDate && (
+                    <Text
+                      size="xs"
+                      style={{ color: 'var(--mantine-color-gray-5)' }}
+                    >
+                      Due: {formatDate(item.dueDate)}
+                    </Text>
+                  )}
+
+                  {/* Tags */}
+                  {item.tags && item.tags.length > 0 && (
+                    <Group gap="xs" mt="xs">
+                      {item.tags.slice(0, 3).map((tag) => (
+                        <Badge
+                          key={tag.id}
+                          variant="light"
+                          size="xs"
+                          style={{
+                            backgroundColor: 'var(--mantine-color-blue-1)',
+                            color: 'var(--mantine-color-blue-7)',
+                          }}
+                        >
+                          {tag.name}
+                        </Badge>
+                      ))}
+                      {item.tags.length > 3 && (
+                        <Badge
+                          variant="light"
+                          size="xs"
+                          style={{
+                            backgroundColor: 'var(--mantine-color-gray-1)',
+                            color: 'var(--mantine-color-gray-6)',
+                          }}
+                        >
+                          +{item.tags.length - 3} more
+                        </Badge>
+                      )}
+                    </Group>
+                  )}
+                </Stack>
               </Card.Section>
             </Card>
           </Grid.Col>

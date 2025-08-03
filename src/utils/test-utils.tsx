@@ -1,17 +1,11 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
-import { theme } from '@/styles/theme';
+import { MantineProvider } from '@mantine/core';
+import '@mantine/core/styles.css';
 
 // Create a custom renderer that wraps components with necessary providers
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      {children}
-    </ThemeProvider>
-  );
+  return <MantineProvider>{children}</MantineProvider>;
 };
 
 const customRender = (

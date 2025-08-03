@@ -226,6 +226,13 @@ export const PUT = createProtectedHandler(async (req) => {
           },
           take: 1,
         },
+        _count: {
+          select: {
+            comments: true,
+            approvals: true,
+            attachments: true,
+          },
+        },
       },
     });
 

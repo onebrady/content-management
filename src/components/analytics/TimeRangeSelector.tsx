@@ -3,138 +3,111 @@
 import { useState } from 'react';
 import {
   Box,
-  ButtonGroup,
+  Group,
   Button,
-  Popover,
+  Text,
   Paper,
-  Typography,
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { AnalyticsTimeRange } from '@/lib/analytics';
+  useMantineColorScheme,
+} from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
+import { IconCalendar } from '@tabler/icons-react';
+
+interface TimeRange {
+  startDate: Date | null;
+  endDate: Date | null;
+}
 
 interface TimeRangeSelectorProps {
-  timeRange: AnalyticsTimeRange;
-  onTimeRangeChange: (timeRange: AnalyticsTimeRange) => void;
+  timeRange: TimeRange;
+  onTimeRangeChange: (range: TimeRange) => void;
 }
 
 export function TimeRangeSelector({
   timeRange,
   onTimeRangeChange,
 }: TimeRangeSelectorProps) {
-  const [activeButton, setActiveButton] = useState<string>('30d');
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  const [startDate, setStartDate] = useState<Date | null>(timeRange.startDate);
-  const [endDate, setEndDate] = useState<Date | null>(timeRange.endDate);
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
 
-  // Handle predefined range selection
-  const handleRangeSelect = (days: number, buttonId: string) => {
+  const handleQuickSelect = (days: number) => {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-
     onTimeRangeChange({ startDate, endDate });
-    setActiveButton(buttonId);
   };
 
-  // Handle custom range popover
-  const handleCustomClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-    setActiveButton('custom');
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  // Apply custom date range
-  const handleApplyCustomRange = () => {
-    if (startDate && endDate) {
-      onTimeRangeChange({ startDate, endDate });
-      handleClose();
-    }
-  };
-
-  const open = Boolean(anchorEl);
+  const presets = [
+    { label: 'Last 7 days', value: 7 },
+    { label: 'Last 30 days', value: 30 },
+    { label: 'Last 90 days', value: 90 },
+  ];
 
   return (
-    <Box sx={{ mb: 3 }}>
-      <ButtonGroup variant="outlined" aria-label="time range selection">
-        <Button
-          onClick={() => handleRangeSelect(7, '7d')}
-          variant={activeButton === '7d' ? 'contained' : 'outlined'}
-        >
-          Last 7 Days
-        </Button>
-        <Button
-          onClick={() => handleRangeSelect(30, '30d')}
-          variant={activeButton === '30d' ? 'contained' : 'outlined'}
-        >
-          Last 30 Days
-        </Button>
-        <Button
-          onClick={() => handleRangeSelect(90, '90d')}
-          variant={activeButton === '90d' ? 'contained' : 'outlined'}
-        >
-          Last 90 Days
-        </Button>
-        <Button
-          onClick={handleCustomClick}
-          variant={activeButton === 'custom' ? 'contained' : 'outlined'}
-        >
-          Custom Range
-        </Button>
-      </ButtonGroup>
+    <Paper
+      p="md"
+      mb="lg"
+      style={{
+        backgroundColor: isDark
+          ? 'var(--mantine-color-dark-7)'
+          : 'var(--mantine-color-white)',
+        borderColor: isDark
+          ? 'var(--mantine-color-dark-4)'
+          : 'var(--mantine-color-gray-3)',
+      }}
+    >
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Text size="sm" fw={500} mb="xs">
+            Date Range
+          </Text>
+          <Group gap="md">
+            <DatePickerInput
+              placeholder="Start date"
+              value={timeRange.startDate}
+              onChange={(date) =>
+                onTimeRangeChange({ ...timeRange, startDate: date })
+              }
+              leftSection={<IconCalendar size={16} />}
+              clearable
+              style={{ minWidth: 150 }}
+            />
+            <Text size="sm" c="dimmed">
+              to
+            </Text>
+            <DatePickerInput
+              placeholder="End date"
+              value={timeRange.endDate}
+              onChange={(date) =>
+                onTimeRangeChange({ ...timeRange, endDate: date })
+              }
+              leftSection={<IconCalendar size={16} />}
+              clearable
+              style={{ minWidth: 150 }}
+            />
+          </Group>
+        </Box>
 
-      <Popover
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-      >
-        <Paper sx={{ p: 2, width: 300 }}>
-          <Typography variant="subtitle1" sx={{ mb: 2 }}>
-            Select Date Range
-          </Typography>
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Box sx={{ mb: 2 }}>
-              <DatePicker
-                label="Start Date"
-                value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
-                slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-              />
-            </Box>
-            <Box sx={{ mb: 2 }}>
-              <DatePicker
-                label="End Date"
-                value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
-                slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-                minDate={startDate || undefined}
-              />
-            </Box>
-          </LocalizationProvider>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-            <Button onClick={handleClose}>Cancel</Button>
+        <Group gap="xs">
+          {presets.map((preset) => (
             <Button
-              variant="contained"
-              onClick={handleApplyCustomRange}
-              disabled={!startDate || !endDate}
+              key={preset.value}
+              variant="light"
+              size="sm"
+              onClick={() => handleQuickSelect(preset.value)}
+              style={{
+                backgroundColor: isDark
+                  ? 'var(--mantine-color-dark-5)'
+                  : 'var(--mantine-color-gray-0)',
+                borderColor: isDark
+                  ? 'var(--mantine-color-dark-4)'
+                  : 'var(--mantine-color-gray-2)',
+              }}
             >
-              Apply
+              {preset.label}
             </Button>
-          </Box>
-        </Paper>
-      </Popover>
-    </Box>
+          ))}
+        </Group>
+      </Group>
+    </Paper>
   );
 }

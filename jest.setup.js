@@ -3,19 +3,19 @@ import '@testing-library/jest-dom';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
     replace: jest.fn(),
     prefetch: jest.fn(),
     back: jest.fn(),
     forward: jest.fn(),
     refresh: jest.fn(),
-  }),
-  useSearchParams: () => ({
+  })),
+  useSearchParams: jest.fn(() => ({
     get: jest.fn(),
     getAll: jest.fn(),
-  }),
-  usePathname: () => '',
+  })),
+  usePathname: jest.fn(() => '/test-path'),
 }));
 
 // Mock Next Auth

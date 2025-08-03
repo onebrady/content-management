@@ -1,23 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
-  Typography,
-  Divider,
-  List,
-  ListItem,
+  Text,
+  Stack,
   Paper,
-  CircularProgress,
+  Loader,
   Alert,
   Button,
   Menu,
-  MenuItem,
-  IconButton,
-  Tooltip,
+  ActionIcon,
   Pagination,
-} from '@mui/material';
-import { MoreVert as MoreIcon, Sort as SortIcon } from '@mui/icons-material';
+  Group,
+  Title,
+  Divider,
+} from '@mantine/core';
+import { IconDotsVertical, IconSortAscending } from '@tabler/icons-react';
 import { Comment } from '@/components/comments/Comment';
 import { CommentForm } from '@/components/comments/CommentForm';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,11 +38,13 @@ export function CommentList({
   const [totalPages, setTotalPages] = useState(
     Math.ceil(initialComments.length / 10) || 1
   );
-  const [sortMenuAnchorEl, setSortMenuAnchorEl] = useState<null | HTMLElement>(
-    null
-  );
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [replyTo, setReplyTo] = useState<string | null>(null);
+
+  // Fetch comments on component mount and when dependencies change
+  useEffect(() => {
+    fetchComments();
+  }, [contentId, page, sortOrder]);
 
   // Fetch comments
   const fetchComments = async () => {
@@ -71,28 +72,14 @@ export function CommentList({
   };
 
   // Handle page change
-  const handlePageChange = (
-    event: React.ChangeEvent<unknown>,
-    value: number
-  ) => {
+  const handlePageChange = (value: number) => {
     setPage(value);
-    fetchComments();
   };
 
-  // Handle sort menu
-  const handleSortMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setSortMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleSortMenuClose = () => {
-    setSortMenuAnchorEl(null);
-  };
-
+  // Handle sort change
   const handleSortChange = (order: 'newest' | 'oldest') => {
     setSortOrder(order);
     setPage(1);
-    setSortMenuAnchorEl(null);
-    fetchComments();
   };
 
   // Handle comment submission
@@ -193,45 +180,34 @@ export function CommentList({
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography variant="h6">Comments ({comments.length})</Typography>
-        <Box>
-          <Tooltip title="Sort comments">
-            <IconButton onClick={handleSortMenuOpen}>
-              <SortIcon />
-            </IconButton>
-          </Tooltip>
-          <Menu
-            anchorEl={sortMenuAnchorEl}
-            open={Boolean(sortMenuAnchorEl)}
-            onClose={handleSortMenuClose}
-          >
-            <MenuItem
-              selected={sortOrder === 'newest'}
+      <Group justify="space-between" mb="md">
+        <Title order={4}>Comments ({comments.length})</Title>
+        <Menu>
+          <Menu.Target>
+            <ActionIcon variant="subtle">
+              <IconSortAscending size={16} />
+            </ActionIcon>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
               onClick={() => handleSortChange('newest')}
+              fw={sortOrder === 'newest' ? 'bold' : 'normal'}
             >
               Newest first
-            </MenuItem>
-            <MenuItem
-              selected={sortOrder === 'oldest'}
+            </Menu.Item>
+            <Menu.Item
               onClick={() => handleSortChange('oldest')}
+              fw={sortOrder === 'oldest' ? 'bold' : 'normal'}
             >
               Oldest first
-            </MenuItem>
-          </Menu>
-        </Box>
-      </Box>
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      </Group>
 
       {/* Comment form */}
       {user && (
-        <Box sx={{ mb: 3 }}>
+        <Box mb="lg">
           <CommentForm
             onSubmit={(text) => handleCommentSubmit(text)}
             placeholder="Add a comment..."
@@ -242,36 +218,24 @@ export function CommentList({
 
       {/* Error message */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert color="red" mb="md">
           {error}
         </Alert>
       )}
 
       {/* Comments list */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-          <CircularProgress />
+        <Box ta="center" py="xl">
+          <Loader />
         </Box>
       ) : comments.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="text.secondary">
-            No comments yet. Be the first to comment!
-          </Typography>
+        <Paper p="xl" ta="center">
+          <Text c="dimmed">No comments yet. Be the first to comment!</Text>
         </Paper>
       ) : (
-        <List sx={{ width: '100%', bgcolor: 'background.paper', p: 0 }}>
+        <Stack gap="md">
           {comments.map((comment) => (
-            <ListItem
-              key={comment.id}
-              alignItems="flex-start"
-              sx={{
-                display: 'block',
-                px: 0,
-                py: 2,
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
+            <Box key={comment.id}>
               <Comment
                 comment={comment}
                 onDelete={() => handleCommentDelete(comment.id)}
@@ -281,29 +245,22 @@ export function CommentList({
 
               {/* Replies */}
               {comment.replies && comment.replies.length > 0 && (
-                <List sx={{ pl: 6, mt: 2 }}>
+                <Stack gap="sm" ml="xl" mt="sm">
                   {comment.replies.map((reply: any) => (
-                    <ListItem
+                    <Comment
                       key={reply.id}
-                      alignItems="flex-start"
-                      sx={{ display: 'block', px: 0, py: 1 }}
-                    >
-                      <Comment
-                        comment={reply}
-                        onDelete={() =>
-                          handleCommentDelete(reply.id, comment.id)
-                        }
-                        isReply
-                        currentUserId={user?.id}
-                      />
-                    </ListItem>
+                      comment={reply}
+                      onDelete={() => handleCommentDelete(reply.id, comment.id)}
+                      isReply
+                      currentUserId={user?.id}
+                    />
                   ))}
-                </List>
+                </Stack>
               )}
 
               {/* Reply form */}
               {replyTo === comment.id && (
-                <Box sx={{ pl: 6, mt: 2 }}>
+                <Box ml="xl" mt="sm">
                   <CommentForm
                     onSubmit={(text) => handleCommentSubmit(text, comment.id)}
                     onCancel={handleCancelReply}
@@ -313,19 +270,18 @@ export function CommentList({
                   />
                 </Box>
               )}
-            </ListItem>
+            </Box>
           ))}
-        </List>
+        </Stack>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+        <Box ta="center" mt="lg">
           <Pagination
-            count={totalPages}
-            page={page}
+            total={totalPages}
+            value={page}
             onChange={handlePageChange}
-            color="primary"
           />
         </Box>
       )}

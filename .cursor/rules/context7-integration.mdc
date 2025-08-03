@@ -1,0 +1,85 @@
+---
+description: "Advanced Context7 integration for Mantine + Neon + pnpm + AgentOS workflow"
+globs: ["**/*.{ts,tsx}"]
+alwaysApply: false
+---
+
+# Smart Context7 Usage for Complete Tech Stack
+
+## Primary Integration Scenarios
+Automatically use Context7 when working with:
+
+### UI Library and Styling (Mantine Focus)
+- Implementing or customizing Mantine components, themes, or responsive behavior
+- Migrating from MUI components to Mantine equivalents
+- Working with Mantine hooks (@mantine/hooks) for common functionality
+- Integrating @tabler/icons-react with Mantine components
+- Setting up Mantine forms, validation, or complex UI interactions
+- Implementing Mantine's dark/light theme system
+- Creating responsive layouts with Mantine's breakpoint system
+
+### Rich Content and File Management
+- Implementing or extending Tiptap rich text editor functionality
+- Creating custom Tiptap nodes, marks, or extensions
+- Integrating UploadThing for file upload workflows
+- Configuring React Ace editor for code editing features
+- Setting up content sanitization and security measures
+- Implementing file validation and processing workflows
+
+### Database and Backend Integration (Neon + Prisma)
+- Setting up or modifying Neon database connections and configuration
+- Working with Prisma schema definitions, relationships, or complex queries
+- Implementing Neon serverless features and optimization patterns
+- Setting up database migrations and seeding strategies
+- Configuring connection pooling and performance optimization
+- Troubleshooting Neon-specific connection or scaling issues
+
+### State Management and Data Fetching
+- Implementing TanStack Query patterns, mutations, or advanced caching
+- Setting up Zustand stores or complex state management patterns
+- Integrating React Hook Form with Zod validation schemas
+- Working with NextAuth.js authentication flows and providers
+- Setting up Prisma Auth Adapter integration
+
+### Testing and Development Workflow
+- Setting up or configuring Jest unit tests with Testing Library
+- Implementing Playwright E2E tests for complex user workflows
+- Configuring test environments for Mantine components
+- Setting up database testing with Prisma and Neon
+- Implementing test mocking strategies for external services
+
+### Package Management and Build Tools (pnpm Focus)
+- Converting npm scripts to pnpm equivalents
+- Setting up pnpm workspace configurations
+- Troubleshooting pnpm-specific dependency issues
+- Optimizing build processes with pnpm
+
+### Email and Communication Services
+- Integrating Resend email service with React Email templates
+- Setting up transactional email workflows
+- Implementing notification systems with React Hot Toast
+
+### Migration and Modernization Tasks
+- MUI to Mantine component migration patterns
+- Updating legacy code to modern React patterns
+- TypeScript type improvements and strict mode compliance
+
+## Context7 Exclusions
+Skip Context7 for these scenarios:
+- Basic JavaScript/TypeScript syntax questions
+- General React patterns without library-specific implementations
+- Code reviews that don't involve library changes or new integrations
+- General algorithmic or logic problems
+- Simple refactoring that doesn't change external dependencies
+
+## AgentOS Integration with Context7
+- When using create-spec, automatically invoke Context7 for technology research
+- For execute-tasks involving new libraries or complex integrations
+- When documenting migration decisions or component mappings
+- For troubleshooting integration issues during development
+
+## Performance Optimization
+- Use Context7 to find current best practices for performance optimization
+- Get latest patterns for bundle size reduction and tree-shaking
+- Find optimal configuration for serverless environments
+- Research current caching strategies and implementation patterns

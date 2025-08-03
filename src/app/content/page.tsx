@@ -21,6 +21,7 @@ interface Content {
   id: string;
   title: string;
   slug: string;
+  heroImage?: string; // Add hero image field
   body: any;
   status: string;
   type: string;
@@ -179,6 +180,13 @@ function ContentPageClient() {
     }
   }, [mode, contentId]);
 
+  // Refresh content list when navigating to list mode
+  useEffect(() => {
+    if (mode === 'list') {
+      fetchContent();
+    }
+  }, [mode]);
+
   // Navigation functions
   const navigateToMode = (newMode: ContentMode, id?: string) => {
     const params = new URLSearchParams();
@@ -234,7 +242,9 @@ function ContentPageClient() {
     }
   };
 
-  const handleBackToList = () => {
+  const handleBackToList = async () => {
+    // Refresh content list when navigating back to ensure it's up to date
+    await fetchContent();
     navigateToMode('list');
   };
 
@@ -261,8 +271,22 @@ function ContentPageClient() {
         const savedContent = await response.json();
 
         if (selectedContent) {
-          // Edit mode - redirect to view mode
-          showNotification('Content updated successfully', 'success');
+          // Edit mode - refresh content list and redirect to view mode
+          // Removed success notification to avoid covering the save button
+
+          // Optimistically update the content list with the new data
+          setContent((prevContent) =>
+            prevContent.map((item) =>
+              item.id === savedContent.id ? { ...item, ...savedContent } : item
+            )
+          );
+
+          // Refresh the content list to ensure all data is up to date
+          await fetchContent();
+
+          // Update the selected content with the latest data
+          setSelectedContent(savedContent);
+
           navigateToMode('view', savedContent.id);
         } else {
           // Create mode - redirect to list and refresh
@@ -315,7 +339,10 @@ function ContentPageClient() {
 
   // Generate breadcrumb items based on current mode
   const getBreadcrumbItems = () => {
-    const items = [{ label: 'Content', href: '/content' }];
+    const items = [
+      { label: 'Dashboard', href: '/dashboard' },
+      { label: 'Content', href: '/content' },
+    ];
 
     if (mode === 'create') {
       items.push({ label: 'Create Content', href: '/content?mode=create' });
@@ -463,7 +490,6 @@ function ContentPageClient() {
               content={content || []}
               onView={handleView}
               onEdit={handleEdit}
-              onViewBySlug={handleViewBySlug}
               onCreate={handleCreate}
               onDelete={handleDelete}
             />

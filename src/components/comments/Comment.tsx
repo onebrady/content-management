@@ -3,25 +3,22 @@
 import { useState } from 'react';
 import {
   Box,
-  Typography,
-  IconButton,
+  Text,
+  ActionIcon,
   Menu,
-  MenuItem,
   Avatar,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
+  Modal,
   Button,
-} from '@mui/material';
+  Group,
+  Stack,
+} from '@mantine/core';
 import {
-  MoreVert as MoreIcon,
-  Reply as ReplyIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-} from '@mui/icons-material';
+  IconDotsVertical,
+  IconMessageReply,
+  IconTrash,
+  IconEdit,
+} from '@tabler/icons-react';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentForm } from './CommentForm';
 
@@ -53,8 +50,7 @@ export function Comment({
   isReply = false,
   currentUserId,
 }: CommentProps) {
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // Format date
@@ -69,33 +65,18 @@ export function Comment({
   // Check if current user is the author
   const isAuthor = currentUserId === comment.user.id;
 
-  // Handle menu
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-  };
-
   // Handle delete
   const handleDeleteClick = () => {
-    handleMenuClose();
-    setDeleteDialogOpen(true);
+    setDeleteModalOpen(true);
   };
 
   const handleDeleteConfirm = () => {
-    setDeleteDialogOpen(false);
+    setDeleteModalOpen(false);
     onDelete();
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false);
   };
 
   // Handle edit
   const handleEditClick = () => {
-    handleMenuClose();
     setIsEditing(true);
   };
 
@@ -112,7 +93,6 @@ export function Comment({
 
   // Handle reply
   const handleReplyClick = () => {
-    handleMenuClose();
     if (onReply) {
       onReply();
     }
@@ -131,16 +111,16 @@ export function Comment({
   // Get avatar color based on user id (for consistent colors)
   const getAvatarColor = (userId: string) => {
     const colors = [
-      '#1976d2', // blue
-      '#388e3c', // green
-      '#d32f2f', // red
-      '#f57c00', // orange
-      '#7b1fa2', // purple
-      '#0288d1', // light blue
-      '#388e3c', // light green
-      '#d81b60', // pink
-      '#5d4037', // brown
-      '#455a64', // blue grey
+      'blue',
+      'green',
+      'red',
+      'orange',
+      'violet',
+      'cyan',
+      'teal',
+      'pink',
+      'grape',
+      'indigo',
     ];
 
     // Simple hash function to get consistent color
@@ -152,31 +132,27 @@ export function Comment({
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+    <Box w="100%">
+      <Group align="flex-start" gap="sm">
         {/* Avatar */}
         <Avatar
-          sx={{
-            bgcolor: getAvatarColor(comment.user.id),
-            width: isReply ? 32 : 40,
-            height: isReply ? 32 : 40,
-            mr: 2,
-          }}
+          color={getAvatarColor(comment.user.id)}
+          size={isReply ? 'sm' : 'md'}
         >
           {getUserInitials(comment.user.name)}
         </Avatar>
 
         {/* Comment content */}
-        <Box sx={{ flexGrow: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-            <Typography variant="subtitle2" component="span">
+        <Box style={{ flex: 1 }}>
+          <Group gap="xs" mb="xs">
+            <Text size="sm" fw={500}>
               {comment.user.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+            </Text>
+            <Text size="xs" c="dimmed">
               {formatDate(comment.updatedAt)}
               {comment.updatedAt !== comment.createdAt && ' (edited)'}
-            </Typography>
-          </Box>
+            </Text>
+          </Group>
 
           {isEditing ? (
             <CommentForm
@@ -187,18 +163,19 @@ export function Comment({
               autoFocus
             />
           ) : (
-            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+            <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
               {comment.commentText}
-            </Typography>
+            </Text>
           )}
 
           {/* Reply button (only for top-level comments) */}
           {!isReply && onReply && !isEditing && (
             <Button
-              size="small"
-              startIcon={<ReplyIcon />}
+              size="xs"
+              variant="subtle"
+              leftSection={<IconMessageReply size={14} />}
               onClick={handleReplyClick}
-              sx={{ mt: 1, textTransform: 'none' }}
+              mt="xs"
             >
               Reply
             </Button>
@@ -207,58 +184,65 @@ export function Comment({
 
         {/* Actions menu */}
         {(isAuthor || currentUserId) && (
-          <Box>
-            <IconButton
-              size="small"
-              onClick={handleMenuOpen}
-              aria-label="comment actions"
-            >
-              <MoreIcon fontSize="small" />
-            </IconButton>
-            <Menu
-              anchorEl={menuAnchorEl}
-              open={Boolean(menuAnchorEl)}
-              onClose={handleMenuClose}
-            >
+          <Menu>
+            <Menu.Target>
+              <ActionIcon variant="subtle" size="sm">
+                <IconDotsVertical size={16} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
               {isAuthor && onEdit && (
-                <MenuItem onClick={handleEditClick}>
-                  <EditIcon fontSize="small" sx={{ mr: 1 }} />
+                <Menu.Item
+                  leftSection={<IconEdit size={14} />}
+                  onClick={handleEditClick}
+                >
                   Edit
-                </MenuItem>
+                </Menu.Item>
               )}
               {isAuthor && (
-                <MenuItem onClick={handleDeleteClick}>
-                  <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                <Menu.Item
+                  leftSection={<IconTrash size={14} />}
+                  color="red"
+                  onClick={handleDeleteClick}
+                >
                   Delete
-                </MenuItem>
+                </Menu.Item>
               )}
               {!isReply && onReply && (
-                <MenuItem onClick={handleReplyClick}>
-                  <ReplyIcon fontSize="small" sx={{ mr: 1 }} />
+                <Menu.Item
+                  leftSection={<IconMessageReply size={14} />}
+                  onClick={handleReplyClick}
+                >
                   Reply
-                </MenuItem>
+                </Menu.Item>
               )}
-            </Menu>
-          </Box>
+            </Menu.Dropdown>
+          </Menu>
         )}
-      </Box>
+      </Group>
 
-      {/* Delete confirmation dialog */}
-      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
-        <DialogTitle>Delete Comment</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+      {/* Delete confirmation modal */}
+      <Modal
+        opened={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        title="Delete Comment"
+        centered
+      >
+        <Stack gap="md">
+          <Text>
             Are you sure you want to delete this comment? This action cannot be
             undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </Text>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleDeleteConfirm}>
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Box>
   );
 }

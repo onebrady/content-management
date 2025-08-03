@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import {
   createProtectedHandler,
   requirePermission,
@@ -18,6 +19,8 @@ export const GET = createProtectedHandler(async (req) => {
   const status = searchParams.get('status') as ContentStatus | null;
   const type = searchParams.get('type') as ContentType | null;
   const authorId = searchParams.get('authorId') || '';
+  const sort = searchParams.get('sort') || 'updatedAt';
+  const order = searchParams.get('order') || 'desc';
 
   const skip = (page - 1) * limit;
 
@@ -41,6 +44,20 @@ export const GET = createProtectedHandler(async (req) => {
 
   if (authorId) {
     where.authorId = authorId;
+  }
+
+  // Build orderBy clause
+  const orderBy: Prisma.ContentOrderByWithRelationInput = {};
+  if (
+    sort === 'createdAt' ||
+    sort === 'updatedAt' ||
+    sort === 'title' ||
+    sort === 'type' ||
+    sort === 'status'
+  ) {
+    orderBy[sort] = order as 'asc' | 'desc';
+  } else {
+    orderBy.updatedAt = 'desc';
   }
 
   try {
@@ -74,7 +91,7 @@ export const GET = createProtectedHandler(async (req) => {
             },
           },
         },
-        orderBy: { updatedAt: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),

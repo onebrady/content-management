@@ -3,10 +3,13 @@
 import {
   Box,
   Card,
-  CardContent,
-  Typography,
-  SvgIconProps,
-} from '@mui/material';
+  Text,
+  Title,
+  Group,
+  Badge,
+  useMantineColorScheme,
+} from '@mantine/core';
+import { IconTrendingUp, IconTrendingDown } from '@tabler/icons-react';
 import { ReactNode } from 'react';
 
 interface StatCardProps {
@@ -21,53 +24,88 @@ interface StatCardProps {
   };
 }
 
-export function StatCard({ title, value, icon, color, trend }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  icon,
+  color = 'blue',
+  trend,
+}: StatCardProps) {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mb: 2,
-          }}
-        >
-          <Typography variant="h6" color="text.secondary">
+    <Card
+      withBorder
+      shadow="sm"
+      style={{
+        backgroundColor: isDark
+          ? 'var(--mantine-color-dark-7)'
+          : 'var(--mantine-color-white)',
+        borderColor: isDark
+          ? 'var(--mantine-color-dark-4)'
+          : 'var(--mantine-color-gray-3)',
+        transition: 'all 0.2s ease',
+        height: '100%',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = isDark
+          ? '0 8px 25px rgba(0,0,0,0.3)'
+          : '0 8px 25px rgba(0,0,0,0.1)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
+      }}
+    >
+      <Card.Section p="md">
+        <Group justify="space-between" align="flex-start" mb="md">
+          <Text size="sm" c="dimmed" fw={500}>
             {title}
-          </Typography>
+          </Text>
           <Box
-            sx={{
+            style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              p: 1,
+              padding: '8px',
               borderRadius: '50%',
-              bgcolor: color ? `${color}.light` : 'primary.light',
-              color: color ? `${color}.main` : 'primary.main',
+              backgroundColor: `var(--mantine-color-${color}-1)`,
+              color: `var(--mantine-color-${color}-6)`,
             }}
           >
             {icon}
           </Box>
-        </Box>
-        <Typography variant="h4" component="div">
+        </Group>
+
+        <Title order={2} mb="xs">
           {value}
-        </Typography>
+        </Title>
+
         {trend && (
-          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
-            <Typography
-              variant="body2"
-              color={trend.positive ? 'success.main' : 'error.main'}
-              sx={{ display: 'flex', alignItems: 'center' }}
+          <Group gap="xs" align="center">
+            <Badge
+              variant="light"
+              color={trend.positive ? 'green' : 'red'}
+              size="sm"
+              leftSection={
+                trend.positive ? (
+                  <IconTrendingUp size={12} />
+                ) : (
+                  <IconTrendingDown size={12} />
+                )
+              }
             >
-              {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+              {trend.positive ? '+' : '-'}
+              {Math.abs(trend.value)}%
+            </Badge>
+            <Text size="xs" c="dimmed">
               {trend.label}
-            </Typography>
-          </Box>
+            </Text>
+          </Group>
         )}
-      </CardContent>
+      </Card.Section>
     </Card>
   );
 }
