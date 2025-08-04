@@ -9,6 +9,7 @@ interface ApprovalRequestEmailProps {
   contentType: string;
   authorName: string;
   contentId: string;
+  contentSlug?: string;
 }
 
 export default function ApprovalRequestEmail({
@@ -17,8 +18,11 @@ export default function ApprovalRequestEmail({
   contentType,
   authorName,
   contentId,
+  contentSlug,
 }: ApprovalRequestEmailProps) {
-  const contentUrl = `${emailConfig.baseUrl}/content?view=${contentId}`;
+  const contentUrl = contentSlug
+    ? `${emailConfig.baseUrl}/content/${contentSlug}`
+    : `${emailConfig.baseUrl}/content?mode=view&id=${contentId}`;
 
   return (
     <BaseEmail

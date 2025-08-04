@@ -11,6 +11,7 @@ interface ApprovalStatusEmailProps {
   approverName: string;
   comments?: string;
   contentId: string;
+  contentSlug?: string;
 }
 
 export default function ApprovalStatusEmail({
@@ -21,8 +22,11 @@ export default function ApprovalStatusEmail({
   approverName,
   comments,
   contentId,
+  contentSlug,
 }: ApprovalStatusEmailProps) {
-  const contentUrl = `${emailConfig.baseUrl}/content?view=${contentId}`;
+  const contentUrl = contentSlug 
+    ? `${emailConfig.baseUrl}/content/${contentSlug}`
+    : `${emailConfig.baseUrl}/content?mode=view&id=${contentId}`;
   const statusLower = status.toLowerCase();
   const isApproved = status === 'APPROVED';
 

@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import React from 'react';
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY;
@@ -17,13 +18,15 @@ export async function sendEmail({
   subject,
   html,
   text,
+  react,
   from = emailConfig.from,
   replyTo = emailConfig.replyTo,
 }: {
   to: string | string[];
   subject: string;
-  html: string;
+  html?: string;
   text?: string;
+  react?: React.ReactElement;
   from?: string;
   replyTo?: string;
 }) {
@@ -33,14 +36,26 @@ export async function sendEmail({
   }
 
   try {
-    const { data, error } = await resend.emails.send({
+    const emailData: any = {
       from,
       to,
       subject,
-      html,
-      text,
       reply_to: replyTo,
-    });
+    };
+
+    // Use React component if provided, otherwise use html/text
+    if (react) {
+      emailData.react = react;
+    } else if (html) {
+      emailData.html = html;
+      if (text) {
+        emailData.text = text;
+      }
+    } else {
+      return { success: false, error: 'Missing html, text, or react field' };
+    }
+
+    const { data, error } = await resend.emails.send(emailData);
 
     if (error) {
       console.error('Failed to send email:', error);
@@ -63,8 +78,9 @@ export function formatEmailAddress(email: string, name?: string) {
 interface QueuedEmail {
   to: string | string[];
   subject: string;
-  html: string;
+  html?: string;
   text?: string;
+  react?: React.ReactElement;
   from?: string;
   replyTo?: string;
   priority?: 'high' | 'normal' | 'low';
@@ -117,6 +133,7 @@ async function processEmailQueue() {
         subject: email.subject,
         html: email.html,
         text: email.text,
+        react: email.react,
         from: email.from,
         replyTo: email.replyTo,
       });

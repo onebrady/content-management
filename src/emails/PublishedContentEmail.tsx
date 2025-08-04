@@ -9,6 +9,7 @@ interface PublishedContentEmailProps {
   contentType: string;
   publisherName: string;
   contentId: string;
+  contentSlug?: string;
   publishDate: string;
 }
 
@@ -18,9 +19,12 @@ export default function PublishedContentEmail({
   contentType,
   publisherName,
   contentId,
+  contentSlug,
   publishDate,
 }: PublishedContentEmailProps) {
-  const contentUrl = `${emailConfig.baseUrl}/content?view=${contentId}`;
+  const contentUrl = contentSlug
+    ? `${emailConfig.baseUrl}/content/${contentSlug}`
+    : `${emailConfig.baseUrl}/content?mode=view&id=${contentId}`;
   const formattedDate = new Date(publishDate).toLocaleString('en-US', {
     weekday: 'long',
     year: 'numeric',

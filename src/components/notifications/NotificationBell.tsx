@@ -62,7 +62,7 @@ export default function NotificationBell() {
 
     // Navigate based on notification type
     if (notification.contentId) {
-      router.push(`/content?view=${notification.contentId}`);
+      router.push(`/content?mode=view&id=${notification.contentId}`);
     }
 
     setOpened(false);

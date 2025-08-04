@@ -1,10 +1,58 @@
 # Authentication Troubleshooting Guide
 
-This guide helps diagnose and fix authentication issues, particularly redirect loops.
+This guide helps diagnose and fix authentication issues, particularly redirect loops and Azure AD OAuth callback problems.
 
 ## Common Issues & Solutions
 
-### 1. Redirect Loop Issues
+### 1. OAuthCallback Error (Azure AD)
+
+**Symptoms:**
+- Browser shows "OAuthCallback" error in URL
+- Authentication never completes
+- User gets redirected back to signin page with error
+
+**Causes & Solutions:**
+
+#### A. Azure AD App Registration Configuration
+1. Go to [Azure Portal](https://portal.azure.com)
+2. Navigate to **Azure Active Directory** > **App registrations**
+3. Find your app registration
+4. Go to **Authentication** > **Redirect URIs**
+5. **Remove ALL existing redirect URIs**
+6. **Add ONLY these redirect URIs:**
+   - `https://content.westerntruck.com/api/auth/callback/azure-ad` (Production)
+   - `http://localhost:3000/api/auth/callback/azure-ad` (Local Development)
+7. Under **Implicit grant and hybrid flows**, check:
+   - ✅ Access tokens
+   - ✅ ID tokens
+8. Under **Supported account types**, ensure it's set to "Accounts in this organizational directory only"
+9. Save the changes
+
+#### B. Environment Variable Issues
+```bash
+# Check your environment variables
+echo $NEXTAUTH_URL
+echo $NEXTAUTH_SECRET
+echo $AZURE_AD_CLIENT_ID
+echo $AZURE_AD_CLIENT_SECRET
+echo $AZURE_AD_TENANT_ID
+```
+
+**Fix:**
+- Ensure `NEXTAUTH_URL` matches your deployed domain exactly
+- For production: `NEXTAUTH_URL=https://content.westerntruck.com`
+- For local development: `NEXTAUTH_URL=http://localhost:3000`
+
+#### C. Cookie Domain Issues
+**For Production:**
+- Cookies are set with domain `.westerntruck.com`
+- Only applies in production environment
+
+**For Local Development:**
+- Cookies are set without domain restriction
+- Works with localhost
+
+### 2. Redirect Loop Issues
 
 **Symptoms:**
 - Browser shows "Too many redirects" error
@@ -40,7 +88,7 @@ echo $NEXTAUTH_SECRET
 - Cookies are set without domain restriction
 - Works with localhost
 
-### 2. Session Issues
+### 3. Session Issues
 
 **Symptoms:**
 - User appears logged out after page refresh
@@ -52,7 +100,7 @@ echo $NEXTAUTH_SECRET
 - Verify `NEXTAUTH_SECRET` is set and consistent
 - Clear browser cache and cookies
 
-### 3. Middleware Issues
+### 4. Middleware Issues
 
 **Symptoms:**
 - Authentication works but certain pages redirect incorrectly
@@ -148,6 +196,13 @@ npx prisma generate
 - Review server-side logs in development
 
 ## Quick Fixes
+
+### If OAuthCallback Error Persists:
+1. **Clear all browser data** (cookies, cache, local storage)
+2. **Verify Azure AD redirect URI** matches exactly: `https://content.westerntruck.com/api/auth/callback/azure-ad`
+3. **Check environment variables** are correct
+4. **Restart the application** completely
+5. **Test in incognito mode**
 
 ### If Redirect Loop Persists:
 1. **Clear all browser data** (cookies, cache, local storage)

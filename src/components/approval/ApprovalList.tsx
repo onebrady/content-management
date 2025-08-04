@@ -303,7 +303,7 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
       router.push(`/content/${slug}`);
     } else {
       // Fallback to the content view if no slug is available
-      router.push(`/content?view=${contentId}`);
+      router.push(`/content?mode=view&id=${contentId}`);
     }
   };
 

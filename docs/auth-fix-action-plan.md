@@ -4,6 +4,16 @@
 
 The `OAuthCallback` error you're seeing indicates that Azure AD is attempting to redirect back to your application after authentication, but something is failing during the callback process.
 
+### ✅ Updated Configuration Files
+
+The following files have been updated to fix the OAuth callback issues:
+
+1. **`src/lib/auth.ts`** - Improved Azure AD provider configuration
+2. **`src/app/auth/signin/page.tsx`** - Enhanced sign-in flow
+3. **`env.example`** - Updated environment variable documentation
+4. **`docs/auth-troubleshooting.md`** - Comprehensive troubleshooting guide
+5. **`scripts/verify-azure-config.js`** - Configuration verification script
+
 ### Step 1: Environment Variable Verification
 
 **Check your Vercel environment variables:**
@@ -32,7 +42,9 @@ AZURE_AD_TENANT_ID=your-azure-tenant-id
 3. Find your app registration
 4. Go to Authentication > Redirect URIs
 5. **Remove ALL existing redirect URIs**
-6. **Add ONLY this one:** `https://content.westerntruck.com/api/auth/callback/azure-ad`
+6. **Add ONLY these redirect URIs:**
+   - `https://content.westerntruck.com/api/auth/callback/azure-ad` (Production)
+   - `http://localhost:3000/api/auth/callback/azure-ad` (Local Development)
 7. Under "Implicit grant and hybrid flows", check both:
    - Access tokens
    - ID tokens
@@ -49,7 +61,26 @@ AZURE_AD_TENANT_ID=your-azure-tenant-id
    - Microsoft Graph > openid
 3. Click "Grant admin consent" button
 
-### Step 3: Clear Browser Data
+### Step 3: Local Development Setup
+
+**For your local version on `localhost:3000`:**
+
+1. Create a `.env.local` file with these variables:
+```bash
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-local-secret-key
+AZURE_AD_CLIENT_ID=your-azure-client-id
+AZURE_AD_CLIENT_SECRET=your-azure-client-secret
+AZURE_AD_TENANT_ID=your-azure-tenant-id
+DATABASE_URL=postgresql://username:password@localhost:5432/content_management
+```
+
+2. Run the verification script:
+```bash
+pnpm run verify:auth
+```
+
+### Step 4: Clear Browser Data
 
 **Complete browser cleanup:**
 
@@ -63,172 +94,89 @@ AZURE_AD_TENANT_ID=your-azure-tenant-id
 4. Close browser completely
 5. Reopen in incognito/private mode
 
-### Step 4: Deploy the Fixes
+### Step 5: Deploy the Fixes
 
 **Deploy the updated code:**
 
-1. The code changes have been made to fix the OAuthCallback error:
-   - Added proper profile handling for Azure AD
-   - Enhanced token and session management
-   - Improved redirect logic
-   - Added better error handling
-   - Enabled debug mode for detailed logs
-2. Commit and push the changes
-3. Deploy to Vercel
-4. Wait for deployment to complete
-5. Check Vercel Function logs for detailed error information
+1. Commit and push your changes
+2. Deploy to Vercel
+3. Verify the deployment completes successfully
 
-### Step 5: Test Authentication
+### Step 6: Test the Authentication
 
 **Test the authentication flow:**
 
-1. Open incognito browser
-2. Go to `https://content.westerntruck.com/auth/signin`
-3. Click "Sign in with Microsoft"
-4. Complete the Azure AD authentication
-5. Verify you're redirected to `/dashboard`
+1. Visit `https://content.westerntruck.com/auth/signin`
+2. Click "Sign in with Microsoft"
+3. Complete the Azure AD authentication
+4. Verify you're redirected to the dashboard
+5. Test session persistence by refreshing the page
 
-## 🔧 If Issues Persist
+### Step 7: Monitor and Debug
 
-### Run the Debug Script
+**If issues persist:**
 
-```bash
-# Run the authentication debug script
-node scripts/debug-auth.js
-```
+1. Check browser console for errors
+2. Monitor Vercel function logs
+3. Run the verification script: `pnpm run verify:auth`
+4. Check the troubleshooting guide: `docs/auth-troubleshooting.md`
 
-This will check:
+## Key Changes Made
 
-- Environment variables
-- Database connection
-- Azure AD configuration
-- Common redirect loop issues
+### 1. Improved Azure AD Provider Configuration
+- Enhanced profile callback to handle Azure AD data correctly
+- Better error handling in callbacks
+- Improved redirect logic to prevent loops
 
-### Check Vercel Logs
+### 2. Enhanced Sign-In Flow
+- Better loading states
+- Improved error handling
+- Clearer user feedback
 
-1. Go to Vercel dashboard
-2. Navigate to your project
-3. Go to Functions tab
-4. Check for any authentication-related errors
-5. Look for specific error messages
+### 3. Comprehensive Documentation
+- Updated troubleshooting guide with Azure AD specific issues
+- Added configuration verification script
+- Improved environment variable documentation
 
-### Verify Database Connection
+### 4. Debugging Tools
+- Added `verify:auth` script to check configuration
+- Enhanced logging for debugging
+- Better error messages
 
-```bash
-# Test database connection
-npx prisma db push
-npx prisma generate
-```
+## Testing Checklist
 
-## 🎯 Expected Results
+- [ ] Environment variables are correctly set
+- [ ] Azure AD app is properly configured
+- [ ] Redirect URIs are correct
+- [ ] Local development works
+- [ ] Production deployment works
+- [ ] Authentication flow completes
+- [ ] Session persists after refresh
+- [ ] User roles are properly assigned
+- [ ] Protected routes work correctly
 
-After completing these steps, you should:
+## Emergency Recovery
 
-- ✅ Be able to access `/auth/signin` without redirect loops
-- ✅ Successfully authenticate with Azure AD
-- ✅ Be redirected to `/dashboard` after authentication
-- ✅ Have a persistent session across page refreshes
-- ✅ Be able to access protected routes
+If authentication is completely broken:
 
-## 🚨 Emergency Fallback
+1. **Rollback to previous working version**
+2. **Check environment variables** in deployment platform
+3. **Verify Azure AD configuration** hasn't changed
+4. **Test with a fresh browser session**
+5. **Monitor logs** for specific error messages
 
-If authentication is still broken after applying all fixes:
+## Support Resources
 
-1. **Check Vercel Function Logs**:
-   - Go to Vercel dashboard > Functions tab
-   - Look for logs with "OAuthCallback" or "auth" related errors
-   - Check for any missing environment variables or configuration issues
+- **Troubleshooting Guide:** `docs/auth-troubleshooting.md`
+- **Configuration Verification:** `pnpm run verify:auth`
+- **Azure Portal:** https://portal.azure.com
+- **NextAuth.js Docs:** https://next-auth.js.org/
+- **Azure AD Provider Docs:** https://next-auth.js.org/providers/azure-ad
 
-2. **Verify Client Secret**:
-   - Go to Azure Portal > App registrations > Your app > Certificates & secrets
-   - Check if your client secret has expired
-   - If needed, create a new client secret and update `AZURE_AD_CLIENT_SECRET` in Vercel
+## Next Steps
 
-3. **Test with a Different Browser**:
-   - Try Chrome, Firefox, Edge, etc.
-   - Always use incognito/private mode
-
-4. **Check Network Requests**:
-   - Open browser developer tools (F12)
-   - Go to Network tab
-   - Try signing in and look for failed requests
-   - Check for any CORS or redirect issues
-
-5. **Rollback if Necessary**:
-   - If all else fails, rollback to a previous working version
-   - Contact support with specific error messages and logs
-
-## 📋 Verification Checklist
-
-- [ ] Environment variables are set correctly in Vercel
-- [ ] Azure AD redirect URI is exactly `https://content.westerntruck.com/api/auth/callback/azure-ad`
-- [ ] Browser cache and cookies are cleared
-- [ ] Code changes are deployed to Vercel
-- [ ] Authentication flow works in incognito mode
-- [ ] Session persists after page refresh
-- [ ] Protected routes are accessible
-- [ ] No redirect loops occur
-
-## 🔍 Troubleshooting Commands
-
-```bash
-# Generate a new secure secret
-openssl rand -base64 32
-
-# Test environment variables
-node -e "console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL)"
-
-# Run debug script
-node scripts/debug-auth.js
-
-# Check database
-npx prisma studio
-```
-
-## 📞 Next Steps
-
-1. **Follow the action plan step by step**
-2. **Run the debug script** to identify specific issues:
-   ```
-   node scripts/debug-auth.js
-   ```
-3. **Test in incognito mode** to avoid cache issues
-4. **Monitor Vercel logs** for error messages
-5. **Contact support** if issues persist after following all steps
-
-## 🔧 Summary of Fixes for OAuthCallback Error
-
-The following changes have been implemented to fix the OAuthCallback error:
-
-1. **Azure AD Provider Configuration**:
-   - Added proper profile handling for Azure AD
-   - Updated scope to include `User.Read` explicitly
-   - Added profile callback to handle Azure AD profile data
-
-2. **Session & Token Management**:
-   - Enhanced token handling to store account info
-   - Improved session callback to use token data
-   - Better error handling in all callbacks
-
-3. **Redirect Logic**:
-   - Simplified redirect callback to prevent loops
-   - Better handling of relative URLs
-   - Clear redirect path to dashboard
-
-4. **Error Handling**:
-   - Added specific error messages for OAuthCallback errors
-   - Added error code display on error page
-   - Enabled debug mode for detailed logs
-
-5. **Debugging Tools**:
-   - Created comprehensive debug script
-   - Added detailed troubleshooting guide
-   - Enhanced error logging throughout the auth flow
-
-These changes address the most common causes of OAuthCallback errors:
-
-- Incorrect redirect URI configuration
-- Expired or invalid client secrets
-- Missing or incorrect permissions
-- Cookie domain issues
-- Session management problems
+1. **Deploy the updated code** to Vercel
+2. **Verify Azure AD configuration** using the verification script
+3. **Test the authentication flow** in both local and production environments
+4. **Monitor for any issues** and refer to the troubleshooting guide if needed
+5. **Update team documentation** with the new configuration process

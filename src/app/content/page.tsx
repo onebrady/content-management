@@ -16,6 +16,7 @@ import { ContentList } from '@/components/content/ContentList';
 import { ContentForm } from '@/components/content/ContentForm';
 import { ContentDetail } from '@/components/content/ContentDetail';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 interface Content {
   id: string;
@@ -736,7 +737,9 @@ export default function ContentPage() {
         </AppLayout>
       }
     >
-      <ContentPageClient />
+      <AuthGuard>
+        <ContentPageClient />
+      </AuthGuard>
     </Suspense>
   );
 }

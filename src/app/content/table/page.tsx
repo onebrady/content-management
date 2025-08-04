@@ -397,7 +397,7 @@ export default function ContentTablePage() {
 
   // Handle view content
   const handleView = (id: string) => {
-    router.push(`/content?view=${id}`);
+    router.push(`/content?mode=view&id=${id}`);
   };
 
   // Handle edit content

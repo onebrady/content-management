@@ -37,29 +37,29 @@ export function DocumentOutline({ editor }: DocumentOutlineProps) {
     if (!editor) return;
 
     const updateHeadings = () => {
-      const headingNodes = editor.state.doc.content.content.filter(
-        (node) => node.type.name === 'heading'
-      );
+      const newHeadings: HeadingItem[] = [];
+      const doc = editor.state.doc;
 
-      const headingItems: HeadingItem[] = [];
-      let pos = 0;
-
-      editor.state.doc.descendants((node, nodePos) => {
+      doc.descendants((node, pos) => {
         if (node.type.name === 'heading') {
-          headingItems.push({
-            level: node.attrs.level,
-            text: node.textContent,
-            pos: nodePos,
-          });
+          const level = node.attrs.level;
+          const text = node.textContent;
+          if (text.trim()) {
+            newHeadings.push({
+              id: `heading-${pos}`,
+              level,
+              text: text.trim(),
+              pos,
+            });
+          }
         }
       });
 
-      setHeadings(headingItems);
+      setHeadings(newHeadings);
     };
 
-    // Update headings when content changes
-    editor.on('update', updateHeadings);
     updateHeadings();
+    editor.on('update', updateHeadings);
 
     return () => {
       editor.off('update', updateHeadings);

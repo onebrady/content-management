@@ -7,11 +7,21 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconSun, IconMoon, IconDeviceDesktop } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
 
 export function ThemeToggle() {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const getThemeIcon = () => {
+    if (!mounted) {
+      return <IconDeviceDesktop size={18} />;
+    }
+
     switch (colorScheme) {
       case 'light':
         return <IconSun size={18} />;

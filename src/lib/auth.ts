@@ -18,11 +18,12 @@ export const authOptions: NextAuthOptions = {
           scope: 'openid profile email User.Read',
         },
       },
-      // Add profile callback to handle Azure AD profile data correctly
+      // Improved profile callback to handle Azure AD profile data correctly
       profile(profile) {
         return {
           id: profile.sub,
-          name: profile.name,
+          name:
+            profile.name || profile.display_name || profile.preferred_username,
           email: profile.email || profile.preferred_username,
           image: null,
         };
@@ -145,7 +146,7 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
     },
-    // Simplified redirect callback to prevent loops
+    // Improved redirect callback to handle OAuth callback issues
     async redirect({ url, baseUrl }) {
       // Log redirect attempts for debugging
       console.log('Redirect callback:', { url, baseUrl });
@@ -177,5 +178,5 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true, // Enable debug mode to see detailed logs
+  debug: process.env.NODE_ENV === 'development', // Only debug in development
 };

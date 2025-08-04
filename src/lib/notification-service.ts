@@ -69,11 +69,12 @@ export async function sendApprovalRequestNotifications(
         to: approver.email,
         subject: `[Content Management] New content requires your approval: ${content.title}`,
         react: ApprovalRequestEmail({
-          approverName: approver.name,
+          recipientName: approver.name,
           contentTitle: content.title,
           contentType: content.type,
           authorName: content.author.name,
           contentId,
+          contentSlug: content.slug,
         }),
       });
     }
@@ -146,8 +147,9 @@ export async function sendApprovalStatusNotification(
         status === 'APPROVED' ? 'approved' : 'rejected'
       }: ${content.title}`,
       react: ApprovalStatusEmail({
-        authorName: content.author.name,
+        recipientName: content.author.name,
         contentTitle: content.title,
+        contentType: content.type,
         status:
           status === 'APPROVED'
             ? ApprovalStatus.APPROVED
@@ -155,6 +157,7 @@ export async function sendApprovalStatusNotification(
         approverName: approver.name,
         comments,
         contentId,
+        contentSlug: content.slug,
       }),
     });
   } catch (error) {
@@ -220,10 +223,13 @@ export async function sendPublishedContentNotification(
         to: content.author.email,
         subject: `[Content Management] Your content has been published: ${content.title}`,
         react: PublishedContentEmail({
-          authorName: content.author.name,
+          recipientName: content.author.name,
           contentTitle: content.title,
+          contentType: content.type,
           publisherName: publisher.name,
           contentId,
+          contentSlug: content.slug,
+          publishDate: new Date().toISOString(),
         }),
       });
     }
@@ -332,6 +338,7 @@ export async function sendCommentNotification(
         isReply: !!comment.parentId,
         contentId,
         commentId,
+        contentSlug: comment.content.slug,
       }),
     });
   } catch (error) {

@@ -41,7 +41,7 @@ export const navigationConfig: NavigationItem[] = [
   {
     label: 'Content Management',
     icon: IconNotes,
-    initiallyOpened: true,
+    initiallyOpened: false,
     roles: ['CONTRIBUTOR', 'MODERATOR', 'ADMIN'],
     links: [
       {

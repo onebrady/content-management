@@ -16,13 +16,23 @@ import {
 } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useEffect, useState } from 'react';
 
 export function BottomNavIcons() {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const router = useRouter();
   const { user } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const getThemeIcon = () => {
+    if (!mounted) {
+      return <IconDeviceDesktop size={18} />;
+    }
+
     switch (colorScheme) {
       case 'light':
         return <IconSun size={18} />;

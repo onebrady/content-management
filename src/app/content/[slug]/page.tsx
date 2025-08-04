@@ -22,10 +22,11 @@ import {
   IconUser,
   IconUserCheck,
 } from '@tabler/icons-react';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ContentDetail } from '@/components/content/ContentDetail';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 interface Content {
   id: string;
@@ -121,149 +122,146 @@ export default function ContentPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <Box p="md" style={{ display: 'flex', justifyContent: 'center' }}>
-          <Loader />
-        </Box>
-      </DashboardLayout>
+      <AuthGuard>
+        <AppLayout>
+          <Box p="md" style={{ display: 'flex', justifyContent: 'center' }}>
+            <Loader />
+          </Box>
+        </AppLayout>
+      </AuthGuard>
     );
   }
 
   if (error) {
     return (
-      <DashboardLayout>
-        <Box p="md">
-          <Alert color="red" mb="md">
-            {error}
-          </Alert>
-          <Button
-            variant="outline"
-            leftSection={<IconArrowLeft size={16} />}
-            onClick={handleBack}
-          >
-            Back to Content
-          </Button>
-        </Box>
-      </DashboardLayout>
+      <AuthGuard>
+        <AppLayout>
+          <Box p="md">
+            <Alert color="red" mb="md">
+              {error}
+            </Alert>
+            <Button
+              variant="outline"
+              leftSection={<IconArrowLeft size={16} />}
+              onClick={handleBack}
+            >
+              Back to Content
+            </Button>
+          </Box>
+        </AppLayout>
+      </AuthGuard>
     );
   }
 
   if (!content) {
     return (
-      <DashboardLayout>
-        <Box p="md">
-          <Alert color="yellow" mb="md">
-            Content not found
-          </Alert>
-          <Button
-            variant="outline"
-            leftSection={<IconArrowLeft size={16} />}
-            onClick={handleBack}
-          >
-            Back to Content
-          </Button>
-        </Box>
-      </DashboardLayout>
+      <AuthGuard>
+        <AppLayout>
+          <Box p="md">
+            <Alert color="yellow" mb="md">
+              Content not found
+            </Alert>
+            <Button
+              variant="outline"
+              leftSection={<IconArrowLeft size={16} />}
+              onClick={handleBack}
+            >
+              Back to Content
+            </Button>
+          </Box>
+        </AppLayout>
+      </AuthGuard>
     );
   }
 
   const canEdit = user?.role === 'ADMIN' || content.author.id === user?.id;
 
   return (
-    <DashboardLayout>
-      <Box p="md">
-        {/* Header */}
-        <Group justify="space-between" align="flex-start" mb="lg">
-          <Box style={{ flex: 1 }}>
-            <Breadcrumbs
-              items={[
-                { label: 'Content', href: '/content' },
-                { label: content.title, href: `/content/${content.slug}` },
-              ]}
-            />
-            <Title order={1} mt="md" mb="xs">
-              {content.title}
-            </Title>
+    <AuthGuard>
+      <AppLayout>
+        <Box p="md">
+          {/* Header */}
+          <Group justify="space-between" align="flex-start" mb="lg">
+            <Box style={{ flex: 1 }}>
+              <Breadcrumbs
+                items={[
+                  { label: 'Content', href: '/content' },
+                  { label: content.title, href: `/content/${content.slug}` },
+                ]}
+              />
+              <Title order={1} mt="md" mb="xs">
+                {content.title}
+              </Title>
 
-            {/* Meta information */}
-            <Group gap="xs" mb="md" wrap="wrap">
-              <Badge
-                color={
-                  content.status === 'PUBLISHED'
-                    ? 'green'
-                    : content.status === 'DRAFT'
-                      ? 'gray'
-                      : 'yellow'
-                }
-                size="sm"
-              >
-                {content.status}
-              </Badge>
-              <Badge variant="outline" size="sm">
-                {content.type}
-              </Badge>
-              <Badge
-                color={
-                  content.priority === 'HIGH'
-                    ? 'red'
-                    : content.priority === 'MEDIUM'
-                      ? 'yellow'
-                      : 'gray'
-                }
-                size="sm"
-              >
-                {content.priority}
-              </Badge>
-            </Group>
-
-            {/* Additional meta info */}
-            <Group gap="lg" c="dimmed" size="sm">
-              <Group gap="xs">
-                <IconUser size={16} />
-                <Text size="sm">{content.author.name}</Text>
+              {/* Meta information */}
+              <Group gap="xs" mb="md" wrap="wrap">
+                <Badge
+                  color={
+                    content.status === 'PUBLISHED'
+                      ? 'green'
+                      : content.status === 'DRAFT'
+                        ? 'gray'
+                        : 'yellow'
+                  }
+                  size="sm"
+                >
+                  {content.status}
+                </Badge>
+                <Badge variant="outline" size="sm">
+                  {content.type}
+                </Badge>
+                <Badge
+                  color={
+                    content.priority === 'HIGH'
+                      ? 'red'
+                      : content.priority === 'MEDIUM'
+                        ? 'yellow'
+                        : 'gray'
+                  }
+                  size="sm"
+                >
+                  {content.priority}
+                </Badge>
               </Group>
-              {content.assignee && (
+
+              {/* Additional meta info */}
+              <Group gap="lg" c="dimmed" size="sm">
                 <Group gap="xs">
-                  <IconUserCheck size={16} />
-                  <Text size="sm">{content.assignee.name}</Text>
+                  <IconUser size={16} />
+                  <Text size="sm">{content.author.name}</Text>
                 </Group>
-              )}
-              <Group gap="xs">
-                <IconCalendar size={16} />
-                <Text size="sm">
-                  {new Date(content.createdAt).toLocaleDateString()}
-                </Text>
+                {content.assignee && (
+                  <Group gap="xs">
+                    <IconUserCheck size={16} />
+                    <Text size="sm">{content.assignee.name}</Text>
+                  </Group>
+                )}
+                <Group gap="xs">
+                  <IconCalendar size={16} />
+                  <Text size="sm">
+                    {new Date(content.createdAt).toLocaleDateString()}
+                  </Text>
+                </Group>
               </Group>
-            </Group>
-          </Box>
+            </Box>
 
-          {canEdit && (
-            <Button
-              variant="filled"
-              leftSection={<IconEdit size={16} />}
-              onClick={handleEdit}
-              style={{
-                background: 'linear-gradient(45deg, #74b9ff 30%, #0984e3 90%)',
-                boxShadow: '0 3px 5px 2px rgba(116, 185, 255, .3)',
-                color: 'white',
-                fontWeight: 600,
-                '&:hover': {
-                  background:
-                    'linear-gradient(45deg, #0984e3 30%, #74b9ff 90%)',
-                  boxShadow: '0 4px 8px 2px rgba(116, 185, 255, .4)',
-                },
-              }}
-            >
-              Edit
-            </Button>
-          )}
-        </Group>
+            {canEdit && (
+              <Button
+                variant="filled"
+                leftSection={<IconEdit size={16} />}
+                onClick={handleEdit}
+              >
+                Edit
+              </Button>
+            )}
+          </Group>
 
-        <Divider mb="lg" />
+          <Divider mb="lg" />
 
-        {/* Content */}
-        <ContentDetail content={content} />
-      </Box>
-    </DashboardLayout>
+          {/* Content */}
+          <ContentDetail content={content} />
+        </Box>
+      </AppLayout>
+    </AuthGuard>
   );
 }

@@ -4,11 +4,12 @@ import { useState } from 'react';
 import {
   Button,
   Group,
-  Text,
-  Alert,
   Modal,
+  Text,
+  Textarea,
+  Select,
   Stack,
-  Badge,
+  Alert,
   Box,
 } from '@mantine/core';
 import {
@@ -148,26 +149,26 @@ export function BulkApprovalActions({
 
   return (
     <>
-      <Box sx={{ display: 'flex', gap: 2 }}>
+      <Group gap="sm">
         <Button
-          variant="contained"
-          color="success"
-          startIcon={<IconCheck />}
+          variant="filled"
+          color="green"
+          leftSection={<IconCheck />}
           onClick={() => handleOpenDialog('approve')}
           disabled={selectedApprovals.length === 0}
         >
           Approve Selected ({selectedApprovals.length})
         </Button>
         <Button
-          variant="contained"
-          color="error"
-          startIcon={<IconX />}
+          variant="filled"
+          color="red"
+          leftSection={<IconX />}
           onClick={() => handleOpenDialog('reject')}
           disabled={selectedApprovals.length === 0}
         >
           Reject Selected ({selectedApprovals.length})
         </Button>
-      </Box>
+      </Group>
 
       {/* Approve Dialog */}
       <Modal
@@ -188,12 +189,12 @@ export function BulkApprovalActions({
             />
           </Box>
         </Stack>
-        <Group position="right" mt="md">
+        <Group justify="flex-end" mt="md">
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button
             onClick={handleApprove}
-            color="success"
-            variant="contained"
+            color="green"
+            variant="filled"
             disabled={loading}
           >
             Approve
@@ -221,12 +222,12 @@ export function BulkApprovalActions({
             />
           </Box>
         </Stack>
-        <Group position="right" mt="md">
+        <Group justify="flex-end" mt="md">
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button
             onClick={handleReject}
-            color="error"
-            variant="contained"
+            color="red"
+            variant="filled"
             disabled={loading || !comments.trim()}
           >
             Reject
@@ -235,14 +236,17 @@ export function BulkApprovalActions({
       </Modal>
 
       {/* Snackbar for notifications */}
-      <Alert
-        title={snackbar.severity === 'success' ? 'Success' : 'Error'}
-        color={snackbar.severity}
-        icon={snackbar.severity === 'success' ? <IconCheck /> : <IconAlertTriangle />}
-        onClose={handleCloseSnackbar}
-      >
-        {snackbar.message}
-      </Alert>
+      {snackbar.open && (
+        <Alert
+          title={snackbar.severity === 'success' ? 'Success' : 'Error'}
+          color={snackbar.severity}
+          icon={snackbar.severity === 'success' ? <IconCheck /> : <IconAlertTriangle />}
+          withCloseButton
+          onClose={handleCloseSnackbar}
+        >
+          {snackbar.message}
+        </Alert>
+      )}
     </>
   );
 }
