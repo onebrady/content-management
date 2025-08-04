@@ -71,21 +71,86 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       try {
-        // Ensure user exists in our database with proper role
+        // Handle OAuth account linking and user creation
         if (user.email) {
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email },
           });
 
-          if (!existingUser) {
-            // Create new user with default CONTRIBUTOR role
-            await prisma.user.create({
+          if (existingUser) {
+            // Update existing user with latest info from OAuth
+            await prisma.user.update({
+              where: { email: user.email },
+              data: {
+                name: user.name || existingUser.name,
+                // Preserve existing role and other important data
+                role: existingUser.role,
+                department: existingUser.department,
+              },
+            });
+            
+            // If this is an OAuth sign-in, ensure the account is linked
+            if (account && account.provider === 'azure-ad') {
+              // Check if account is already linked
+              const existingAccount = await prisma.account.findFirst({
+                where: {
+                  userId: existingUser.id,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                },
+              });
+
+              if (!existingAccount) {
+                // Link the OAuth account to the existing user
+                await prisma.account.create({
+                  data: {
+                    userId: existingUser.id,
+                    type: account.type,
+                    provider: account.provider,
+                    providerAccountId: account.providerAccountId,
+                    refresh_token: account.refresh_token,
+                    access_token: account.access_token,
+                    expires_at: account.expires_at,
+                    token_type: account.token_type,
+                    scope: account.scope,
+                    id_token: account.id_token,
+                    session_state: account.session_state,
+                  },
+                });
+              }
+            }
+            
+            return true; // Allow sign in for existing users
+          } else {
+            // Create new user with OAuth account
+            const newUser = await prisma.user.create({
               data: {
                 email: user.email,
                 name: user.name || user.email,
                 role: UserRole.CONTRIBUTOR,
               },
             });
+
+            // Link the OAuth account to the new user
+            if (account && account.provider === 'azure-ad') {
+              await prisma.account.create({
+                data: {
+                  userId: newUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  refresh_token: account.refresh_token,
+                  access_token: account.access_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                  session_state: account.session_state,
+                },
+              });
+            }
+
+            return true;
           }
         }
         return true;
