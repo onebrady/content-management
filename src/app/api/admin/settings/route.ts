@@ -10,12 +10,14 @@ interface SystemSettings {
   siteName: string;
   defaultLanguage: string;
   maintenanceMode: boolean;
+  companyLogo?: string;
   [key: string]: any;
 }
 
 // GET /api/settings - Get system settings
 export const GET = createProtectedHandler(async (req) => {
   try {
+    // For public access (like signin page), we don't require authentication
     const settingsRecord = await prisma.notification.findFirst({
       where: { type: SETTINGS_KEY },
     });
@@ -29,6 +31,7 @@ export const GET = createProtectedHandler(async (req) => {
         siteName: 'Content Management',
         defaultLanguage: 'en',
         maintenanceMode: false,
+        companyLogo: '',
       };
       return NextResponse.json(defaultSettings);
     }
@@ -57,23 +60,35 @@ export const POST = createProtectedHandler(async (req) => {
     const settingsString = JSON.stringify(body);
 
     // Using the Notification model as a key-value store for simplicity
-    await prisma.notification.upsert({
+    // First, try to find existing settings
+    const existingSettings = await prisma.notification.findFirst({
       where: {
-        userId_type: {
-          userId: req.user!.id,
-          type: SETTINGS_KEY,
-        },
-      },
-      update: {
-        message: settingsString,
-      },
-      create: {
-        userId: req.user!.id, // Associated with the user who last updated it
+        userId: req.user!.id,
         type: SETTINGS_KEY,
-        message: settingsString,
-        isRead: true, // Mark as "read" to distinguish from user notifications
       },
     });
+
+    if (existingSettings) {
+      // Update existing settings
+      await prisma.notification.update({
+        where: {
+          id: existingSettings.id,
+        },
+        data: {
+          message: settingsString,
+        },
+      });
+    } else {
+      // Create new settings
+      await prisma.notification.create({
+        data: {
+          userId: req.user!.id, // Associated with the user who last updated it
+          type: SETTINGS_KEY,
+          message: settingsString,
+          isRead: true, // Mark as "read" to distinguish from user notifications
+        },
+      });
+    }
 
     return NextResponse.json({ message: 'Settings updated successfully' });
   } catch (error) {

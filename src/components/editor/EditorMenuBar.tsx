@@ -2,18 +2,37 @@
 
 import { Editor } from '@tiptap/react';
 import {
+  Button,
+  Group,
+  Divider,
   Box,
-  Typography,
-  Chip,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
+  Menu,
+  Text,
+  Badge,
+  Stack,
+} from '@mantine/core';
 import {
-  Save,
-  Preview,
-  Fullscreen,
-  FullscreenExit,
-} from '@mui/icons-material';
+  IconBold,
+  IconItalic,
+  IconStrikethrough,
+  IconLink,
+  IconCode,
+  IconQuote,
+  IconList,
+  IconListNumbers,
+  IconHeading,
+  IconAlignLeft,
+  IconAlignCenter,
+  IconAlignRight,
+  IconAlignJustify,
+  IconChevronDown,
+  IconMaximize,
+  IconMinimize,
+  IconDeviceFloppy,
+  IconEye,
+  IconFileText,
+  IconHash,
+} from '@tabler/icons-react';
 import { useState } from 'react';
 
 interface EditorMenuBarProps {
@@ -39,7 +58,10 @@ export function EditorMenuBar({
   const getWordCount = () => {
     if (!editor) return 0;
     const text = editor.getText();
-    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+    return text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
   };
 
   const getCharacterCount = () => {
@@ -49,59 +71,87 @@ export function EditorMenuBar({
 
   return (
     <Box
-      sx={{
-        p: 1,
+      p="md"
+      style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: 1,
-        borderColor: 'divider',
+        borderBottom: '1px solid var(--mantine-color-gray-3)',
+        backgroundColor: 'var(--mantine-color-gray-0)',
+        borderRadius: 'var(--mantine-radius-md) var(--mantine-radius-md) 0 0',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Rich Text Editor
-        </Typography>
-        
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Chip
-            label={`${getWordCount()} words`}
-            size="small"
-            variant="outlined"
-          />
-          <Chip
-            label={`${getCharacterCount()} chars`}
-            size="small"
-            variant="outlined"
-          />
-        </Box>
-      </Box>
+      <Group gap="lg" align="center">
+        <Stack gap={0}>
+          <Text size="sm" fw={600} c="dimmed" style={{ lineHeight: 1.2 }}>
+            Rich Text Editor
+          </Text>
+          <Group gap="md" mt={6}>
+            <Group gap={6} align="center">
+              <IconFileText
+                size={14}
+                style={{ color: 'var(--mantine-color-blue-6)' }}
+              />
+              <Text size="xs" c="dimmed" fw={500}>
+                {getWordCount()} words
+              </Text>
+            </Group>
+            <Group gap={6} align="center">
+              <IconHash
+                size={14}
+                style={{ color: 'var(--mantine-color-gray-6)' }}
+              />
+              <Text size="xs" c="dimmed" fw={500}>
+                {getCharacterCount()} chars
+              </Text>
+            </Group>
+          </Group>
+        </Stack>
+      </Group>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Group gap="xs">
         {onSave && (
-          <Tooltip title="Save">
-            <IconButton size="small" onClick={onSave}>
-              <Save />
-            </IconButton>
-          </Tooltip>
+          <Button
+            size="sm"
+            onClick={onSave}
+            leftSection={<IconDeviceFloppy size={14} />}
+            variant="light"
+            color="blue"
+          >
+            Save
+          </Button>
         )}
 
         {onPreview && (
-          <Tooltip title="Preview">
-            <IconButton size="small" onClick={onPreview}>
-              <Preview />
-            </IconButton>
-          </Tooltip>
+          <Button
+            size="sm"
+            onClick={onPreview}
+            leftSection={<IconEye size={14} />}
+            variant="light"
+            color="green"
+          >
+            Preview
+          </Button>
         )}
 
         {showFullscreen && (
-          <Tooltip title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}>
-            <IconButton size="small" onClick={toggleFullscreen}>
-              {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
-            </IconButton>
-          </Tooltip>
+          <Button
+            size="sm"
+            onClick={toggleFullscreen}
+            leftSection={
+              isFullscreen ? (
+                <IconMinimize size={14} />
+              ) : (
+                <IconMaximize size={14} />
+              )
+            }
+            variant="light"
+            color="blue"
+          >
+            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+          </Button>
         )}
-      </Box>
+      </Group>
     </Box>
   );
-} 
+}

@@ -1,14 +1,7 @@
 'use client';
 
-import {
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Alert,
-} from '@mui/material';
-import { Error, ArrowBack } from '@mui/icons-material';
+import { Button, Card, Text, Box, Alert } from '@mantine/core';
+import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import ErrorClient from './error-client';

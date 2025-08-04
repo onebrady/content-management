@@ -3,13 +3,16 @@
 import { useState } from 'react';
 import {
   Box,
-  Typography,
   Card,
-  CardContent,
-  Alert,
+  Text,
   Button,
-  Grid,
-} from '@mui/material';
+  Alert,
+  Group,
+  Stack,
+  Title,
+  Badge,
+} from '@mantine/core';
+import { IconUpload, IconTrash, IconDownload } from '@tabler/icons-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -69,207 +72,206 @@ export default function UploadTestPage() {
       <Box sx={{ p: 3 }}>
         <Breadcrumbs />
 
-        <Typography variant="h4" component="h1" gutterBottom>
+        <Title order={4} component="h1" mb="xs">
           File Upload Test
-        </Typography>
+        </Title>
 
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+        <Text color="dimmed" size="sm" mb="md">
           Test the file upload functionality with drag and drop, progress
           tracking, and file preview.
-        </Typography>
+        </Text>
 
-        <Grid container spacing={3}>
+        <Group mb="md">
+          <Badge variant="filled" size="lg">
+            Max Files: 10
+          </Badge>
+          <Badge variant="filled" size="lg">
+            Max File Size: 10MB
+          </Badge>
+        </Group>
+
+        <Stack gap="md">
           {/* Upload Component */}
-          <Grid item xs={12} lg={8}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  File Upload
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 2 }}
-                >
-                  Drag and drop files here or click to select. Supports images,
-                  PDFs, documents, videos, and audio files.
-                </Typography>
+          <Card withBorder>
+            <Group justify="space-between" mb="xs">
+              <Title order={6}>File Upload</Title>
+              <Badge variant="light" size="sm">
+                Drag and drop files here or click to select.
+              </Badge>
+            </Group>
 
-                <FileUpload
-                  onUploadComplete={handleUploadComplete}
-                  onUploadError={handleUploadError}
-                  maxFiles={10}
-                  maxFileSize={10 * 1024 * 1024} // 10MB
-                  acceptedFileTypes={[
-                    'image/*',
-                    'application/pdf',
-                    'text/*',
-                    'video/*',
-                    'audio/*',
-                    'application/msword',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'application/vnd.ms-excel',
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                  ]}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
+            <Text color="dimmed" size="sm" mb="sm">
+              Supports images, PDFs, documents, videos, and audio files.
+            </Text>
+
+            <FileUpload
+              onUploadComplete={handleUploadComplete}
+              onUploadError={handleUploadError}
+              maxFiles={10}
+              maxFileSize={10 * 1024 * 1024} // 10MB
+              acceptedFileTypes={[
+                'image/*',
+                'application/pdf',
+                'text/*',
+                'video/*',
+                'audio/*',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              ]}
+            />
+          </Card>
 
           {/* Upload Info */}
-          <Grid item xs={12} lg={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Upload Information
-                </Typography>
+          <Card withBorder>
+            <Group justify="space-between" mb="xs">
+              <Title order={6}>Upload Information</Title>
+            </Group>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Max Files:</strong> 10
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Max File Size:</strong> 10MB
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Accepted Types:</strong>
-                  </Typography>
-                  <Box sx={{ pl: 2 }}>
-                    <Typography variant="caption" display="block">
-                      • Images (JPEG, PNG, GIF, etc.)
-                    </Typography>
-                    <Typography variant="caption" display="block">
-                      • PDFs
-                    </Typography>
-                    <Typography variant="caption" display="block">
-                      • Text files
-                    </Typography>
-                    <Typography variant="caption" display="block">
-                      • Videos (MP4, AVI, etc.)
-                    </Typography>
-                    <Typography variant="caption" display="block">
-                      • Audio (MP3, WAV, etc.)
-                    </Typography>
-                    <Typography variant="caption" display="block">
-                      • Documents (Word, Excel)
-                    </Typography>
-                  </Box>
-                </Box>
+            <Stack gap="xs">
+              <Group>
+                <Badge variant="light" size="sm">
+                  <Text fw="bold">Max Files:</Text> 10
+                </Badge>
+                <Badge variant="light" size="sm">
+                  <Text fw="bold">Max File Size:</Text> 10MB
+                </Badge>
+              </Group>
 
-                {uploadError && (
-                  <Alert severity="error" sx={{ mb: 2 }}>
-                    {uploadError}
-                  </Alert>
-                )}
+              <Badge variant="light" size="sm">
+                <Text fw="bold">Accepted Types:</Text>
+              </Badge>
+              <Stack gap="xs" pl="md">
+                <Text size="sm" color="dimmed">
+                  • Images (JPEG, PNG, GIF, etc.)
+                </Text>
+                <Text size="sm" color="dimmed">
+                  • PDFs
+                </Text>
+                <Text size="sm" color="dimmed">
+                  • Text files
+                </Text>
+                <Text size="sm" color="dimmed">
+                  • Videos (MP4, AVI, etc.)
+                </Text>
+                <Text size="sm" color="dimmed">
+                  • Audio (MP3, WAV, etc.)
+                </Text>
+                <Text size="sm" color="dimmed">
+                  • Documents (Word, Excel)
+                </Text>
+              </Stack>
+            </Stack>
 
-                <Button
-                  variant="outlined"
-                  onClick={handleClearAll}
-                  disabled={uploadedFiles.length === 0}
-                  fullWidth
-                >
-                  Clear All Files
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
+            {uploadError && (
+              <Alert color="red" mt="md" mb="md">
+                {uploadError}
+              </Alert>
+            )}
+
+            <Button
+              variant="outline"
+              onClick={handleClearAll}
+              disabled={uploadedFiles.length === 0}
+              fullWidth
+            >
+              Clear All Files
+            </Button>
+          </Card>
 
           {/* File Preview */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Uploaded Files ({uploadedFiles.length})
-                </Typography>
+          <Card withBorder>
+            <Group justify="space-between" mb="xs">
+              <Title order={6}>Uploaded Files ({uploadedFiles.length})</Title>
+            </Group>
 
-                {uploadedFiles.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No files uploaded yet. Use the upload area above to add
-                      files.
-                    </Typography>
-                  </Box>
-                ) : (
-                  <FilePreview
-                    files={uploadedFiles}
-                    onRemove={handleRemoveFile}
-                    showActions={true}
-                    maxFiles={20}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+            {uploadedFiles.length === 0 ? (
+              <Box style={{ textAlign: 'center', padding: '16px 0' }}>
+                <Text color="dimmed" size="sm">
+                  No files uploaded yet. Use the upload area above to add files.
+                </Text>
+              </Box>
+            ) : (
+              <FilePreview
+                files={uploadedFiles}
+                onRemove={handleRemoveFile}
+                showActions={true}
+                maxFiles={20}
+              />
+            )}
+          </Card>
 
           {/* File Statistics */}
           {uploadedFiles.length > 0 && (
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    File Statistics
-                  </Typography>
+            <Card withBorder>
+              <Group justify="space-between" mb="xs">
+                <Title order={6}>File Statistics</Title>
+              </Group>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Typography variant="body2" color="text.secondary">
-                        Total Files
-                      </Typography>
-                      <Typography variant="h4">
-                        {uploadedFiles.length}
-                      </Typography>
-                    </Grid>
+              <Stack gap="xs">
+                <Group>
+                  <Badge variant="light" size="sm">
+                    <Text fw="bold">Total Files:</Text>
+                  </Badge>
+                  <Badge variant="filled" size="sm">
+                    <Text fw="bold">{uploadedFiles.length}</Text>
+                  </Badge>
+                </Group>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Typography variant="body2" color="text.secondary">
-                        Total Size
-                      </Typography>
-                      <Typography variant="h4">
-                        {(
-                          uploadedFiles.reduce(
-                            (acc, file) => acc + file.size,
-                            0
-                          ) /
-                          (1024 * 1024)
-                        ).toFixed(2)}{' '}
-                        MB
-                      </Typography>
-                    </Grid>
+                <Group>
+                  <Badge variant="light" size="sm">
+                    <Text fw="bold">Total Size:</Text>
+                  </Badge>
+                  <Badge variant="filled" size="sm">
+                    <Text fw="bold">
+                      {(
+                        uploadedFiles.reduce(
+                          (acc, file) => acc + file.size,
+                          0
+                        ) /
+                        (1024 * 1024)
+                      ).toFixed(2)}{' '}
+                      MB
+                    </Text>
+                  </Badge>
+                </Group>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Typography variant="body2" color="text.secondary">
-                        Images
-                      </Typography>
-                      <Typography variant="h4">
-                        {
-                          uploadedFiles.filter((f) =>
-                            f.type.startsWith('image/')
-                          ).length
-                        }
-                      </Typography>
-                    </Grid>
+                <Group>
+                  <Badge variant="light" size="sm">
+                    <Text fw="bold">Images:</Text>
+                  </Badge>
+                  <Badge variant="filled" size="sm">
+                    <Text fw="bold">
+                      {
+                        uploadedFiles.filter((f) => f.type.startsWith('image/'))
+                          .length
+                      }
+                    </Text>
+                  </Badge>
+                </Group>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Typography variant="body2" color="text.secondary">
-                        Documents
-                      </Typography>
-                      <Typography variant="h4">
-                        {
-                          uploadedFiles.filter(
-                            (f) =>
-                              f.type.includes('pdf') ||
-                              f.type.includes('word') ||
-                              f.type.includes('excel')
-                          ).length
-                        }
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
+                <Group>
+                  <Badge variant="light" size="sm">
+                    <Text fw="bold">Documents:</Text>
+                  </Badge>
+                  <Badge variant="filled" size="sm">
+                    <Text fw="bold">
+                      {
+                        uploadedFiles.filter(
+                          (f) =>
+                            f.type.includes('pdf') ||
+                            f.type.includes('word') ||
+                            f.type.includes('excel')
+                        ).length
+                      }
+                    </Text>
+                  </Badge>
+                </Group>
+              </Stack>
+            </Card>
           )}
-        </Grid>
+        </Stack>
       </Box>
     </DashboardLayout>
   );

@@ -3,32 +3,29 @@
 import { useState } from 'react';
 import {
   Box,
-  Typography,
+  Text,
   Card,
-  CardContent,
-  CardHeader,
   Divider,
   List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
   Avatar,
-  Chip,
-  IconButton,
+  Badge,
+  ActionIcon,
   Tooltip,
-  useTheme,
-} from '@mui/material';
+  Group,
+  Stack,
+  Title,
+} from '@mantine/core';
 import {
-  Edit,
-  Send,
-  CheckCircle,
-  Cancel,
-  Publish,
-  ArrowBack,
-  Comment,
-  AttachFile,
-  History,
-} from '@mui/icons-material';
+  IconEdit,
+  IconSend,
+  IconCheck,
+  IconX,
+  IconDeviceFloppy,
+  IconArrowLeft,
+  IconMessage,
+  IconPaperclip,
+  IconHistory,
+} from '@tabler/icons-react';
 import { UserRole } from '@prisma/client';
 
 interface ContentActivityProps {
@@ -46,8 +43,6 @@ interface ContentActivityProps {
 }
 
 export function ContentActivity({ activities }: ContentActivityProps) {
-  const theme = useTheme();
-
   // Format date
   const formatDate = (date: string) => {
     return new Date(date).toLocaleString();
@@ -57,25 +52,25 @@ export function ContentActivity({ activities }: ContentActivityProps) {
   const getActivityIcon = (action: string) => {
     switch (action) {
       case 'CREATED':
-        return <Edit />;
+        return <IconEdit size={16} />;
       case 'UPDATED':
-        return <Edit />;
+        return <IconEdit size={16} />;
       case 'SUBMITTED_FOR_REVIEW':
-        return <Send />;
+        return <IconSend size={16} />;
       case 'APPROVED':
-        return <CheckCircle />;
+        return <IconCheck size={16} />;
       case 'REJECTED':
-        return <Cancel />;
+        return <IconX size={16} />;
       case 'PUBLISHED':
-        return <Publish />;
+        return <IconDeviceFloppy size={16} />;
       case 'RETURNED_TO_DRAFT':
-        return <ArrowBack />;
+        return <IconArrowLeft size={16} />;
       case 'COMMENT_ADDED':
-        return <Comment />;
+        return <IconMessage size={16} />;
       case 'FILE_ATTACHED':
-        return <AttachFile />;
+        return <IconPaperclip size={16} />;
       default:
-        return <History />;
+        return <IconHistory size={16} />;
     }
   };
 
@@ -83,25 +78,25 @@ export function ContentActivity({ activities }: ContentActivityProps) {
   const getActivityColor = (action: string) => {
     switch (action) {
       case 'CREATED':
-        return theme.palette.primary.main;
+        return 'blue';
       case 'UPDATED':
-        return theme.palette.primary.main;
+        return 'blue';
       case 'SUBMITTED_FOR_REVIEW':
-        return theme.palette.warning.main;
+        return 'yellow';
       case 'APPROVED':
-        return theme.palette.success.main;
+        return 'green';
       case 'REJECTED':
-        return theme.palette.error.main;
+        return 'red';
       case 'PUBLISHED':
-        return theme.palette.info.main;
+        return 'cyan';
       case 'RETURNED_TO_DRAFT':
-        return theme.palette.warning.main;
+        return 'yellow';
       case 'COMMENT_ADDED':
-        return theme.palette.secondary.main;
+        return 'violet';
       case 'FILE_ATTACHED':
-        return theme.palette.info.main;
+        return 'cyan';
       default:
-        return theme.palette.text.secondary;
+        return 'gray';
     }
   };
 
@@ -132,62 +127,53 @@ export function ContentActivity({ activities }: ContentActivityProps) {
   };
 
   return (
-    <Card variant="outlined">
-      <CardHeader
-        title="Activity History"
-        subheader={`${activities.length} activities recorded`}
-      />
+    <Card withBorder>
+      <Card.Section p="md">
+        <Group justify="space-between" align="center">
+          <Title order={4}>Activity History</Title>
+          <Text size="sm" c="dimmed">
+            {activities.length} activities recorded
+          </Text>
+        </Group>
+      </Card.Section>
       <Divider />
-      <CardContent>
+      <Card.Section p="md">
         {activities.length > 0 ? (
           <List>
             {activities.map((activity) => (
-              <ListItem key={activity.id} alignItems="flex-start" divider>
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: getActivityColor(activity.action) }}>
+              <List.Item key={activity.id}>
+                <Group gap="md" align="flex-start" py="xs">
+                  <Avatar color={getActivityColor(activity.action)} size="sm">
                     {getActivityIcon(activity.action)}
                   </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body1" fontWeight="bold">
+                  <Box style={{ flex: 1 }}>
+                    <Group gap="xs" align="center" mb={4}>
+                      <Text fw={500} size="sm">
                         {getActivityLabel(activity.action)}
-                      </Typography>
-                      <Chip
-                        size="small"
-                        label={activity.user.role}
-                        color="primary"
-                        variant="outlined"
-                      />
-                    </Box>
-                  }
-                  secondary={
-                    <>
-                      <Typography variant="body2" component="span">
-                        {activity.user.name} - {formatDate(activity.createdAt)}
-                      </Typography>
-                      {activity.details && (
-                        <Typography
-                          variant="body2"
-                          component="p"
-                          sx={{ mt: 1 }}
-                        >
-                          {activity.details}
-                        </Typography>
-                      )}
-                    </>
-                  }
-                />
-              </ListItem>
+                      </Text>
+                      <Badge size="xs" variant="outline">
+                        {activity.user.role}
+                      </Badge>
+                    </Group>
+                    <Text size="sm" c="dimmed">
+                      {activity.user.name} - {formatDate(activity.createdAt)}
+                    </Text>
+                    {activity.details && (
+                      <Text size="sm" mt="xs">
+                        {activity.details}
+                      </Text>
+                    )}
+                  </Box>
+                </Group>
+              </List.Item>
             ))}
           </List>
         ) : (
-          <Typography variant="body2" color="text.secondary">
+          <Text size="sm" c="dimmed">
             No activity recorded yet.
-          </Typography>
+          </Text>
         )}
-      </CardContent>
+      </Card.Section>
     </Card>
   );
 }

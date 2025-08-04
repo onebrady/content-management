@@ -2,8 +2,9 @@ import { Code, Group, ScrollArea } from '@mantine/core';
 import { LinksGroup } from './NavbarLinksGroup/NavbarLinksGroup';
 import { UserButton } from './UserButton/UserButton';
 import { Logo } from './Logo';
-import { ThemeToggle } from './ThemeToggle';
+import { BottomNavIcons } from './BottomNavIcons';
 import { useNavigation } from '@/hooks/useNavigation';
+import { getAppVersion, formatVersion } from '@/lib/version';
 import classes from './NavbarNested.module.css';
 
 export function NavbarNested() {
@@ -19,7 +20,7 @@ export function NavbarNested() {
         <Group justify="space-between">
           <Logo style={{ width: 120 }} />
           <Group gap="xs">
-            <Code fw={700}>v1.0.0</Code>
+            <Code fw={700}>{formatVersion(getAppVersion())}</Code>
           </Group>
         </Group>
       </div>
@@ -29,7 +30,7 @@ export function NavbarNested() {
       </ScrollArea>
 
       <div className={classes.footer}>
-        <ThemeToggle />
+        <BottomNavIcons />
         <UserButton />
       </div>
     </nav>

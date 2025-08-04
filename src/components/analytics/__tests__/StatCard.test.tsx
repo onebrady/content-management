@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, screen } from '@/utils/test-utils';
 import { StatCard } from '../StatCard';
-import { Dashboard as DashboardIcon } from '@mui/icons-material';
+import { IconDashboard } from '@tabler/icons-react';
 
 describe('StatCard Component', () => {
   it('should render with title and value', () => {
     render(
-      <StatCard title="Test Title" value={100} icon={<DashboardIcon />} />
+      <StatCard title="Test Title" value={100} icon={<IconDashboard />} />
     );
 
     expect(screen.getByText('Test Title')).toBeInTheDocument();
@@ -18,7 +18,7 @@ describe('StatCard Component', () => {
       <StatCard
         title="Test Title"
         value="Test Value"
-        icon={<DashboardIcon />}
+        icon={<IconDashboard />}
       />
     );
 
@@ -30,7 +30,7 @@ describe('StatCard Component', () => {
       <StatCard
         title="Test Title"
         value={100}
-        icon={<DashboardIcon />}
+        icon={<IconDashboard />}
         trend={{
           value: 10,
           label: 'increase',
@@ -49,7 +49,7 @@ describe('StatCard Component', () => {
       <StatCard
         title="Test Title"
         value={100}
-        icon={<DashboardIcon />}
+        icon={<IconDashboard />}
         trend={{
           value: 10,
           label: 'decrease',
@@ -68,8 +68,8 @@ describe('StatCard Component', () => {
       <StatCard
         title="Test Title"
         value={100}
-        icon={<DashboardIcon />}
-        color="secondary"
+        icon={<IconDashboard />}
+        color="blue"
       />
     );
 

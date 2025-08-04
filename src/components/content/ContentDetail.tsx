@@ -20,6 +20,7 @@ import {
   Paper,
   Image,
   useMantineColorScheme,
+  AspectRatio,
 } from '@mantine/core';
 import {
   IconEdit,
@@ -223,17 +224,19 @@ export function ContentDetail({
                 {content.title}
               </Title>
               {content.heroImage && (
-                <Box mb="md">
-                  <Image
-                    src={content.heroImage}
-                    alt="Hero"
-                    style={{
-                      width: '100%',
-                      maxHeight: 300,
-                      objectFit: 'cover',
-                      borderRadius: 8,
-                    }}
-                  />
+                <Box mb="md" style={{ maxWidth: 500 }}>
+                  <AspectRatio ratio={1200 / 630}>
+                    <Image
+                      src={content.heroImage}
+                      alt="Hero"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: 8,
+                      }}
+                    />
+                  </AspectRatio>
                 </Box>
               )}
               <Group gap="xs" mb="sm">

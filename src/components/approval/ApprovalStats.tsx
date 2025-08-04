@@ -94,7 +94,7 @@ export function ApprovalStats({ stats, loading }: ApprovalStatsProps) {
                   <Skeleton height={32} width={60} />
                 ) : (
                   <Text size="xl" fw={700} lh={1}>
-                    {item.value}
+                    {item.value.toLocaleString()}
                   </Text>
                 )}
                 <Text size="sm" c="dimmed" ta="center" mt={4}>
@@ -117,13 +117,28 @@ export function ApprovalStats({ stats, loading }: ApprovalStatsProps) {
           {stats.approvalRate !== undefined && (
             <Badge
               variant="light"
-              color={stats.approvalRate > 70 ? 'green' : 'orange'}
+              color={
+                stats.approvalRate > 70
+                  ? 'green'
+                  : stats.approvalRate > 50
+                    ? 'orange'
+                    : 'red'
+              }
               size="lg"
             >
               Approval Rate: {stats.approvalRate}%
             </Badge>
           )}
         </Group>
+      )}
+
+      {/* Empty State */}
+      {!loading && stats.total === 0 && (
+        <Box ta="center" mt="lg">
+          <Text c="dimmed" size="sm">
+            No approval data available
+          </Text>
+        </Box>
       )}
     </Box>
   );

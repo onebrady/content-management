@@ -23,7 +23,63 @@ export const GET = createProtectedHandler(async (req) => {
     const assignedTo = searchParams.get('assignedTo') || '';
     const approvedBy = searchParams.get('approvedBy') || '';
 
-    // Build where clause
+    // Get all content that needs approval (IN_REVIEW status)
+    const contentNeedingApproval = await prisma.content.findMany({
+      where: {
+        status: 'IN_REVIEW',
+        // Apply content filters
+        ...(contentType.length > 0 && { type: { in: contentType } }),
+        ...(search && {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { author: { name: { contains: search, mode: 'insensitive' } } },
+          ],
+        }),
+        ...(assignedTo && { assigneeId: assignedTo }),
+        ...(startDate || endDate
+          ? {
+              updatedAt: {
+                ...(startDate && { gte: startDate }),
+                ...(endDate && { lte: endDate }),
+              },
+            }
+          : {}),
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+        approvals: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    // Get existing approvals with filters
     const where: any = {};
 
     // Status filter
@@ -76,8 +132,8 @@ export const GET = createProtectedHandler(async (req) => {
       where.userId = approvedBy;
     }
 
-    // Get approvals
-    const approvals = await prisma.approval.findMany({
+    // Get existing approvals
+    const existingApprovals = await prisma.approval.findMany({
       where,
       include: {
         content: {
@@ -110,20 +166,43 @@ export const GET = createProtectedHandler(async (req) => {
       },
     });
 
+    // Transform content needing approval into approval-like objects
+    const pendingApprovals = contentNeedingApproval.map((content) => ({
+      id: `pending-${content.id}`,
+      status: ApprovalStatus.PENDING,
+      comments: null,
+      createdAt: content.updatedAt, // Use content updatedAt as submission date
+      updatedAt: content.updatedAt,
+      contentId: content.id,
+      userId: null, // No specific approver assigned yet
+      content: {
+        id: content.id,
+        title: content.title,
+        type: content.type,
+        status: content.status,
+        author: content.author,
+      },
+      user: null, // No approver yet
+      _isPendingApproval: true, // Flag to identify pending approvals
+    }));
+
+    // Combine existing approvals with pending approvals
+    const allApprovals = [...existingApprovals, ...pendingApprovals];
+
     // Calculate stats
     const stats = {
-      pending: approvals.filter((a) => a.status === ApprovalStatus.PENDING)
+      pending: allApprovals.filter((a) => a.status === ApprovalStatus.PENDING)
         .length,
-      approved: approvals.filter((a) => a.status === ApprovalStatus.APPROVED)
+      approved: allApprovals.filter((a) => a.status === ApprovalStatus.APPROVED)
         .length,
-      rejected: approvals.filter((a) => a.status === ApprovalStatus.REJECTED)
+      rejected: allApprovals.filter((a) => a.status === ApprovalStatus.REJECTED)
         .length,
-      total: approvals.length,
+      total: allApprovals.length,
     };
 
     // Calculate average approval time if we have approved items
-    const approvedItems = approvals.filter(
-      (a) => a.status === ApprovalStatus.APPROVED
+    const approvedItems = allApprovals.filter(
+      (a) => a.status === ApprovalStatus.APPROVED && !a._isPendingApproval
     );
     if (approvedItems.length > 0) {
       const totalHours = approvedItems.reduce((sum, item) => {
@@ -144,7 +223,7 @@ export const GET = createProtectedHandler(async (req) => {
     }
 
     return NextResponse.json({
-      approvals,
+      approvals: allApprovals,
       stats,
     });
   } catch (error) {

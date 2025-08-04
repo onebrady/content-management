@@ -3,24 +3,25 @@
 import { useState, useCallback } from 'react';
 import {
   Box,
-  Typography,
+  Text,
   Button,
   Alert,
-  LinearProgress,
-  Chip,
-  IconButton,
+  Progress,
+  Badge,
+  ActionIcon,
   Tooltip,
-  Card,
-  CardContent,
-} from '@mui/material';
+  Paper,
+  Group,
+  Stack,
+} from '@mantine/core';
 import {
-  CloudUpload,
-  Delete,
-  Download,
-  Visibility,
-  FileCopy,
-} from '@mui/icons-material';
-import { useDropzone } from 'react-dropzone';
+  IconUpload,
+  IconTrash,
+  IconDownload,
+  IconEye,
+  IconCopy,
+} from '@tabler/icons-react';
+import { Dropzone } from '@mantine/dropzone';
 import { useUploadThing } from '@/lib/uploadthing';
 import { generateReactHelpers } from '@uploadthing/react';
 
@@ -135,20 +136,6 @@ export function FileUpload({
     ]
   );
 
-  const { getRootProps, getInputProps, isDragActive, isDragReject } =
-    useDropzone({
-      onDrop,
-      accept: acceptedFileTypes.reduce(
-        (acc, type) => {
-          acc[type] = [];
-          return acc;
-        },
-        {} as Record<string, string[]>
-      ),
-      disabled: disabled || isUploading,
-      maxFiles: maxFiles - uploadedFiles.length,
-    });
-
   const handleRemoveFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
@@ -175,168 +162,147 @@ export function FileUpload({
   };
 
   return (
-    <Box>
+    <Stack gap="md">
       {/* Upload Area */}
-      <Card
-        {...getRootProps()}
-        sx={{
-          border: 2,
-          borderStyle: 'dashed',
-          borderColor: isDragActive
-            ? 'primary.main'
-            : isDragReject
-              ? 'error.main'
-              : 'grey.300',
-          backgroundColor: isDragActive ? 'primary.50' : 'background.paper',
-          cursor: disabled || isUploading ? 'not-allowed' : 'pointer',
-          transition: 'all 0.2s ease',
-          '&:hover': {
-            borderColor: disabled || isUploading ? 'grey.300' : 'primary.main',
-            backgroundColor:
-              disabled || isUploading ? 'background.paper' : 'primary.50',
+      <Dropzone
+        onDrop={onDrop}
+        accept={acceptedFileTypes.reduce(
+          (acc, type) => {
+            acc[type] = [];
+            return acc;
           },
-        }}
+          {} as Record<string, string[]>
+        )}
+        disabled={disabled || isUploading}
+        maxFiles={maxFiles - uploadedFiles.length}
+        maxSize={maxFileSize}
       >
-        <CardContent sx={{ textAlign: 'center', py: 4 }}>
-          <input {...getInputProps()} />
-          <CloudUpload sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            {isDragActive
-              ? 'Drop files here'
-              : isDragReject
-                ? 'Some files were rejected'
-                : 'Drag & drop files here'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            or click to select files
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Max {maxFiles} files, up to {formatFileSize(maxFileSize)} each
-          </Typography>
-          {acceptedFileTypes.length > 0 && (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              display="block"
-            >
-              Accepted: {acceptedFileTypes.join(', ')}
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
+        <Group
+          justify="center"
+          gap="xl"
+          style={{ minHeight: 220, pointerEvents: 'none' }}
+        >
+          <Dropzone.Accept>
+            <IconUpload
+              size={50}
+              stroke={1.5}
+              color="var(--mantine-color-blue-6)"
+            />
+          </Dropzone.Accept>
+          <Dropzone.Reject>
+            <IconUpload
+              size={50}
+              stroke={1.5}
+              color="var(--mantine-color-red-6)"
+            />
+          </Dropzone.Reject>
+          <Dropzone.Idle>
+            <IconUpload size={50} stroke={1.5} />
+          </Dropzone.Idle>
+
+          <div>
+            <Text size="xl" inline>
+              Drag files here or click to select
+            </Text>
+            <Text size="sm" c="dimmed" inline mt={7}>
+              Max {maxFiles} files, up to {formatFileSize(maxFileSize)} each
+            </Text>
+            {acceptedFileTypes.length > 0 && (
+              <Text size="xs" c="dimmed" mt={4}>
+                Accepted: {acceptedFileTypes.join(', ')}
+              </Text>
+            )}
+          </div>
+        </Group>
+      </Dropzone>
 
       {/* Upload Progress */}
       {isUploading && (
-        <Box sx={{ mt: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2">Uploading...</Typography>
-            <Typography variant="body2">
-              {Math.round(uploadProgress)}%
-            </Typography>
-          </Box>
-          <LinearProgress variant="determinate" value={uploadProgress} />
+        <Box>
+          <Group justify="space-between" mb="xs">
+            <Text size="sm">Uploading...</Text>
+            <Text size="sm">{Math.round(uploadProgress)}%</Text>
+          </Group>
+          <Progress value={uploadProgress} />
         </Box>
       )}
 
       {/* Error Messages */}
-      {isDragReject && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          Some files were rejected. Please check file types and sizes.
-        </Alert>
-      )}
+      <Alert color="red" title="Upload Error" style={{ display: 'none' }}>
+        Some files were rejected. Please check file types and sizes.
+      </Alert>
 
       {/* Uploaded Files */}
       {uploadedFiles.length > 0 && (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" gutterBottom>
+        <Box>
+          <Text size="lg" fw={600} mb="md">
             Uploaded Files ({uploadedFiles.length})
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          </Text>
+          <Stack gap="xs">
             {uploadedFiles.map((file, index) => (
-              <Card key={index} variant="outlined">
-                <CardContent sx={{ py: 1, px: 2 }}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        flex: 1,
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ fontSize: '1.2em' }}>
-                        {getFileIcon(file.type)}
-                      </Typography>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="body2" noWrap>
-                          {file.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatFileSize(file.size)}
-                        </Typography>
-                      </Box>
+              <Paper key={index} p="md" withBorder>
+                <Group justify="space-between" align="center">
+                  <Group gap="sm" style={{ flex: 1 }}>
+                    <Text size="lg">{getFileIcon(file.type)}</Text>
+                    <Box style={{ flex: 1, minWidth: 0 }}>
+                      <Text size="sm" fw={500} truncate>
+                        {file.name}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {formatFileSize(file.size)}
+                      </Text>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <Tooltip title="View">
-                        <IconButton
-                          size="small"
-                          onClick={() => window.open(file.url, '_blank')}
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Copy URL">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleCopyUrl(file.url)}
-                        >
-                          <FileCopy />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Download">
-                        <IconButton
-                          size="small"
-                          onClick={() => window.open(file.url, '_blank')}
-                        >
-                          <Download />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Remove">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleRemoveFile(index)}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
+                  </Group>
+                  <Group gap="xs">
+                    <Tooltip label="View">
+                      <ActionIcon
+                        size="sm"
+                        onClick={() => window.open(file.url, '_blank')}
+                      >
+                        <IconEye size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Copy URL">
+                      <ActionIcon
+                        size="sm"
+                        onClick={() => handleCopyUrl(file.url)}
+                      >
+                        <IconCopy size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Download">
+                      <ActionIcon
+                        size="sm"
+                        onClick={() => window.open(file.url, '_blank')}
+                      >
+                        <IconDownload size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Remove">
+                      <ActionIcon
+                        size="sm"
+                        color="red"
+                        onClick={() => handleRemoveFile(index)}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </Group>
+              </Paper>
             ))}
-          </Box>
+          </Stack>
         </Box>
       )}
 
-      {/* File Type Chips */}
-      <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+      {/* File Type Badges */}
+      <Group gap="xs">
         {acceptedFileTypes.map((type) => (
-          <Chip
-            key={type}
-            label={type}
-            size="small"
-            variant="outlined"
-            color="primary"
-          />
+          <Badge key={type} variant="outline" size="sm">
+            {type}
+          </Badge>
         ))}
-      </Box>
-    </Box>
+      </Group>
+    </Stack>
   );
 }

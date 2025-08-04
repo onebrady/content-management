@@ -114,6 +114,7 @@ export const authOptions: NextAuthOptions = {
 
             if (dbUser) {
               session.user.id = dbUser.id;
+              session.user.name = dbUser.name; // Ensure name is updated from database
               session.user.role = dbUser.role;
               session.user.department = dbUser.department;
             }

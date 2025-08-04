@@ -3,24 +3,33 @@
 import { useState } from 'react';
 import {
   Box,
-  Typography,
-  Card,
-  CardContent,
+  Text,
+  Paper,
   Button,
-  Grid,
   Alert,
+  Grid,
   List,
-  ListItem,
-  ListItemText,
-  Chip,
-} from '@mui/material';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+  Badge,
+  Group,
+  Stack,
+  Title,
+} from '@mantine/core';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { PermissionGuard, RoleGuard, MinimumRoleGuard } from '@/components/auth/PermissionGuard';
+import {
+  PermissionGuard,
+  RoleGuard,
+  MinimumRoleGuard,
+} from '@/components/auth/PermissionGuard';
 import { PermissionError } from '@/components/auth/PermissionError';
 import { useAuth } from '@/hooks/useAuth';
-import { PERMISSIONS, CONTENT_PERMISSIONS, APPROVAL_PERMISSIONS, USER_PERMISSIONS } from '@/lib/permissions';
+import {
+  PERMISSIONS,
+  CONTENT_PERMISSIONS,
+  APPROVAL_PERMISSIONS,
+  USER_PERMISSIONS,
+} from '@/lib/permissions';
 import { UserRole } from '@/types/database';
 
 export default function PermissionsTestPage() {
@@ -54,202 +63,206 @@ export default function PermissionsTestPage() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'error';
+        return 'red';
       case 'MODERATOR':
-        return 'warning';
+        return 'yellow';
       case 'CONTRIBUTOR':
-        return 'info';
+        return 'blue';
       case 'VIEWER':
-        return 'default';
+        return 'gray';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
   return (
-    <DashboardLayout>
-      <Box sx={{ p: 3 }}>
+    <AppLayout>
+      <Box p="md">
         <Breadcrumbs />
-        
-        <Typography variant="h4" component="h1" gutterBottom>
-          Permissions Test Page
-        </Typography>
 
-        <Grid container spacing={3}>
+        <Title order={1} mb="lg">
+          Permissions Test Page
+        </Title>
+
+        <Grid>
           {/* User Information */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Current User
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <Typography variant="body1">
-                    {user?.name} ({user?.email})
-                  </Typography>
-                  <Chip
-                    label={user?.role}
-                    color={getRoleColor(user?.role || '')}
-                    size="small"
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Grid.Col span={12}>
+            <Paper p="md">
+              <Title order={2} mb="md">
+                Current User
+              </Title>
+              <Group gap="md" mb="md">
+                <Text>
+                  {user?.name} ({user?.email})
+                </Text>
+                <Badge color={getRoleColor(user?.role || '')} size="sm">
+                  {user?.role}
+                </Badge>
+              </Group>
+            </Paper>
+          </Grid.Col>
 
           {/* Permission Tests */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Permission Guards
-                </Typography>
-                
-                <List>
-                  <ListItem>
-                    <ListItemText
-                      primary="Content View Permission"
-                      secondary="Should be visible to all users"
-                    />
-                    <PermissionGuard permission={PERMISSIONS.CONTENT_VIEW}>
-                      <Chip label="Visible" color="success" size="small" />
-                    </PermissionGuard>
-                  </ListItem>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Paper p="md">
+              <Title order={2} mb="md">
+                Permission Guards
+              </Title>
 
-                  <ListItem>
-                    <ListItemText
-                      primary="Content Create Permission"
-                      secondary="Should be visible to CONTRIBUTOR+"
-                    />
-                    <PermissionGuard permission={PERMISSIONS.CONTENT_CREATE}>
-                      <Chip label="Visible" color="success" size="small" />
-                    </PermissionGuard>
-                  </ListItem>
+              <Stack gap="md">
+                <Group justify="space-between">
+                  <Box>
+                    <Text fw={500}>Content View Permission</Text>
+                    <Text size="sm" c="dimmed">
+                      Should be visible to all users
+                    </Text>
+                  </Box>
+                  <PermissionGuard permission={PERMISSIONS.CONTENT_VIEW}>
+                    <Badge color="green" size="sm">
+                      Visible
+                    </Badge>
+                  </PermissionGuard>
+                </Group>
 
-                  <ListItem>
-                    <ListItemText
-                      primary="User Management Permission"
-                      secondary="Should be visible to ADMIN only"
-                    />
-                    <PermissionGuard permission={PERMISSIONS.USER_ROLE_MANAGE}>
-                      <Chip label="Visible" color="success" size="small" />
-                    </PermissionGuard>
-                  </ListItem>
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
+                <Group justify="space-between">
+                  <Box>
+                    <Text fw={500}>Content Create Permission</Text>
+                    <Text size="sm" c="dimmed">
+                      Should be visible to CONTRIBUTOR+
+                    </Text>
+                  </Box>
+                  <PermissionGuard permission={PERMISSIONS.CONTENT_CREATE}>
+                    <Badge color="green" size="sm">
+                      Visible
+                    </Badge>
+                  </PermissionGuard>
+                </Group>
+
+                <Group justify="space-between">
+                  <Box>
+                    <Text fw={500}>User Management Permission</Text>
+                    <Text size="sm" c="dimmed">
+                      Should be visible to ADMIN only
+                    </Text>
+                  </Box>
+                  <PermissionGuard permission={PERMISSIONS.USER_ROLE_MANAGE}>
+                    <Badge color="green" size="sm">
+                      Visible
+                    </Badge>
+                  </PermissionGuard>
+                </Group>
+              </Stack>
+            </Paper>
+          </Grid.Col>
 
           {/* Role Tests */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Role Guards
-                </Typography>
-                
-                <List>
-                  <ListItem>
-                    <ListItemText
-                      primary="Admin Only Content"
-                      secondary="Should be visible to ADMIN only"
-                    />
-                    <RoleGuard roles={[UserRole.ADMIN]}>
-                      <Chip label="Visible" color="success" size="small" />
-                    </RoleGuard>
-                  </ListItem>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Paper p="md">
+              <Title order={2} mb="md">
+                Role Guards
+              </Title>
 
-                  <ListItem>
-                    <ListItemText
-                      primary="Moderator+ Content"
-                      secondary="Should be visible to MODERATOR and ADMIN"
-                    />
-                    <RoleGuard roles={[UserRole.MODERATOR, UserRole.ADMIN]}>
-                      <Chip label="Visible" color="success" size="small" />
-                    </RoleGuard>
-                  </ListItem>
+              <Stack gap="md">
+                <Group justify="space-between">
+                  <Box>
+                    <Text fw={500}>Admin Only Content</Text>
+                    <Text size="sm" c="dimmed">
+                      Should be visible to ADMIN only
+                    </Text>
+                  </Box>
+                  <RoleGuard roles={[UserRole.ADMIN]}>
+                    <Badge color="green" size="sm">
+                      Visible
+                    </Badge>
+                  </RoleGuard>
+                </Group>
 
-                  <ListItem>
-                    <ListItemText
-                      primary="Minimum Role Test"
-                      secondary="Should be visible to CONTRIBUTOR+"
-                    />
-                    <MinimumRoleGuard minimumRole={UserRole.CONTRIBUTOR}>
-                      <Chip label="Visible" color="success" size="small" />
-                    </MinimumRoleGuard>
-                  </ListItem>
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
+                <Group justify="space-between">
+                  <Box>
+                    <Text fw={500}>Moderator+ Content</Text>
+                    <Text size="sm" c="dimmed">
+                      Should be visible to MODERATOR and ADMIN
+                    </Text>
+                  </Box>
+                  <RoleGuard roles={[UserRole.MODERATOR, UserRole.ADMIN]}>
+                    <Badge color="green" size="sm">
+                      Visible
+                    </Badge>
+                  </RoleGuard>
+                </Group>
+
+                <Group justify="space-between">
+                  <Box>
+                    <Text fw={500}>Minimum Role Test</Text>
+                    <Text size="sm" c="dimmed">
+                      Should be visible to CONTRIBUTOR+
+                    </Text>
+                  </Box>
+                  <MinimumRoleGuard minimumRole={UserRole.CONTRIBUTOR}>
+                    <Badge color="green" size="sm">
+                      Visible
+                    </Badge>
+                  </MinimumRoleGuard>
+                </Group>
+              </Stack>
+            </Paper>
+          </Grid.Col>
 
           {/* API Test */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  API Permission Tests
-                </Typography>
-                
-                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => testApiCall('GET')}
-                  >
-                    Test GET (Content View)
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => testApiCall('POST')}
-                  >
-                    Test POST (Content Create)
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => testApiCall('PUT')}
-                  >
-                    Test PUT (Moderator+)
-                  </Button>
-                </Box>
+          <Grid.Col span={12}>
+            <Paper p="md">
+              <Title order={2} mb="md">
+                API Permission Tests
+              </Title>
 
-                {apiResponse && (
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {apiResponse}
-                    </Typography>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+              <Group gap="md" mb="md">
+                <Button variant="outline" onClick={() => testApiCall('GET')}>
+                  Test GET (Content View)
+                </Button>
+                <Button variant="outline" onClick={() => testApiCall('POST')}>
+                  Test POST (Content Create)
+                </Button>
+                <Button variant="outline" onClick={() => testApiCall('PUT')}>
+                  Test PUT (Moderator+)
+                </Button>
+              </Group>
+
+              {apiResponse && (
+                <Alert color="blue" title="API Response">
+                  <Text component="pre" style={{ whiteSpace: 'pre-wrap' }}>
+                    {apiResponse}
+                  </Text>
+                </Alert>
+              )}
+            </Paper>
+          </Grid.Col>
 
           {/* Permission Error Test */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Permission Error Component
-                </Typography>
-                
-                <PermissionGuard
-                  permission={PERMISSIONS.USER_ROLE_MANAGE}
-                  fallback={
-                    <PermissionError
-                      title="Access Restricted"
-                      message="This section is only available to administrators."
-                      showBackButton={false}
-                    />
-                  }
-                >
-                  <Alert severity="success">
-                    This content is only visible to users with USER_ROLE_MANAGE permission.
-                  </Alert>
-                </PermissionGuard>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Grid.Col span={12}>
+            <Paper p="md">
+              <Title order={2} mb="md">
+                Permission Error Component
+              </Title>
+
+              <PermissionGuard
+                permission={PERMISSIONS.USER_ROLE_MANAGE}
+                fallback={
+                  <PermissionError
+                    title="Access Restricted"
+                    message="This section is only available to administrators."
+                    showBackButton={false}
+                  />
+                }
+              >
+                <Alert color="green">
+                  This content is only visible to users with USER_ROLE_MANAGE
+                  permission.
+                </Alert>
+              </PermissionGuard>
+            </Paper>
+          </Grid.Col>
         </Grid>
       </Box>
-    </DashboardLayout>
+    </AppLayout>
   );
-} 
+}

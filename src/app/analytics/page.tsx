@@ -66,7 +66,7 @@ export default function AnalyticsDashboard() {
   return (
     <PermissionGuard permission={PERMISSIONS.ANALYTICS_VIEW}>
       <AppLayout>
-        <Container size="xl" py="xl">
+        <Box p="xl">
           {/* Breadcrumbs */}
           <Breadcrumbs mb="lg">
             {breadcrumbItems.map((item, index) => {
@@ -325,7 +325,7 @@ export default function AnalyticsDashboard() {
               </Paper>
             </>
           )}
-        </Container>
+        </Box>
       </AppLayout>
     </PermissionGuard>
   );

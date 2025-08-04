@@ -5,19 +5,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import {
   Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Alert,
-  Snackbar,
   Paper,
-} from '@mui/material';
+  Text,
+  Button,
+  TextInput,
+  Select,
+  Alert,
+  Stack,
+  Title,
+  Group,
+} from '@mantine/core';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -145,101 +142,86 @@ export default function CreateUserPage() {
       fallback={<div>You don't have permission to create users</div>}
     >
       <DashboardLayout>
-        <Box sx={{ p: 3 }}>
+        <Box p="md">
           <Breadcrumbs />
 
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Title order={1} mb="lg">
             Create New User
-          </Typography>
+          </Title>
 
-          <Paper sx={{ p: 3, maxWidth: 600, mx: 'auto' }}>
+          <Paper p="lg" style={{ maxWidth: 600, margin: '0 auto' }}>
             <form onSubmit={handleSubmit}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <TextField
+              <Stack gap="lg">
+                <TextInput
                   label="Name"
                   value={formData.name}
                   onChange={handleChange('name')}
-                  fullWidth
                   required
-                  error={errors.name}
-                  helperText={errors.name ? 'Name is required' : ''}
+                  error={errors.name ? 'Name is required' : null}
                   disabled={isSubmitting}
                 />
 
-                <TextField
+                <TextInput
                   label="Email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange('email')}
-                  fullWidth
                   required
-                  error={errors.email}
-                  helperText={errors.email ? 'Valid email is required' : ''}
+                  error={errors.email ? 'Valid email is required' : null}
                   disabled={isSubmitting}
                 />
 
-                <FormControl fullWidth required error={errors.role}>
-                  <InputLabel>Role</InputLabel>
-                  <Select
-                    value={formData.role}
-                    onChange={handleChange('role')}
-                    label="Role"
-                    disabled={isSubmitting}
-                  >
-                    <MenuItem value="VIEWER">Viewer</MenuItem>
-                    <MenuItem value="CONTRIBUTOR">Contributor</MenuItem>
-                    <MenuItem value="MODERATOR">Moderator</MenuItem>
-                    <MenuItem value="ADMIN">Admin</MenuItem>
-                  </Select>
-                </FormControl>
+                <Select
+                  label="Role"
+                  value={formData.role}
+                  onChange={(value) =>
+                    setFormData({ ...formData, role: value || 'VIEWER' })
+                  }
+                  required
+                  error={errors.role ? 'Role is required' : null}
+                  disabled={isSubmitting}
+                  data={[
+                    { value: 'VIEWER', label: 'Viewer' },
+                    { value: 'CONTRIBUTOR', label: 'Contributor' },
+                    { value: 'MODERATOR', label: 'Moderator' },
+                    { value: 'ADMIN', label: 'Admin' },
+                  ]}
+                />
 
-                <TextField
+                <TextInput
                   label="Department"
                   value={formData.department}
                   onChange={handleChange('department')}
-                  fullWidth
                   disabled={isSubmitting}
                 />
 
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    mt: 2,
-                  }}
-                >
+                <Group justify="space-between" mt="md">
                   <Button
-                    variant="outlined"
+                    variant="outline"
                     onClick={() => router.push('/admin/users')}
                     disabled={isSubmitting}
                   >
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSubmitting}
-                  >
+                  <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? 'Creating...' : 'Create User'}
                   </Button>
-                </Box>
-              </Box>
+                </Group>
+              </Stack>
             </form>
           </Paper>
 
-          <Snackbar
-            open={notification.open}
-            autoHideDuration={6000}
-            onClose={() => setNotification({ ...notification, open: false })}
-          >
+          {/* Notification */}
+          {notification.open && (
             <Alert
+              color={notification.severity === 'success' ? 'green' : 'red'}
+              title={notification.severity === 'success' ? 'Success' : 'Error'}
               onClose={() => setNotification({ ...notification, open: false })}
-              severity={notification.severity}
-              sx={{ width: '100%' }}
+              style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}
             >
               {notification.message}
             </Alert>
-          </Snackbar>
+          )}
         </Box>
       </DashboardLayout>
     </PermissionGuard>

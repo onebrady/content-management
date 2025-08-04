@@ -91,27 +91,19 @@ function ContentPageClient() {
 
   // Fetch content list
   const fetchContent = async () => {
-    console.log('Fetching content...');
     try {
       const response = await fetch('/api/content', {
         credentials: 'include',
       });
-      console.log('Content response status:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched content response:', data);
-        // Handle paginated response
         const contentArray = data.content || [];
-        console.log('Setting content array:', contentArray);
         setContent(contentArray);
       } else {
         console.error('Failed to fetch content:', response.status);
-        setContent([]);
       }
     } catch (error) {
       console.error('Error fetching content:', error);
-      showNotification('Failed to load content', 'error');
-      setContent([]);
     }
   };
 
@@ -159,10 +151,8 @@ function ContentPageClient() {
   // Initialize data
   useEffect(() => {
     const initializeData = async () => {
-      console.log('Initializing data, setting loading to true');
       setLoading(true);
       await Promise.all([fetchContent(), fetchTagsAndUsers()]);
-      console.log('Data initialized, setting loading to false');
       setLoading(false);
     };
 
@@ -288,7 +278,6 @@ function ContentPageClient() {
           navigateToMode('view', savedContent.id);
         } else {
           // Create mode - redirect to list and refresh
-          showNotification('Content created successfully', 'success');
           await fetchContent(); // Refresh the list
           navigateToMode('list');
         }
@@ -340,23 +329,30 @@ function ContentPageClient() {
   const handleApprove = async (contentId: string, comments?: string) => {
     try {
       setIsSubmitting(true);
-      const response = await fetch(`/api/content/${contentId}/workflow`, {
+
+      // Use the approval API instead of workflow API
+      const response = await fetch(`/api/content/${contentId}/approval`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'approve',
+          status: 'APPROVED',
           comments,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to approve content');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to approve content');
       }
 
+      const result = await response.json();
       showNotification('Content approved successfully!', 'success');
-      await fetchContentById(contentId); // Refresh the content
+
+      // Refresh the content and the content list
+      await fetchContentById(contentId);
+      await fetchContent(); // Refresh the main content list
     } catch (error) {
       console.error('Error approving content:', error);
       showNotification(
@@ -371,23 +367,30 @@ function ContentPageClient() {
   const handleReject = async (contentId: string, comments?: string) => {
     try {
       setIsSubmitting(true);
-      const response = await fetch(`/api/content/${contentId}/workflow`, {
+
+      // Use the approval API instead of workflow API
+      const response = await fetch(`/api/content/${contentId}/approval`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'reject',
+          status: 'REJECTED',
           comments,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to reject content');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to reject content');
       }
 
+      const result = await response.json();
       showNotification('Content rejected successfully!', 'success');
-      await fetchContentById(contentId); // Refresh the content
+
+      // Refresh the content and the content list
+      await fetchContentById(contentId);
+      await fetchContent(); // Refresh the main content list
     } catch (error) {
       console.error('Error rejecting content:', error);
       showNotification(
@@ -628,12 +631,6 @@ function ContentPageClient() {
         {/* Content based on mode */}
         {mode === 'list' && (
           <>
-            {console.log(
-              'Rendering ContentList with content:',
-              content,
-              'loading:',
-              loading
-            )}
             <ContentList
               content={content || []}
               onView={handleView}

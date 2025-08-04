@@ -3,33 +3,32 @@
 import { useState } from 'react';
 import {
   Badge,
-  IconButton,
+  ActionIcon,
   Popover,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Typography,
+  Text,
   Box,
   Button,
   Divider,
-  CircularProgress,
+  Loader,
   Tooltip,
-} from '@mui/material';
+  Group,
+  Stack,
+  ScrollArea,
+} from '@mantine/core';
 import {
-  Notifications as NotificationsIcon,
-  Close as CloseIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
-  Info as InfoIcon,
-  Warning as WarningIcon,
-} from '@mui/icons-material';
+  IconBell,
+  IconX,
+  IconCheck,
+  IconAlertCircle,
+  IconInfoCircle,
+  IconExclamationMark,
+} from '@tabler/icons-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useRouter } from 'next/navigation';
 
 export default function NotificationBell() {
   const router = useRouter();
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const [opened, setOpened] = useState(false);
   const {
     notifications,
     unreadCount,
@@ -39,14 +38,10 @@ export default function NotificationBell() {
     fetchNotifications,
   } = useNotifications({ unreadOnly: false, autoRefresh: true });
 
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleClick = () => {
+    setOpened(!opened);
     // Refresh notifications when opening the popover
     fetchNotifications();
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
   };
 
   const handleMarkAllAsRead = () => {
@@ -70,24 +65,24 @@ export default function NotificationBell() {
       router.push(`/content?view=${notification.contentId}`);
     }
 
-    handleClose();
+    setOpened(false);
   };
 
   // Get notification icon based on type
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'APPROVAL_APPROVED':
-        return <CheckCircleIcon color="success" />;
+        return <IconCheck size={16} color="green" />;
       case 'APPROVAL_REJECTED':
-        return <ErrorIcon color="error" />;
+        return <IconAlertCircle size={16} color="red" />;
       case 'APPROVAL_REQUEST':
-        return <WarningIcon color="warning" />;
+        return <IconExclamationMark size={16} color="yellow" />;
       case 'CONTENT_PUBLISHED':
-        return <CheckCircleIcon color="info" />;
+        return <IconCheck size={16} color="blue" />;
       case 'NEW_COMMENT':
-        return <InfoIcon color="primary" />;
+        return <IconInfoCircle size={16} color="blue" />;
       default:
-        return <InfoIcon />;
+        return <IconInfoCircle size={16} />;
     }
   };
 
@@ -108,106 +103,102 @@ export default function NotificationBell() {
     }
   };
 
-  const open = Boolean(anchorEl);
-  const id = open ? 'notification-popover' : undefined;
-
   return (
-    <>
-      <IconButton color="inherit" onClick={handleClick} aria-describedby={id}>
-        <Badge badgeContent={unreadCount} color="error">
-          <NotificationsIcon />
-        </Badge>
-      </IconButton>
+    <Popover
+      opened={opened}
+      onChange={setOpened}
+      width={360}
+      position="bottom-end"
+      withArrow
+    >
+      <Popover.Target>
+        <ActionIcon variant="subtle" onClick={handleClick}>
+          <Badge
+            size="xs"
+            variant="filled"
+            color="red"
+            style={{ position: 'absolute', top: -5, right: -5 }}
+          >
+            {unreadCount}
+          </Badge>
+          <IconBell size={20} />
+        </ActionIcon>
+      </Popover.Target>
 
-      <Popover
-        id={id}
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            width: 360,
-            maxHeight: 500,
-          },
-        }}
-      >
-        <Box
-          sx={{
-            p: 2,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="h6">Notifications</Typography>
+      <Popover.Dropdown>
+        <Group justify="space-between" mb="md">
+          <Text size="lg" fw={600}>
+            Notifications
+          </Text>
           {unreadCount > 0 && (
-            <Button size="small" onClick={handleMarkAllAsRead}>
+            <Button size="xs" onClick={handleMarkAllAsRead}>
               Mark all as read
             </Button>
           )}
-        </Box>
+        </Group>
 
-        <Divider />
+        <Divider mb="md" />
 
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress size={24} />
+          <Box ta="center" py="xl">
+            <Loader size="sm" />
           </Box>
         ) : notifications.length === 0 ? (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography color="text.secondary">No notifications</Typography>
+          <Box ta="center" py="xl">
+            <Text c="dimmed">No notifications</Text>
           </Box>
         ) : (
-          <List sx={{ p: 0, maxHeight: 400, overflow: 'auto' }}>
-            {notifications.map((notification) => (
-              <ListItem
-                key={notification.id}
-                button
-                onClick={() => handleNotificationClick(notification)}
-                sx={{
-                  bgcolor: notification.isRead ? 'transparent' : 'action.hover',
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-                  {getNotificationIcon(notification.type)}
-                </Box>
-                <ListItemText
-                  primary={notification.message}
-                  secondary={formatDate(notification.createdAt)}
-                  primaryTypographyProps={{
-                    variant: 'body2',
-                    fontWeight: notification.isRead ? 'normal' : 'bold',
+          <ScrollArea h={400}>
+            <Stack gap={0}>
+              {notifications.map((notification) => (
+                <Box
+                  key={notification.id}
+                  p="md"
+                  style={{
+                    backgroundColor: notification.isRead
+                      ? 'transparent'
+                      : 'var(--mantine-color-gray-0)',
+                    borderBottom: '1px solid var(--mantine-color-gray-3)',
+                    cursor: 'pointer',
                   }}
-                />
-                <ListItemSecondaryAction>
-                  <Tooltip title="Delete">
-                    <IconButton
-                      edge="end"
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(notification.id);
-                      }}
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <Group justify="space-between" align="flex-start">
+                    <Group gap="sm" align="flex-start" style={{ flex: 1 }}>
+                      {getNotificationIcon(notification.type)}
+                      <Box style={{ flex: 1 }}>
+                        <Text
+                          size="sm"
+                          fw={notification.isRead ? 'normal' : 'bold'}
+                          mb={4}
+                        >
+                          {notification.message}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {formatDate(notification.createdAt)}
+                        </Text>
+                      </Box>
+                    </Group>
+                    <Tooltip label="Delete">
+                      <ActionIcon
+                        size="sm"
+                        variant="subtle"
+                        color="red"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(notification.id);
+                        }}
+                      >
+                        <IconX size={14} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </Box>
+              ))}
+            </Stack>
+          </ScrollArea>
         )}
-      </Popover>
-    </>
+      </Popover.Dropdown>
+    </Popover>
   );
 }

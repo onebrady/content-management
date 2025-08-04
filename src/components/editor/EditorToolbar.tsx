@@ -3,25 +3,27 @@
 import { Editor } from '@tiptap/react';
 import {
   Box,
-  ToggleButton,
-  ToggleButtonGroup,
-  IconButton,
+  ActionIcon,
   Tooltip,
   Divider,
-} from '@mui/material';
+  Group,
+  Button,
+} from '@mantine/core';
 import {
-  FormatBold,
-  FormatItalic,
-  FormatStrikethrough,
-  FormatListBulleted,
-  FormatListNumbered,
-  FormatQuote,
-  Code,
-  Link,
-  Image,
-  Undo,
-  Redo,
-} from '@mui/icons-material';
+  IconBold,
+  IconItalic,
+  IconStrikethrough,
+  IconList,
+  IconListNumbers,
+  IconQuote,
+  IconCode,
+  IconLink,
+  IconPhoto,
+  IconArrowBackUp,
+  IconArrowForwardUp,
+  IconIndentIncrease,
+  IconIndentDecrease,
+} from '@tabler/icons-react';
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -47,173 +49,193 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   };
 
   return (
-    <Box
-      sx={{
-        p: 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1,
-        flexWrap: 'wrap',
-      }}
-    >
-      {/* Text Formatting */}
-      <ToggleButtonGroup size="small" value="" exclusive>
-        <Tooltip title="Bold">
-          <ToggleButton
-            value="bold"
-            selected={editor.isActive('bold')}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-          >
-            <FormatBold />
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Italic">
-          <ToggleButton
-            value="italic"
-            selected={editor.isActive('italic')}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-          >
-            <FormatItalic />
-          </ToggleButton>
-        </Tooltip>
+    <Box p="xs">
+      <Group gap="xs" wrap="wrap">
+        {/* Text Formatting */}
+        <Group gap={4}>
+          <Tooltip label="Bold">
+            <ActionIcon
+              variant={editor.isActive('bold') ? 'filled' : 'subtle'}
+              onClick={() => editor.chain().focus().toggleBold().run()}
+            >
+              <IconBold size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Italic">
+            <ActionIcon
+              variant={editor.isActive('italic') ? 'filled' : 'subtle'}
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+            >
+              <IconItalic size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Strikethrough">
+            <ActionIcon
+              variant={editor.isActive('strike') ? 'filled' : 'subtle'}
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+            >
+              <IconStrikethrough size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
 
-        <Tooltip title="Strikethrough">
-          <ToggleButton
-            value="strike"
-            selected={editor.isActive('strike')}
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-          >
-            <FormatStrikethrough />
-          </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
+        <Divider orientation="vertical" />
 
-      <Divider orientation="vertical" flexItem />
+        {/* Headings */}
+        <Group gap={4}>
+          <Tooltip label="Heading 1">
+            <Button
+              size="xs"
+              variant={
+                editor.isActive('heading', { level: 1 }) ? 'filled' : 'subtle'
+              }
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 1 }).run()
+              }
+            >
+              H1
+            </Button>
+          </Tooltip>
+          <Tooltip label="Heading 2">
+            <Button
+              size="xs"
+              variant={
+                editor.isActive('heading', { level: 2 }) ? 'filled' : 'subtle'
+              }
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 2 }).run()
+              }
+            >
+              H2
+            </Button>
+          </Tooltip>
+          <Tooltip label="Heading 3">
+            <Button
+              size="xs"
+              variant={
+                editor.isActive('heading', { level: 3 }) ? 'filled' : 'subtle'
+              }
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 3 }).run()
+              }
+            >
+              H3
+            </Button>
+          </Tooltip>
+        </Group>
 
-      {/* Headings */}
-      <ToggleButtonGroup size="small" value="" exclusive>
-        <Tooltip title="Heading 1">
-          <ToggleButton
-            value="h1"
-            selected={editor.isActive('heading', { level: 1 })}
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 1 }).run()
-            }
-          >
-            H1
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Heading 2">
-          <ToggleButton
-            value="h2"
-            selected={editor.isActive('heading', { level: 2 })}
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 2 }).run()
-            }
-          >
-            H2
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Heading 3">
-          <ToggleButton
-            value="h3"
-            selected={editor.isActive('heading', { level: 3 })}
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 3 }).run()
-            }
-          >
-            H3
-          </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
+        <Divider orientation="vertical" />
 
-      <Divider orientation="vertical" flexItem />
+        {/* Lists */}
+        <Group gap={4}>
+          <Tooltip label="Bullet List">
+            <ActionIcon
+              variant={editor.isActive('bulletList') ? 'filled' : 'subtle'}
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+            >
+              <IconList size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Numbered List">
+            <ActionIcon
+              variant={editor.isActive('orderedList') ? 'filled' : 'subtle'}
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            >
+              <IconListNumbers size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
 
-      {/* Lists */}
-      <ToggleButtonGroup size="small" value="" exclusive>
-        <Tooltip title="Bullet List">
-          <ToggleButton
-            value="bulletList"
-            selected={editor.isActive('bulletList')}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-          >
-            <FormatListBulleted />
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Numbered List">
-          <ToggleButton
-            value="orderedList"
-            selected={editor.isActive('orderedList')}
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          >
-            <FormatListNumbered />
-          </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
+        <Divider orientation="vertical" />
 
-      <Divider orientation="vertical" flexItem />
+        {/* Indentation */}
+        <Group gap={4}>
+          <Tooltip label="Decrease Indent">
+            <ActionIcon
+              variant="light"
+              onClick={() => editor.chain().focus().outdent().run()}
+              color="gray"
+            >
+              <IconIndentDecrease size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Increase Indent">
+            <ActionIcon
+              variant="light"
+              onClick={() => editor.chain().focus().indent().run()}
+              color="gray"
+            >
+              <IconIndentIncrease size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
 
-      {/* Block Elements */}
-      <ToggleButtonGroup size="small" value="" exclusive>
-        <Tooltip title="Blockquote">
-          <ToggleButton
-            value="blockquote"
-            selected={editor.isActive('blockquote')}
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          >
-            <FormatQuote />
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Code Block">
-          <ToggleButton
-            value="codeBlock"
-            selected={editor.isActive('codeBlock')}
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          >
-            <Code />
-          </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
+        <Divider orientation="vertical" />
 
-      <Divider orientation="vertical" flexItem />
+        {/* Block Elements */}
+        <Group gap={4}>
+          <Tooltip label="Blockquote">
+            <ActionIcon
+              variant={editor.isActive('blockquote') ? 'filled' : 'subtle'}
+              onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            >
+              <IconQuote size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Code Block">
+            <ActionIcon
+              variant={editor.isActive('codeBlock') ? 'filled' : 'subtle'}
+              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            >
+              <IconCode size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
 
-      {/* Links and Images */}
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
-        <Tooltip title="Add Link">
-          <IconButton size="small" onClick={addLink}>
-            <Link />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Add Image">
-          <IconButton size="small" onClick={addImage}>
-            <Image />
-          </IconButton>
-        </Tooltip>
-      </Box>
+        <Divider orientation="vertical" />
 
-      <Divider orientation="vertical" flexItem />
+        {/* Links and Media */}
+        <Group gap={4}>
+          <Tooltip label="Add Link">
+            <ActionIcon
+              variant={editor.isActive('link') ? 'filled' : 'light'}
+              onClick={addLink}
+              color={editor.isActive('link') ? 'blue' : 'gray'}
+            >
+              <IconLink size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Add Image">
+            <ActionIcon variant="light" onClick={addImage} color="gray">
+              <IconPhoto size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
 
-      {/* Undo/Redo */}
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
-        <Tooltip title="Undo">
-          <IconButton
-            size="small"
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-          >
-            <Undo />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Redo">
-          <IconButton
-            size="small"
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-          >
-            <Redo />
-          </IconButton>
-        </Tooltip>
-      </Box>
+        <Divider orientation="vertical" />
+
+        {/* History */}
+        <Group gap={4}>
+          <Tooltip label="Undo">
+            <ActionIcon
+              variant="subtle"
+              onClick={() => editor.chain().focus().undo().run()}
+              disabled={!editor.can().undo()}
+            >
+              <IconArrowBackUp size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Redo">
+            <ActionIcon
+              variant="subtle"
+              onClick={() => editor.chain().focus().redo().run()}
+              disabled={!editor.can().redo()}
+            >
+              <IconArrowForwardUp size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      </Group>
     </Box>
   );
 }

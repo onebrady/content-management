@@ -26,6 +26,7 @@ import {
   Divider,
   useMantineColorScheme,
 } from '@mantine/core';
+import { getAppVersion, formatVersion } from '@/lib/version';
 import {
   IconBell,
   IconRefresh,
@@ -146,7 +147,16 @@ export default function DashboardPage() {
     let greeting = 'Good morning';
     if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
     else if (hour >= 17) greeting = 'Good evening';
+
+    // Debug: Log user data to console
+    console.log('Current user data:', user);
+
     return `${greeting}, ${user?.name || 'User'}!`;
+  };
+
+  const getDashboardSubtitle = () => {
+    const version = getAppVersion();
+    return `Welcome to WesternTruck dashboard ${formatVersion(version)}`;
   };
 
   const getTrendIcon = (trend: number) => {
@@ -238,17 +248,19 @@ export default function DashboardPage() {
                 {getWelcomeMessage()}
               </Title>
               <Text size="lg" c="dimmed">
-                Here's what's happening with your content today
+                {getDashboardSubtitle()}
               </Text>
             </div>
 
             {/* Quick Search */}
-            <Paper 
-              withBorder 
-              p="md" 
-              style={{ 
+            <Paper
+              withBorder
+              p="md"
+              style={{
                 minWidth: 300,
-                backgroundColor: isDark ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-gray-0)',
+                backgroundColor: isDark
+                  ? 'var(--mantine-color-dark-6)'
+                  : 'var(--mantine-color-gray-0)',
               }}
             >
               <Group gap="sm">
@@ -319,19 +331,23 @@ export default function DashboardPage() {
                   style={{
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    backgroundColor: isDark ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-white)',
-                    borderColor: isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)',
+                    backgroundColor: isDark
+                      ? 'var(--mantine-color-dark-6)'
+                      : 'var(--mantine-color-white)',
+                    borderColor: isDark
+                      ? 'var(--mantine-color-dark-4)'
+                      : 'var(--mantine-color-gray-3)',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = isDark 
-                      ? '0 4px 12px rgba(0,0,0,0.3)' 
+                    e.currentTarget.style.boxShadow = isDark
+                      ? '0 4px 12px rgba(0,0,0,0.3)'
                       : '0 4px 12px rgba(0,0,0,0.1)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = isDark 
-                      ? '0 1px 3px rgba(0,0,0,0.2)' 
+                    e.currentTarget.style.boxShadow = isDark
+                      ? '0 1px 3px rgba(0,0,0,0.2)'
                       : '0 1px 3px rgba(0,0,0,0.1)';
                   }}
                   onClick={() => {
@@ -388,13 +404,17 @@ export default function DashboardPage() {
         <Grid>
           {/* Quick Actions */}
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card 
-              withBorder 
-              shadow="sm" 
+            <Card
+              withBorder
+              shadow="sm"
               h={{ base: 'auto', md: 400 }}
               style={{
-                backgroundColor: isDark ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-white)',
-                borderColor: isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)',
+                backgroundColor: isDark
+                  ? 'var(--mantine-color-dark-6)'
+                  : 'var(--mantine-color-white)',
+                borderColor: isDark
+                  ? 'var(--mantine-color-dark-4)'
+                  : 'var(--mantine-color-gray-3)',
               }}
             >
               <Card.Section p="lg">
@@ -423,19 +443,23 @@ export default function DashboardPage() {
                         transition: 'all 0.2s ease',
                         height: 'auto',
                         minHeight: '50px',
-                        backgroundColor: isDark ? 'var(--mantine-color-dark-5)' : 'var(--mantine-color-gray-0)',
-                        borderColor: isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-2)',
+                        backgroundColor: isDark
+                          ? 'var(--mantine-color-dark-5)'
+                          : 'var(--mantine-color-gray-0)',
+                        borderColor: isDark
+                          ? 'var(--mantine-color-dark-4)'
+                          : 'var(--mantine-color-gray-2)',
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateX(4px)';
-                        e.currentTarget.style.backgroundColor = isDark 
-                          ? 'var(--mantine-color-dark-4)' 
+                        e.currentTarget.style.backgroundColor = isDark
+                          ? 'var(--mantine-color-dark-4)'
                           : 'var(--mantine-color-gray-1)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateX(0)';
-                        e.currentTarget.style.backgroundColor = isDark 
-                          ? 'var(--mantine-color-dark-5)' 
+                        e.currentTarget.style.backgroundColor = isDark
+                          ? 'var(--mantine-color-dark-5)'
                           : 'var(--mantine-color-gray-0)';
                       }}
                     >
@@ -456,13 +480,17 @@ export default function DashboardPage() {
 
           {/* Recent Activity */}
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card 
-              withBorder 
-              shadow="sm" 
+            <Card
+              withBorder
+              shadow="sm"
               h={{ base: 'auto', md: 400 }}
               style={{
-                backgroundColor: isDark ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-white)',
-                borderColor: isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)',
+                backgroundColor: isDark
+                  ? 'var(--mantine-color-dark-6)'
+                  : 'var(--mantine-color-white)',
+                borderColor: isDark
+                  ? 'var(--mantine-color-dark-4)'
+                  : 'var(--mantine-color-gray-3)',
               }}
             >
               <Card.Section p="lg">
@@ -633,12 +661,16 @@ export default function DashboardPage() {
               View All
             </Button>
           </Group>
-          <Card 
-            withBorder 
+          <Card
+            withBorder
             shadow="sm"
             style={{
-              backgroundColor: isDark ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-white)',
-              borderColor: isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)',
+              backgroundColor: isDark
+                ? 'var(--mantine-color-dark-6)'
+                : 'var(--mantine-color-white)',
+              borderColor: isDark
+                ? 'var(--mantine-color-dark-4)'
+                : 'var(--mantine-color-gray-3)',
             }}
           >
             <Card.Section p="lg">
@@ -671,8 +703,12 @@ export default function DashboardPage() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          backgroundColor: isDark ? 'var(--mantine-color-dark-5)' : 'var(--mantine-color-gray-1)',
-                          borderColor: isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-2)',
+                          backgroundColor: isDark
+                            ? 'var(--mantine-color-dark-5)'
+                            : 'var(--mantine-color-gray-1)',
+                          borderColor: isDark
+                            ? 'var(--mantine-color-dark-4)'
+                            : 'var(--mantine-color-gray-2)',
                         }}
                       >
                         {content.heroImage ? (

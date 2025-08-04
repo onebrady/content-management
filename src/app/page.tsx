@@ -3,71 +3,35 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Button, Box, Text, Container, Title, Stack } from '@mantine/core';
-import { IconLogin } from '@tabler/icons-react';
+import { Box, Text } from '@mantine/core';
 
 export default function Home() {
-  const { isAuthenticated, isLoading, signIn } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
+    if (!isLoading) {
+      if (isAuthenticated) {
+        // If user is authenticated, redirect to dashboard
+        router.push('/dashboard');
+      } else {
+        // If user is not authenticated, redirect to signin page
+        router.push('/auth/signin');
+      }
     }
   }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading) {
-    return (
-      <Box
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text>Loading...</Text>
-      </Box>
-    );
-  }
-
+  // Show loading state while checking authentication
   return (
-    <Container size="lg">
-      <Box
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-        }}
-      >
-        <Stack gap="xl" align="center">
-          <Title order={1} size="3rem">
-            Content Management Tool
-          </Title>
-          <Text size="xl" c="dimmed">
-            Secure, role-based content management with Microsoft Azure AD
-            authentication
-          </Text>
-          <Text size="md" maw={600}>
-            Streamline your content creation, review, and approval workflows
-            with our enterprise-grade content management system. Built with
-            Next.js, Mantine UI, and Microsoft Azure AD for secure
-            authentication.
-          </Text>
-          <Button
-            size="lg"
-            leftSection={<IconLogin size={20} />}
-            onClick={() => signIn('azure-ad')}
-            px="xl"
-            py="md"
-          >
-            Get Started
-          </Button>
-        </Stack>
-      </Box>
-    </Container>
+    <Box
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Text>Redirecting...</Text>
+    </Box>
   );
 }

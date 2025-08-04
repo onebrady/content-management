@@ -3,32 +3,28 @@
 import { useState } from 'react';
 import {
   Box,
-  Typography,
-  Chip,
+  Text,
+  Badge,
   Button,
   Card,
-  CardContent,
-  CardHeader,
   Divider,
   Alert,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  TextField,
-  Tooltip,
-} from '@mui/material';
+  Loader,
+  Modal,
+  Textarea,
+  Group,
+  Stack,
+  Title,
+} from '@mantine/core';
 import {
-  CheckCircle,
-  Cancel,
-  HourglassEmpty,
-  Edit,
-  Send,
-  Publish,
-  ArrowBack,
-} from '@mui/icons-material';
+  IconCheck,
+  IconX,
+  IconClock,
+  IconEdit,
+  IconSend,
+  IconDeviceFloppy,
+  IconArrowLeft,
+} from '@tabler/icons-react';
 import { ContentStatus, ApprovalStatus, UserRole } from '@prisma/client';
 import { useAuth } from '@/hooks/useAuth';
 import { PERMISSIONS } from '@/lib/permissions';
@@ -99,69 +95,62 @@ export function ApprovalStatus({
   const getStatusColor = (status: ContentStatus) => {
     switch (status) {
       case 'DRAFT':
-        return 'default';
+        return 'gray';
       case 'IN_REVIEW':
-        return 'warning';
+        return 'yellow';
       case 'APPROVED':
-        return 'success';
+        return 'green';
       case 'REJECTED':
-        return 'error';
+        return 'red';
       case 'PUBLISHED':
-        return 'info';
+        return 'blue';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
-  // Get approval status color
+  // Get approval color
   const getApprovalColor = (status: ApprovalStatus) => {
     switch (status) {
       case 'APPROVED':
-        return 'success';
+        return 'green';
       case 'REJECTED':
-        return 'error';
+        return 'red';
       case 'PENDING':
-        return 'warning';
+        return 'yellow';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
-  // Get approval status icon
+  // Get approval icon
   const getApprovalIcon = (status: ApprovalStatus) => {
     switch (status) {
       case 'APPROVED':
-        return <CheckCircle fontSize="small" />;
+        return <IconCheck size={16} />;
       case 'REJECTED':
-        return <Cancel fontSize="small" />;
+        return <IconX size={16} />;
       case 'PENDING':
-        return <HourglassEmpty fontSize="small" />;
+        return <IconClock size={16} />;
       default:
-        return null;
+        return <IconClock size={16} />;
     }
   };
 
-  // Handle dialog open
   const handleOpenDialog = (
     type: 'approve' | 'reject' | 'submit' | 'publish' | 'draft'
   ) => {
-    setDialogOpen({
-      open: true,
-      type,
-    });
-  };
-
-  // Handle dialog close
-  const handleCloseDialog = () => {
-    setDialogOpen({
-      ...dialogOpen,
-      open: false,
-    });
+    setDialogOpen({ open: true, type });
     setComments('');
     setReason('');
   };
 
-  // Handle approve
+  const handleCloseDialog = () => {
+    setDialogOpen({ open: false, type: 'approve' });
+    setComments('');
+    setReason('');
+  };
+
   const handleApprove = async () => {
     if (onApprove) {
       await onApprove(content.id, comments);
@@ -169,7 +158,6 @@ export function ApprovalStatus({
     handleCloseDialog();
   };
 
-  // Handle reject
   const handleReject = async () => {
     if (onReject) {
       await onReject(content.id, comments);
@@ -177,7 +165,6 @@ export function ApprovalStatus({
     handleCloseDialog();
   };
 
-  // Handle submit for review
   const handleSubmitForReview = async () => {
     if (onSubmitForReview) {
       await onSubmitForReview(content.id);
@@ -185,7 +172,6 @@ export function ApprovalStatus({
     handleCloseDialog();
   };
 
-  // Handle publish
   const handlePublish = async () => {
     if (onPublish) {
       await onPublish(content.id);
@@ -193,7 +179,6 @@ export function ApprovalStatus({
     handleCloseDialog();
   };
 
-  // Handle return to draft
   const handleReturnToDraft = async () => {
     if (onReturnToDraft) {
       await onReturnToDraft(content.id, reason);
@@ -218,123 +203,119 @@ export function ApprovalStatus({
     (isAuthor || user?.role === 'MODERATOR' || user?.role === 'ADMIN');
 
   return (
-    <Card variant="outlined">
-      <CardHeader
-        title="Approval Status"
-        subheader={`Current status: ${content.status.replace('_', ' ')}`}
-        action={
-          <Chip
-            label={content.status.replace('_', ' ')}
-            color={getStatusColor(content.status)}
-          />
-        }
-      />
+    <Card withBorder>
+      <Card.Section p="md">
+        <Group justify="space-between" align="center">
+          <Stack gap={4}>
+            <Title order={4}>Approval Status</Title>
+            <Text size="sm" c="dimmed">
+              Current status: {content.status.replace('_', ' ')}
+            </Text>
+          </Stack>
+          <Badge color={getStatusColor(content.status)} size="lg">
+            {content.status.replace('_', ' ')}
+          </Badge>
+        </Group>
+      </Card.Section>
       <Divider />
-      <CardContent>
+      <Card.Section p="md">
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-            <CircularProgress size={24} />
+          <Box
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              padding: '1rem',
+            }}
+          >
+            <Loader size="sm" />
           </Box>
         ) : (
           <>
             {/* Status-specific messages */}
             {content.status === 'DRAFT' && (
-              <Alert severity="info" sx={{ mb: 2 }}>
+              <Alert color="blue" mb="md">
                 This content is in draft state. Submit it for review when ready.
               </Alert>
             )}
 
             {content.status === 'IN_REVIEW' && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
+              <Alert color="yellow" mb="md">
                 This content is being reviewed. Approvals:{' '}
                 {approvals.filter((a) => a.status === 'APPROVED').length}
               </Alert>
             )}
 
             {content.status === 'APPROVED' && (
-              <Alert severity="success" sx={{ mb: 2 }}>
+              <Alert color="green" mb="md">
                 This content has been approved and is ready to be published.
               </Alert>
             )}
 
             {content.status === 'REJECTED' && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert color="red" mb="md">
                 This content has been rejected. Please review the comments and
                 make necessary changes.
               </Alert>
             )}
 
             {content.status === 'PUBLISHED' && (
-              <Alert severity="info" sx={{ mb: 2 }}>
+              <Alert color="blue" mb="md">
                 This content is published and visible to users.
               </Alert>
             )}
 
             {/* Approvals list */}
             {approvals.length > 0 ? (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
+              <Box mt="md">
+                <Text fw={500} mb="sm">
                   Approval History
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                </Text>
+                <Stack gap="sm">
                   {approvals.map((approval) => (
-                    <Card key={approval.id} variant="outlined" sx={{ p: 1 }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
+                    <Card key={approval.id} withBorder p="sm">
+                      <Group justify="space-between" align="flex-start">
                         <Box>
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                            }}
-                          >
-                            <Typography variant="body2" fontWeight="bold">
+                          <Group gap="xs" align="center" mb={4}>
+                            <Text size="sm" fw={500}>
                               {approval.user.name}
-                            </Typography>
-                            <Chip
-                              size="small"
-                              label={approval.status}
+                            </Text>
+                            <Badge
+                              size="sm"
                               color={getApprovalColor(approval.status)}
-                              icon={getApprovalIcon(approval.status)}
-                            />
-                          </Box>
-                          <Typography variant="caption" color="text.secondary">
+                              leftSection={getApprovalIcon(approval.status)}
+                            >
+                              {approval.status}
+                            </Badge>
+                          </Group>
+                          <Text size="xs" c="dimmed">
                             {formatDate(approval.updatedAt)}
-                          </Typography>
+                          </Text>
                         </Box>
-                      </Box>
+                      </Group>
                       {approval.comments && (
-                        <Box sx={{ mt: 1 }}>
-                          <Typography variant="body2">
-                            {approval.comments}
-                          </Typography>
-                        </Box>
+                        <Text size="sm" mt="xs">
+                          {approval.comments}
+                        </Text>
                       )}
                     </Card>
                   ))}
-                </Box>
+                </Stack>
               </Box>
             ) : content.status !== 'DRAFT' ? (
-              <Typography variant="body2" color="text.secondary">
+              <Text size="sm" c="dimmed">
                 No approvals have been submitted yet.
-              </Typography>
+              </Text>
             ) : null}
 
             {/* Action buttons */}
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 3 }}>
+            <Group gap="sm" mt="lg" wrap="wrap">
               {/* Submit for review button */}
               {canSubmitForReview && (
                 <PermissionGuard permission={PERMISSIONS.CONTENT_EDIT}>
                   <Button
-                    variant="outlined"
-                    color="primary"
-                    startIcon={<Send />}
+                    variant="outline"
+                    color="blue"
+                    leftSection={<IconSend size={16} />}
                     onClick={() => handleOpenDialog('submit')}
                     disabled={loading}
                   >
@@ -346,26 +327,26 @@ export function ApprovalStatus({
               {/* Approval buttons */}
               {content.status === 'IN_REVIEW' && canApprove && (
                 <PermissionGuard permission={PERMISSIONS.CONTENT_APPROVE}>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Group gap="sm">
                     <Button
-                      variant="contained"
-                      color="success"
-                      startIcon={<CheckCircle />}
+                      variant="filled"
+                      color="green"
+                      leftSection={<IconCheck size={16} />}
                       onClick={() => handleOpenDialog('approve')}
                       disabled={loading}
                     >
                       Approve
                     </Button>
                     <Button
-                      variant="contained"
-                      color="error"
-                      startIcon={<Cancel />}
+                      variant="filled"
+                      color="red"
+                      leftSection={<IconX size={16} />}
                       onClick={() => handleOpenDialog('reject')}
                       disabled={loading}
                     >
                       Reject
                     </Button>
-                  </Box>
+                  </Group>
                 </PermissionGuard>
               )}
 
@@ -373,9 +354,9 @@ export function ApprovalStatus({
               {canPublish && (
                 <PermissionGuard permission={PERMISSIONS.CONTENT_PUBLISH}>
                   <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<Publish />}
+                    variant="filled"
+                    color="blue"
+                    leftSection={<IconDeviceFloppy size={16} />}
                     onClick={() => handleOpenDialog('publish')}
                     disabled={loading}
                   >
@@ -388,8 +369,8 @@ export function ApprovalStatus({
               {canReturnToDraft && (
                 <PermissionGuard permission={PERMISSIONS.CONTENT_EDIT}>
                   <Button
-                    variant="outlined"
-                    startIcon={<ArrowBack />}
+                    variant="outline"
+                    leftSection={<IconArrowLeft size={16} />}
                     onClick={() => handleOpenDialog('draft')}
                     disabled={loading}
                   >
@@ -397,155 +378,147 @@ export function ApprovalStatus({
                   </Button>
                 </PermissionGuard>
               )}
-            </Box>
+            </Group>
           </>
         )}
-      </CardContent>
+      </Card.Section>
 
-      {/* Approval Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'approve'}
+      {/* Approval Modal */}
+      <Modal
+        opened={dialogOpen.open && dialogOpen.type === 'approve'}
         onClose={handleCloseDialog}
+        title="Approve Content"
       >
-        <DialogTitle>Approve Content</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack gap="md">
+          <Text size="sm">
             You are approving "{content.title}". Please provide any comments
             (optional).
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
+          </Text>
+          <Textarea
             label="Comments"
-            fullWidth
-            multiline
-            rows={4}
+            placeholder="Enter comments..."
             value={comments}
             onChange={(e) => setComments(e.target.value)}
+            rows={4}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleApprove} color="success" variant="contained">
-            Approve
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="outline" onClick={handleCloseDialog}>
+              Cancel
+            </Button>
+            <Button color="green" onClick={handleApprove}>
+              Approve
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-      {/* Reject Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'reject'}
+      {/* Reject Modal */}
+      <Modal
+        opened={dialogOpen.open && dialogOpen.type === 'reject'}
         onClose={handleCloseDialog}
+        title="Reject Content"
       >
-        <DialogTitle>Reject Content</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack gap="md">
+          <Text size="sm">
             You are rejecting "{content.title}". Please provide a reason for
             rejection.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
+          </Text>
+          <Textarea
             label="Reason for Rejection"
-            fullWidth
-            multiline
-            rows={4}
+            placeholder="Enter reason for rejection..."
             value={comments}
             onChange={(e) => setComments(e.target.value)}
+            rows={4}
             required
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button
-            onClick={handleReject}
-            color="error"
-            variant="contained"
-            disabled={!comments.trim()}
-          >
-            Reject
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="outline" onClick={handleCloseDialog}>
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={handleReject}
+              disabled={!comments.trim()}
+            >
+              Reject
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-      {/* Submit for Review Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'submit'}
+      {/* Submit for Review Modal */}
+      <Modal
+        opened={dialogOpen.open && dialogOpen.type === 'submit'}
         onClose={handleCloseDialog}
+        title="Submit for Review"
       >
-        <DialogTitle>Submit for Review</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack gap="md">
+          <Text size="sm">
             You are submitting "{content.title}" for review. Once submitted, it
             will be reviewed by moderators.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button
-            onClick={handleSubmitForReview}
-            color="primary"
-            variant="contained"
-          >
-            Submit
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </Text>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="outline" onClick={handleCloseDialog}>
+              Cancel
+            </Button>
+            <Button color="blue" onClick={handleSubmitForReview}>
+              Submit
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-      {/* Publish Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'publish'}
+      {/* Publish Modal */}
+      <Modal
+        opened={dialogOpen.open && dialogOpen.type === 'publish'}
         onClose={handleCloseDialog}
+        title="Publish Content"
       >
-        <DialogTitle>Publish Content</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack gap="md">
+          <Text size="sm">
             You are publishing "{content.title}". Once published, it will be
             visible to users.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handlePublish} color="primary" variant="contained">
-            Publish
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </Text>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="outline" onClick={handleCloseDialog}>
+              Cancel
+            </Button>
+            <Button color="blue" onClick={handlePublish}>
+              Publish
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-      {/* Return to Draft Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'draft'}
+      {/* Return to Draft Modal */}
+      <Modal
+        opened={dialogOpen.open && dialogOpen.type === 'draft'}
         onClose={handleCloseDialog}
+        title="Return to Draft"
       >
-        <DialogTitle>Return to Draft</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack gap="md">
+          <Text size="sm">
             You are returning "{content.title}" to draft state. Please provide a
             reason.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
+          </Text>
+          <Textarea
             label="Reason"
-            fullWidth
-            multiline
-            rows={4}
+            placeholder="Enter reason..."
             value={reason}
             onChange={(e) => setReason(e.target.value)}
+            rows={4}
             required
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button
-            onClick={handleReturnToDraft}
-            variant="contained"
-            disabled={!reason.trim()}
-          >
-            Return to Draft
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="outline" onClick={handleCloseDialog}>
+              Cancel
+            </Button>
+            <Button onClick={handleReturnToDraft} disabled={!reason.trim()}>
+              Return to Draft
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Card>
   );
 }

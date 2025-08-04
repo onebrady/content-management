@@ -95,18 +95,6 @@ export const navigationConfig: NavigationItem[] = [
     roles: ['MODERATOR', 'ADMIN'],
   },
   {
-    label: 'Search',
-    icon: IconSearch,
-    link: '/search',
-    roles: ['CONTRIBUTOR', 'MODERATOR', 'ADMIN', 'VIEWER'],
-  },
-  {
-    label: 'Settings',
-    icon: IconSettings,
-    link: '/admin/settings',
-    roles: ['ADMIN'],
-  },
-  {
     label: 'Security',
     icon: IconLock,
     roles: ['ADMIN'],

@@ -1,26 +1,20 @@
 'use client';
 
 import { Editor } from '@tiptap/react';
+import { ActionIcon, Group, Divider, Box, Paper, Tooltip } from '@mantine/core';
 import {
-  Box,
-  Paper,
-  ToggleButton,
-  ToggleButtonGroup,
-  IconButton,
-  Tooltip,
-  Divider,
-} from '@mui/material';
-import {
-  FormatBold,
-  FormatItalic,
-  FormatStrikethrough,
-  FormatListBulleted,
-  FormatListNumbered,
-  FormatIndentIncrease,
-  FormatIndentDecrease,
-  Link,
-  Image,
-} from '@mui/icons-material';
+  IconBold,
+  IconItalic,
+  IconStrikethrough,
+  IconLink,
+  IconCode,
+  IconQuote,
+  IconList,
+  IconListNumbers,
+  IconIndentIncrease,
+  IconIndentDecrease,
+  IconPhoto,
+} from '@tabler/icons-react';
 
 interface BubbleMenuComponentProps {
   editor: Editor;
@@ -47,192 +41,198 @@ export function BubbleMenuComponent({ editor }: BubbleMenuComponentProps) {
 
   return (
     <Paper
-      elevation={8}
-      sx={{
-        p: 0.5,
+      shadow="md"
+      p="xs"
+      style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 0.5,
+        gap: '4px',
         flexWrap: 'nowrap',
         minWidth: 'fit-content',
         maxWidth: 'none',
         width: 'max-content',
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',
+        borderRadius: 8,
+        border: '1px solid var(--mantine-color-gray-3)',
+        backgroundColor: 'var(--mantine-color-white)',
         overflow: 'visible',
         whiteSpace: 'nowrap',
       }}
     >
       {/* Text Formatting */}
-      <ToggleButtonGroup size="small" value="" exclusive>
-        <Tooltip title="Bold (Ctrl+B)">
-          <ToggleButton
-            value="bold"
-            selected={editor.isActive('bold')}
+      <Group gap={4}>
+        <Tooltip label="Bold (Ctrl+B)">
+          <ActionIcon
+            variant={editor.isActive('bold') ? 'filled' : 'light'}
+            size="xs"
             onClick={() => editor.chain().focus().toggleBold().run()}
-            sx={{ minWidth: 28, height: 28 }}
+            aria-label="Bold"
           >
-            <FormatBold fontSize="small" />
-          </ToggleButton>
+            <IconBold size={14} />
+          </ActionIcon>
         </Tooltip>
-        <Tooltip title="Italic (Ctrl+I)">
-          <ToggleButton
-            value="italic"
-            selected={editor.isActive('italic')}
+        <Tooltip label="Italic (Ctrl+I)">
+          <ActionIcon
+            variant={editor.isActive('italic') ? 'filled' : 'light'}
+            size="xs"
             onClick={() => editor.chain().focus().toggleItalic().run()}
-            sx={{ minWidth: 28, height: 28 }}
+            aria-label="Italic"
           >
-            <FormatItalic fontSize="small" />
-          </ToggleButton>
+            <IconItalic size={14} />
+          </ActionIcon>
         </Tooltip>
-        <Tooltip title="Strikethrough">
-          <ToggleButton
-            value="strike"
-            selected={editor.isActive('strike')}
+        <Tooltip label="Strikethrough">
+          <ActionIcon
+            variant={editor.isActive('strike') ? 'filled' : 'light'}
+            size="xs"
             onClick={() => editor.chain().focus().toggleStrike().run()}
-            sx={{ minWidth: 28, height: 28 }}
+            aria-label="Strikethrough"
           >
-            <FormatStrikethrough fontSize="small" />
-          </ToggleButton>
+            <IconStrikethrough size={14} />
+          </ActionIcon>
         </Tooltip>
-      </ToggleButtonGroup>
+      </Group>
 
-      <Divider orientation="vertical" flexItem />
+      <Divider orientation="vertical" />
 
       {/* Headings */}
-      <ToggleButtonGroup size="small" value="" exclusive>
-        <Tooltip title="Heading 1 (Ctrl+1)">
-          <ToggleButton
-            value="h1"
-            selected={editor.isActive('heading', { level: 1 })}
+      <Group gap={4}>
+        <Tooltip label="Heading 1 (Ctrl+1)">
+          <ActionIcon
+            variant={
+              editor.isActive('heading', { level: 1 }) ? 'filled' : 'light'
+            }
+            size="xs"
             onClick={() =>
               editor.chain().focus().toggleHeading({ level: 1 }).run()
             }
-            sx={{
-              minWidth: 28,
-              height: 28,
+            aria-label="Heading 1"
+            style={{
               fontWeight: 'bold',
               fontSize: '0.7rem',
             }}
           >
             H1
-          </ToggleButton>
+          </ActionIcon>
         </Tooltip>
-        <Tooltip title="Heading 2 (Ctrl+2)">
-          <ToggleButton
-            value="h2"
-            selected={editor.isActive('heading', { level: 2 })}
+        <Tooltip label="Heading 2 (Ctrl+2)">
+          <ActionIcon
+            variant={
+              editor.isActive('heading', { level: 2 }) ? 'filled' : 'light'
+            }
+            size="xs"
             onClick={() =>
               editor.chain().focus().toggleHeading({ level: 2 }).run()
             }
-            sx={{
-              minWidth: 28,
-              height: 28,
+            aria-label="Heading 2"
+            style={{
               fontWeight: 600,
               fontSize: '0.7rem',
             }}
           >
             H2
-          </ToggleButton>
+          </ActionIcon>
         </Tooltip>
-        <Tooltip title="Heading 3 (Ctrl+3)">
-          <ToggleButton
-            value="h3"
-            selected={editor.isActive('heading', { level: 3 })}
+        <Tooltip label="Heading 3 (Ctrl+3)">
+          <ActionIcon
+            variant={
+              editor.isActive('heading', { level: 3 }) ? 'filled' : 'light'
+            }
+            size="xs"
             onClick={() =>
               editor.chain().focus().toggleHeading({ level: 3 }).run()
             }
-            sx={{
-              minWidth: 28,
-              height: 28,
+            aria-label="Heading 3"
+            style={{
               fontWeight: 500,
               fontSize: '0.7rem',
             }}
           >
             H3
-          </ToggleButton>
+          </ActionIcon>
         </Tooltip>
-      </ToggleButtonGroup>
+      </Group>
 
-      <Divider orientation="vertical" flexItem />
+      <Divider orientation="vertical" />
 
       {/* Lists */}
-      <ToggleButtonGroup size="small" value="" exclusive>
-        <Tooltip title="Bullet List">
-          <ToggleButton
-            value="bulletList"
-            selected={editor.isActive('bulletList')}
+      <Group gap={4}>
+        <Tooltip label="Bullet List">
+          <ActionIcon
+            variant={editor.isActive('bulletList') ? 'filled' : 'light'}
+            size="xs"
             onClick={() => editor.chain().focus().toggleBulletList().run()}
-            sx={{ minWidth: 28, height: 28 }}
+            aria-label="Bullet List"
           >
-            <FormatListBulleted fontSize="small" />
-          </ToggleButton>
+            <IconList size={14} />
+          </ActionIcon>
         </Tooltip>
-        <Tooltip title="Numbered List">
-          <ToggleButton
-            value="orderedList"
-            selected={editor.isActive('orderedList')}
+        <Tooltip label="Numbered List">
+          <ActionIcon
+            variant={editor.isActive('orderedList') ? 'filled' : 'light'}
+            size="xs"
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            sx={{ minWidth: 28, height: 28 }}
+            aria-label="Numbered List"
           >
-            <FormatListNumbered fontSize="small" />
-          </ToggleButton>
+            <IconListNumbers size={14} />
+          </ActionIcon>
         </Tooltip>
-      </ToggleButtonGroup>
+      </Group>
 
-      <Divider orientation="vertical" flexItem />
+      <Divider orientation="vertical" />
 
       {/* Indentation */}
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
-        <Tooltip title="Decrease Indent">
-          <IconButton
-            size="small"
+      <Group gap={4}>
+        <Tooltip label="Decrease Indent">
+          <ActionIcon
+            size="xs"
+            variant="light"
             onClick={() =>
               editor.chain().focus().liftListItem('listItem').run()
             }
-            sx={{ width: 28, height: 28 }}
+            aria-label="Decrease Indent"
           >
-            <FormatIndentDecrease fontSize="small" />
-          </IconButton>
+            <IconIndentDecrease size={14} />
+          </ActionIcon>
         </Tooltip>
-        <Tooltip title="Increase Indent">
-          <IconButton
-            size="small"
+        <Tooltip label="Increase Indent">
+          <ActionIcon
+            size="xs"
+            variant="light"
             onClick={() =>
               editor.chain().focus().sinkListItem('listItem').run()
             }
-            sx={{ width: 28, height: 28 }}
+            aria-label="Increase Indent"
           >
-            <FormatIndentIncrease fontSize="small" />
-          </IconButton>
+            <IconIndentIncrease size={14} />
+          </ActionIcon>
         </Tooltip>
-      </Box>
+      </Group>
 
-      <Divider orientation="vertical" flexItem />
+      <Divider orientation="vertical" />
 
       {/* Link and Image */}
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
-        <Tooltip title="Add Link">
-          <IconButton
-            size="small"
+      <Group gap={4}>
+        <Tooltip label="Add Link">
+          <ActionIcon
+            size="xs"
+            variant="light"
             onClick={addLink}
-            sx={{ width: 28, height: 28 }}
+            aria-label="Add Link"
           >
-            <Link fontSize="small" />
-          </IconButton>
+            <IconLink size={14} />
+          </ActionIcon>
         </Tooltip>
-        <Tooltip title="Add Image">
-          <IconButton
-            size="small"
+        <Tooltip label="Add Image">
+          <ActionIcon
+            size="xs"
+            variant="light"
             onClick={addImage}
-            sx={{ width: 28, height: 28 }}
+            aria-label="Add Image"
           >
-            <Image fontSize="small" />
-          </IconButton>
+            <IconPhoto size={14} />
+          </ActionIcon>
         </Tooltip>
-      </Box>
+      </Group>
     </Paper>
   );
 }

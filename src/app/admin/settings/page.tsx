@@ -3,29 +3,30 @@
 import { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
+  Paper,
+  Text,
+  TextInput,
   Button,
   Switch,
-  FormControlLabel,
-  CircularProgress,
+  Loader,
   Alert,
-  Snackbar,
-  Paper,
-} from '@mui/material';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+  Stack,
+  Title,
+  Group,
+} from '@mantine/core';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { CompanyLogoUpload } from '@/components/upload/CompanyLogoUpload';
 
 interface SystemSettings {
   siteName: string;
   defaultLanguage: string;
   maintenanceMode: boolean;
+  companyLogo?: string;
 }
 
 export default function SettingsPage() {
@@ -103,119 +104,103 @@ export default function SettingsPage() {
       permission={PERMISSIONS.SETTINGS_VIEW}
       fallback={<div>You do not have permission to view this page.</div>}
     >
-      <DashboardLayout>
-        <Box sx={{ p: 3 }}>
+      <AppLayout>
+        <Box p="md">
           <Breadcrumbs />
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Title order={1} mb="lg">
             System Settings
-          </Typography>
+          </Title>
 
-          <Paper sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
+          <Paper p="lg" style={{ maxWidth: 800, margin: '0 auto' }}>
             {settings ? (
-              <Box component="form" noValidate autoComplete="off">
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Site Name"
-                      value={settings.siteName}
-                      onChange={(e) =>
-                        setSettings({ ...settings, siteName: e.target.value })
-                      }
+              <Stack gap="lg">
+                <TextInput
+                  label="Site Name"
+                  value={settings.siteName}
+                  onChange={(e) =>
+                    setSettings({ ...settings, siteName: e.target.value })
+                  }
+                  disabled={isSaving}
+                />
+                <TextInput
+                  label="Default Language"
+                  value={settings.defaultLanguage}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      defaultLanguage: e.target.value,
+                    })
+                  }
+                  disabled={isSaving}
+                />
+                <Box>
+                  <Text size="sm" fw={500} mb="xs">
+                    Company Logo
+                  </Text>
+                  <Text size="xs" c="dimmed" mb="md">
+                    This logo will appear on the signin page instead of 'Welcome
+                    Back' text
+                  </Text>
+                  <CompanyLogoUpload
+                    currentLogoUrl={settings.companyLogo}
+                    onLogoUpdate={(logoUrl) =>
+                      setSettings({
+                        ...settings,
+                        companyLogo: logoUrl,
+                      })
+                    }
+                    onLogoRemove={() =>
+                      setSettings({
+                        ...settings,
+                        companyLogo: '',
+                      })
+                    }
+                    disabled={isSaving}
+                  />
+                </Box>
+                <Switch
+                  label="Maintenance Mode"
+                  checked={settings.maintenanceMode}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      maintenanceMode: e.currentTarget.checked,
+                    })
+                  }
+                  disabled={isSaving}
+                />
+                <Group justify="flex-end">
+                  <PermissionGuard permission={PERMISSIONS.SETTINGS_EDIT}>
+                    <Button
+                      onClick={handleSaveSettings}
                       disabled={isSaving}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Default Language"
-                      value={settings.defaultLanguage}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          defaultLanguage: e.target.value,
-                        })
-                      }
-                      disabled={isSaving}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={settings.maintenanceMode}
-                          onChange={(e) =>
-                            setSettings({
-                              ...settings,
-                              maintenanceMode: e.target.checked,
-                            })
-                          }
-                          disabled={isSaving}
-                        />
-                      }
-                      label="Maintenance Mode"
-                    />
-                  </Grid>
-                  <Grid
-                    item
-                    xs={12}
-                    sx={{ display: 'flex', justifyContent: 'flex-end' }}
-                  >
-                    <PermissionGuard permission={PERMISSIONS.SETTINGS_EDIT}>
-                      <Button
-                        variant="contained"
-                        onClick={handleSaveSettings}
-                        disabled={isSaving}
-                      >
-                        {isSaving ? (
-                          <CircularProgress size={24} />
-                        ) : (
-                          'Save Settings'
-                        )}
-                      </Button>
-                    </PermissionGuard>
-                  </Grid>
-                </Grid>
-              </Box>
+                      leftSection={isSaving ? <Loader size="sm" /> : null}
+                    >
+                      {isSaving ? 'Saving...' : 'Save Settings'}
+                    </Button>
+                  </PermissionGuard>
+                </Group>
+              </Stack>
             ) : (
-              <Alert severity="error">Could not load settings.</Alert>
+              <Alert color="red" title="Error">
+                Could not load settings.
+              </Alert>
             )}
           </Paper>
 
-          <Snackbar
-            open={notification.open}
-            autoHideDuration={6000}
-            onClose={() => setNotification({ ...notification, open: false })}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
+          {/* Notification */}
+          {notification.open && (
             <Alert
+              color={notification.severity === 'success' ? 'green' : 'red'}
+              title={notification.severity === 'success' ? 'Success' : 'Error'}
               onClose={() => setNotification({ ...notification, open: false })}
-              severity={notification.severity}
-              sx={{ width: '100%' }}
+              style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}
             >
               {notification.message}
             </Alert>
-          </Snackbar>
+          )}
         </Box>
-      </DashboardLayout>
+      </AppLayout>
     </PermissionGuard>
   );
 }
-// Basic Grid component to structure the form
-const Grid = (props: {
-  container?: boolean;
-  item?: boolean;
-  xs?: number;
-  spacing?: number;
-  children: React.ReactNode;
-  sx?: object;
-}) => (
-  <Box
-    display={props.container ? 'flex' : 'block'}
-    flexWrap="wrap"
-    mx={props.container ? -1.5 : 0}
-    {...props}
-  >
-    {props.children}
-  </Box>
-);

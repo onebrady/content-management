@@ -3,37 +3,26 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
-  Typography,
-  Chip,
-  IconButton,
+  Text,
+  Badge,
+  ActionIcon,
   Tooltip,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
+  Modal,
+  Group,
   Avatar,
-  useTheme,
-} from '@mui/material';
+  Stack,
+  Title,
+} from '@mantine/core';
 import {
-  GridColDef,
-  GridRenderCellParams,
-  GridValueFormatterParams,
-  GridRowSelectionModel,
-  GridSortModel,
-  GridFilterModel,
-  GridPaginationModel,
-} from '@mui/x-data-grid';
-import {
-  Edit,
-  Delete,
-  Visibility,
-  FilePresent,
-  Comment,
-  CheckCircle,
-  Add,
-} from '@mui/icons-material';
+  IconEdit,
+  IconTrash,
+  IconEye,
+  IconFile,
+  IconMessage,
+  IconCheck,
+  IconPlus,
+} from '@tabler/icons-react';
 import { DataTable } from '@/components/tables/DataTable';
 import { ContentType, ContentStatus, Priority } from '@prisma/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -78,12 +67,11 @@ export function ContentDataTable({
   onBulkAction,
 }: ContentDataTableProps) {
   const { user } = useAuth();
-  const theme = useTheme();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedForDelete, setSelectedForDelete] = useState<string | string[]>(
     ''
   );
-  const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
   // Format date for display
   const formatDate = (date: string) => {
@@ -94,17 +82,17 @@ export function ContentDataTable({
   const getStatusColor = (status: ContentStatus) => {
     switch (status) {
       case ContentStatus.DRAFT:
-        return 'default';
+        return 'gray';
       case ContentStatus.IN_REVIEW:
-        return 'warning';
+        return 'yellow';
       case ContentStatus.APPROVED:
-        return 'success';
+        return 'green';
       case ContentStatus.REJECTED:
-        return 'error';
+        return 'red';
       case ContentStatus.PUBLISHED:
-        return 'info';
+        return 'blue';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -112,15 +100,15 @@ export function ContentDataTable({
   const getPriorityColor = (priority: Priority) => {
     switch (priority) {
       case Priority.LOW:
-        return 'success';
+        return 'green';
       case Priority.MEDIUM:
-        return 'info';
+        return 'blue';
       case Priority.HIGH:
-        return 'warning';
+        return 'yellow';
       case Priority.URGENT:
-        return 'error';
+        return 'red';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -162,203 +150,155 @@ export function ContentDataTable({
   };
 
   // Handle bulk actions
-  const handleBulkAction = (
-    action: string,
-    selection: GridRowSelectionModel
-  ) => {
+  const handleBulkAction = (action: string, selection: string[]) => {
     if (action === 'delete') {
-      handleDeleteClick(selection as string[]);
+      handleDeleteClick(selection);
     } else if (onBulkAction) {
-      onBulkAction(action, selection as string[]);
+      onBulkAction(action, selection);
     }
   };
 
   // Handle pagination changes
-  const handlePaginationChange = (params: GridPaginationModel) => {
+  const handlePaginationChange = (page: number, pageSize: number) => {
     if (onPageChange) {
-      onPageChange(params.page + 1, params.pageSize);
+      onPageChange(page, pageSize);
     }
   };
 
   // Handle sorting changes
-  const handleSortChange = (sortModel: GridSortModel) => {
-    if (sortModel.length > 0 && onSortChange) {
-      const { field, sort } = sortModel[0];
-      onSortChange(field, sort as 'asc' | 'desc');
+  const handleSortChange = (field: string, sort: 'asc' | 'desc') => {
+    if (onSortChange) {
+      onSortChange(field, sort);
     }
   };
 
   // Handle filter changes
-  const handleFilterChange = (filterModel: GridFilterModel) => {
+  const handleFilterChange = (filters: any) => {
     if (onFilterChange) {
-      // Convert filter model to a simpler format for the API
-      const apiFilters: Record<string, any> = {};
-
-      if (filterModel.items && filterModel.items.length > 0) {
-        filterModel.items.forEach((filter) => {
-          if (filter.field && filter.value !== undefined) {
-            apiFilters[filter.field] = filter.value;
-          }
-        });
-      }
-
-      onFilterChange(apiFilters);
+      onFilterChange(filters);
     }
   };
 
   // Define table columns
-  const columns: GridColDef[] = useMemo(
+  const columns = useMemo(
     () => [
       {
         field: 'title',
         headerName: 'Title',
-        flex: 2,
-        minWidth: 200,
-        renderCell: (params: GridRenderCellParams) => (
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-              {params.value}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {params.row.type.replace('_', ' ')}
-            </Typography>
-          </Box>
+        width: 300,
+        renderCell: (value: any, row: any) => (
+          <Stack gap={4}>
+            <Text size="sm" fw={500}>
+              {value}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {row.type.replace('_', ' ')}
+            </Text>
+          </Stack>
         ),
       },
       {
         field: 'status',
         headerName: 'Status',
-        flex: 1,
-        minWidth: 120,
-        renderCell: (params: GridRenderCellParams) => (
-          <Chip
-            label={params.value.replace('_', ' ')}
-            size="small"
-            color={getStatusColor(params.value)}
-          />
+        width: 120,
+        renderCell: (value: any) => (
+          <Badge color={getStatusColor(value)} size="sm">
+            {value.replace('_', ' ')}
+          </Badge>
         ),
       },
       {
         field: 'priority',
         headerName: 'Priority',
-        flex: 1,
-        minWidth: 100,
-        renderCell: (params: GridRenderCellParams) => (
-          <Chip
-            label={params.value}
-            size="small"
-            color={getPriorityColor(params.value)}
-          />
+        width: 100,
+        renderCell: (value: any) => (
+          <Badge color={getPriorityColor(value)} size="sm">
+            {value}
+          </Badge>
         ),
       },
       {
         field: 'author',
         headerName: 'Author',
-        flex: 1,
-        minWidth: 150,
-        valueGetter: (params) => params.row.author?.name || 'Unknown',
-        renderCell: (params: GridRenderCellParams) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Avatar
-              sx={{
-                width: 24,
-                height: 24,
-                bgcolor: theme.palette.primary.main,
-              }}
-            >
-              {params.row.author?.name?.charAt(0) || '?'}
+        width: 150,
+        renderCell: (value: any, row: any) => (
+          <Group gap="xs">
+            <Avatar size="sm" color="blue">
+              {row.author?.name?.charAt(0) || '?'}
             </Avatar>
-            <Typography variant="body2">{params.row.author?.name}</Typography>
-          </Box>
+            <Text size="sm">{row.author?.name}</Text>
+          </Group>
         ),
       },
       {
         field: 'updatedAt',
         headerName: 'Updated',
-        flex: 1,
-        minWidth: 170,
-        valueFormatter: (params: GridValueFormatterParams) =>
-          formatDate(params.value as string),
+        width: 170,
+        renderCell: (value: any) => formatDate(value),
       },
       {
         field: '_count',
         headerName: 'Items',
-        flex: 1,
-        minWidth: 150,
-        renderCell: (params: GridRenderCellParams) => (
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Tooltip title={`${params.row._count.comments} comments`}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Comment fontSize="small" color="action" sx={{ mr: 0.5 }} />
-                <Typography variant="body2">
-                  {params.row._count.comments}
-                </Typography>
-              </Box>
+        width: 150,
+        renderCell: (value: any, row: any) => (
+          <Group gap="md">
+            <Tooltip label={`${row._count.comments} comments`}>
+              <Group gap={4}>
+                <IconMessage size={14} />
+                <Text size="xs">{row._count.comments}</Text>
+              </Group>
             </Tooltip>
-            <Tooltip title={`${params.row._count.attachments} attachments`}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <FilePresent fontSize="small" color="action" sx={{ mr: 0.5 }} />
-                <Typography variant="body2">
-                  {params.row._count.attachments}
-                </Typography>
-              </Box>
+            <Tooltip label={`${row._count.attachments} attachments`}>
+              <Group gap={4}>
+                <IconFile size={14} />
+                <Text size="xs">{row._count.attachments}</Text>
+              </Group>
             </Tooltip>
-            <Tooltip title={`${params.row._count.approvals} approvals`}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CheckCircle fontSize="small" color="action" sx={{ mr: 0.5 }} />
-                <Typography variant="body2">
-                  {params.row._count.approvals}
-                </Typography>
-              </Box>
+            <Tooltip label={`${row._count.approvals} approvals`}>
+              <Group gap={4}>
+                <IconCheck size={14} />
+                <Text size="xs">{row._count.approvals}</Text>
+              </Group>
             </Tooltip>
-          </Box>
+          </Group>
         ),
       },
       {
         field: 'actions',
         headerName: 'Actions',
-        flex: 1,
-        minWidth: 120,
-        sortable: false,
-        filterable: false,
-        renderCell: (params: GridRenderCellParams) => (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title="View">
-              <IconButton
-                size="small"
-                onClick={() => handleView(params.row.id)}
-              >
-                <Visibility fontSize="small" />
-              </IconButton>
+        width: 120,
+        renderCell: (value: any, row: any) => (
+          <Group gap="xs">
+            <Tooltip label="View">
+              <ActionIcon size="sm" onClick={() => handleView(row.id)}>
+                <IconEye size={16} />
+              </ActionIcon>
             </Tooltip>
 
-            {canEdit(params.row) && (
-              <Tooltip title="Edit">
-                <IconButton
-                  size="small"
-                  onClick={() => handleEdit(params.row.id)}
-                >
-                  <Edit fontSize="small" />
-                </IconButton>
+            {canEdit(row) && (
+              <Tooltip label="Edit">
+                <ActionIcon size="sm" onClick={() => handleEdit(row.id)}>
+                  <IconEdit size={16} />
+                </ActionIcon>
               </Tooltip>
             )}
 
-            {canDelete(params.row) && (
-              <Tooltip title="Delete">
-                <IconButton
-                  size="small"
-                  onClick={() => handleDeleteClick(params.row.id)}
-                  color="error"
+            {canDelete(row) && (
+              <Tooltip label="Delete">
+                <ActionIcon
+                  size="sm"
+                  color="red"
+                  onClick={() => handleDeleteClick(row.id)}
                 >
-                  <Delete fontSize="small" />
-                </IconButton>
+                  <IconTrash size={16} />
+                </ActionIcon>
               </Tooltip>
             )}
-          </Box>
+          </Group>
         ),
       },
     ],
-    [theme, user]
+    [user]
   );
 
   // Define custom actions
@@ -366,43 +306,31 @@ export function ContentDataTable({
     {
       name: 'delete',
       label: 'Delete Selected',
-      icon: <Delete fontSize="small" />,
+      icon: <IconTrash size={16} />,
     },
     {
       name: 'markAsPublished',
       label: 'Mark as Published',
-      icon: <CheckCircle fontSize="small" />,
+      icon: <IconCheck size={16} />,
     },
     {
       name: 'export',
       label: 'Export Selected',
-      icon: <FilePresent fontSize="small" />,
+      icon: <IconFile size={16} />,
     },
   ];
 
-  // Initial state for the data grid
-  const initialState = {
-    pagination: {
-      paginationModel: {
-        page: pagination.page - 1, // Convert from 1-indexed to 0-indexed
-        pageSize: pagination.pageSize,
-      },
-    },
-  };
-
   return (
     <>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h5" component="h1">
-          Content Management
-        </Typography>
+      <Group justify="space-between" mb="md">
+        <Title order={1}>Content Management</Title>
 
         <PermissionGuard permission={PERMISSIONS.CONTENT_CREATE}>
-          <Button variant="contained" startIcon={<Add />} onClick={onCreate}>
+          <Button leftSection={<IconPlus size={16} />} onClick={onCreate}>
             Create Content
           </Button>
         </PermissionGuard>
-      </Box>
+      </Group>
 
       <DataTable
         rows={data}
@@ -410,19 +338,22 @@ export function ContentDataTable({
         loading={loading}
         title="Content Items"
         subtitle={`Showing ${data.length} of ${pagination.total} items`}
-        initialState={initialState}
-        onRowClick={(params) => handleView(params.id as string)}
+        pagination={{
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          pageCount: Math.ceil(pagination.total / pagination.pageSize),
+        }}
+        onRowClick={(row) => handleView(row.id)}
         onSelectionChange={setSelectedRows}
         onPaginationChange={handlePaginationChange}
         onSortChange={handleSortChange}
         onFilterChange={handleFilterChange}
         onRefresh={onRefresh}
-        onDelete={(selection) => handleDeleteClick(selection as string[])}
-        onEdit={(selection) => handleEdit(selection[0] as string)}
-        onView={(selection) => handleView(selection[0] as string)}
-        onExport={
-          onExport ? (selection) => onExport(selection as string[]) : undefined
-        }
+        onDelete={(selection) => handleDeleteClick(selection)}
+        onEdit={(selection) => handleEdit(selection[0])}
+        onView={(selection) => handleView(selection[0])}
+        onExport={onExport ? (selection) => onExport(selection) : undefined}
         onCustomAction={handleBulkAction}
         customActions={customActions}
         checkboxSelection
@@ -430,30 +361,27 @@ export function ContentDataTable({
         showQuickFilter
       />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
+      {/* Delete Confirmation Modal */}
+      <Modal
+        opened={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
+        title="Confirm Deletion"
       >
-        <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {Array.isArray(selectedForDelete)
-              ? `Are you sure you want to delete ${selectedForDelete.length} selected items? This action cannot be undone.`
-              : 'Are you sure you want to delete this item? This action cannot be undone.'}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={handleDeleteConfirm}
-            color="error"
-            variant="contained"
-          >
+        <Text mb="md">
+          {Array.isArray(selectedForDelete)
+            ? `Are you sure you want to delete ${selectedForDelete.length} selected items? This action cannot be undone.`
+            : 'Are you sure you want to delete this item? This action cannot be undone.'}
+        </Text>
+
+        <Group justify="flex-end" gap="xs">
+          <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button color="red" onClick={handleDeleteConfirm}>
             Delete
           </Button>
-        </DialogActions>
-      </Dialog>
+        </Group>
+      </Modal>
     </>
   );
 }

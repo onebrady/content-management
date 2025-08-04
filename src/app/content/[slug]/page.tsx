@@ -5,20 +5,23 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   Box,
   Paper,
-  Typography,
-  Chip,
+  Text,
+  Badge,
   Divider,
   Button,
-  CircularProgress,
+  Loader,
   Alert,
-} from '@mui/material';
+  Group,
+  Stack,
+  Title,
+} from '@mantine/core';
 import {
-  Edit,
-  ArrowBack,
-  CalendarToday,
-  Person,
-  Assignment,
-} from '@mui/icons-material';
+  IconEdit,
+  IconArrowLeft,
+  IconCalendar,
+  IconUser,
+  IconUserCheck,
+} from '@tabler/icons-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ContentDetail } from '@/components/content/ContentDetail';
@@ -119,8 +122,8 @@ export default function ContentPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress />
+        <Box p="md" style={{ display: 'flex', justifyContent: 'center' }}>
+          <Loader />
         </Box>
       </DashboardLayout>
     );
@@ -129,13 +132,13 @@ export default function ContentPage() {
   if (error) {
     return (
       <DashboardLayout>
-        <Box sx={{ p: 3 }}>
-          <Alert severity="error" sx={{ mb: 2 }}>
+        <Box p="md">
+          <Alert color="red" mb="md">
             {error}
           </Alert>
           <Button
-            variant="outlined"
-            startIcon={<ArrowBack />}
+            variant="outline"
+            leftSection={<IconArrowLeft size={16} />}
             onClick={handleBack}
           >
             Back to Content
@@ -148,13 +151,13 @@ export default function ContentPage() {
   if (!content) {
     return (
       <DashboardLayout>
-        <Box sx={{ p: 3 }}>
-          <Alert severity="warning" sx={{ mb: 2 }}>
+        <Box p="md">
+          <Alert color="yellow" mb="md">
             Content not found
           </Alert>
           <Button
-            variant="outlined"
-            startIcon={<ArrowBack />}
+            variant="outline"
+            leftSection={<IconArrowLeft size={16} />}
             onClick={handleBack}
           >
             Back to Content
@@ -168,95 +171,85 @@ export default function ContentPage() {
 
   return (
     <DashboardLayout>
-      <Box sx={{ p: 3 }}>
+      <Box p="md">
         {/* Header */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            mb: 3,
-          }}
-        >
-          <Box sx={{ flex: 1 }}>
+        <Group justify="space-between" align="flex-start" mb="lg">
+          <Box style={{ flex: 1 }}>
             <Breadcrumbs
               items={[
                 { label: 'Content', href: '/content' },
                 { label: content.title, href: `/content/${content.slug}` },
               ]}
             />
-            <Typography variant="h4" component="h1" sx={{ mt: 2, mb: 1 }}>
+            <Title order={1} mt="md" mb="xs">
               {content.title}
-            </Typography>
-            
+            </Title>
+
             {/* Meta information */}
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
-              <Chip
-                label={content.status}
+            <Group gap="xs" mb="md" wrap="wrap">
+              <Badge
                 color={
                   content.status === 'PUBLISHED'
-                    ? 'success'
+                    ? 'green'
                     : content.status === 'DRAFT'
-                    ? 'default'
-                    : 'warning'
+                      ? 'gray'
+                      : 'yellow'
                 }
-                size="small"
-              />
-              <Chip
-                label={content.type}
-                variant="outlined"
-                size="small"
-              />
-              <Chip
-                label={content.priority}
+                size="sm"
+              >
+                {content.status}
+              </Badge>
+              <Badge variant="outline" size="sm">
+                {content.type}
+              </Badge>
+              <Badge
                 color={
                   content.priority === 'HIGH'
-                    ? 'error'
+                    ? 'red'
                     : content.priority === 'MEDIUM'
-                    ? 'warning'
-                    : 'default'
+                      ? 'yellow'
+                      : 'gray'
                 }
-                size="small"
-              />
-            </Box>
+                size="sm"
+              >
+                {content.priority}
+              </Badge>
+            </Group>
 
             {/* Additional meta info */}
-            <Box sx={{ display: 'flex', gap: 3, color: 'text.secondary', fontSize: '0.875rem' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Person fontSize="small" />
-                <Typography variant="body2">
-                  {content.author.name}
-                </Typography>
-              </Box>
+            <Group gap="lg" c="dimmed" size="sm">
+              <Group gap="xs">
+                <IconUser size={16} />
+                <Text size="sm">{content.author.name}</Text>
+              </Group>
               {content.assignee && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Assignment fontSize="small" />
-                  <Typography variant="body2">
-                    {content.assignee.name}
-                  </Typography>
-                </Box>
+                <Group gap="xs">
+                  <IconUserCheck size={16} />
+                  <Text size="sm">{content.assignee.name}</Text>
+                </Group>
               )}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <CalendarToday fontSize="small" />
-                <Typography variant="body2">
+              <Group gap="xs">
+                <IconCalendar size={16} />
+                <Text size="sm">
                   {new Date(content.createdAt).toLocaleDateString()}
-                </Typography>
-              </Box>
-            </Box>
+                </Text>
+              </Group>
+            </Group>
           </Box>
 
           {canEdit && (
             <Button
-              variant="contained"
-              startIcon={<Edit />}
+              variant="filled"
+              leftSection={<IconEdit size={16} />}
               onClick={handleEdit}
-              sx={{
+              style={{
                 background: 'linear-gradient(45deg, #74b9ff 30%, #0984e3 90%)',
                 boxShadow: '0 3px 5px 2px rgba(116, 185, 255, .3)',
                 color: 'white',
                 fontWeight: 600,
                 '&:hover': {
-                  background: 'linear-gradient(45deg, #0984e3 30%, #74b9ff 90%)',
+                  background:
+                    'linear-gradient(45deg, #0984e3 30%, #74b9ff 90%)',
                   boxShadow: '0 4px 8px 2px rgba(116, 185, 255, .4)',
                 },
               }}
@@ -264,13 +257,13 @@ export default function ContentPage() {
               Edit
             </Button>
           )}
-        </Box>
+        </Group>
 
-        <Divider sx={{ mb: 3 }} />
+        <Divider mb="lg" />
 
         {/* Content */}
         <ContentDetail content={content} />
       </Box>
     </DashboardLayout>
   );
-} 
+}

@@ -1,67 +1,75 @@
 'use client';
 
+import { useEditor, EditorContent } from '@tiptap/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  useEditor,
-  EditorContent,
-  BubbleMenu,
-  FloatingMenu,
-} from '@tiptap/react';
-import { useEffect } from 'react';
+  Box,
+  Paper,
+  Divider,
+  Badge,
+  Button,
+  useMantineColorScheme,
+  Group,
+} from '@mantine/core';
 import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import Placeholder from '@tiptap/extension-placeholder';
-import { Box, Paper, Divider, Text, Badge } from '@mantine/core';
-import { EditorToolbar } from './EditorToolbar';
 import { EditorMenuBar } from './EditorMenuBar';
-import { FloatingToolbar } from './FloatingToolbar';
+import { EditorToolbar } from './EditorToolbar';
+import { BubbleMenu } from '@tiptap/react';
 import { BubbleMenuComponent } from './BubbleMenuComponent';
 import { DocumentOutline } from './DocumentOutline';
+import { IconInfoCircle } from '@tabler/icons-react';
 
 interface TiptapEditorProps {
-  content?: string;
-  onChange?: (content: string) => void;
+  content: string;
+  onChange: (content: string) => void;
   placeholder?: string;
-  editable?: boolean;
-  className?: string;
+  readOnly?: boolean;
+  showStats?: boolean;
 }
 
 export function TiptapEditor({
-  content = '',
+  content,
   onChange,
   placeholder = 'Start writing...',
-  editable = true,
-  className,
+  readOnly = false,
+  showStats = false,
 }: TiptapEditorProps) {
-  console.log('TiptapEditor received content:', content);
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3, 4, 5, 6],
-        },
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+  const [showStatsButton, setShowStatsButton] = useState(false);
+  const [stats, setStats] = useState({ wordCount: 0, charCount: 0 });
+
+  const extensions = useMemo(
+    () => [
+      StarterKit,
+      Placeholder.configure({
+        placeholder,
       }),
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'editor-link',
+          class: 'text-blue-600 underline',
         },
       }),
       Image.configure({
         HTMLAttributes: {
-          class: 'editor-image',
+          class: 'max-w-full h-auto',
         },
       }),
-      Placeholder.configure({
-        placeholder,
-      }),
     ],
+    [placeholder]
+  );
+
+  const editor = useEditor({
+    extensions,
     content,
-    editable,
+    editable: !readOnly,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      console.log('TiptapEditor onUpdate - HTML content:', html);
-      onChange?.(html);
+      onChange(html);
     },
     editorProps: {
       attributes: {
@@ -120,91 +128,86 @@ export function TiptapEditor({
     },
   });
 
-  // Update editor content when content prop changes
-  useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      console.log('TiptapEditor updating content from prop:', content);
-      editor.commands.setContent(content);
+  // Calculate stats only when showStats is true and stats button is clicked
+  const calculateStats = useCallback(() => {
+    if (editor) {
+      const text = editor.getText();
+      const wordCount = text
+        .split(/\s+/)
+        .filter((word) => word.length > 0).length;
+      const charCount = text.length;
+      setStats({ wordCount, charCount });
     }
-  }, [editor, content]);
+  }, [editor]);
+
+  // Show stats button after content is added
+  useEffect(() => {
+    if (editor && showStats) {
+      const text = editor.getText();
+      if (text.trim().length > 0) {
+        setShowStatsButton(true);
+      }
+    }
+  }, [editor, showStats]);
 
   if (!editor) {
-    return null;
+    return (
+      <Box>
+        <Paper p="md" withBorder>
+          <Box style={{ minHeight: '200px' }} />
+        </Paper>
+      </Box>
+    );
   }
 
   return (
-    <Paper shadow="xs" className={className}>
-      <EditorMenuBar editor={editor} />
-      <Divider />
-      <EditorToolbar editor={editor} />
-      <Divider />
-      <Box p="md" style={{ minHeight: 200, position: 'relative' }}>
-        <EditorContent editor={editor} />
-
-        {/* Floating Toolbar - appears when text is selected */}
-        <FloatingToolbar editor={editor} />
-
-        {/* Bubble Menu - appears on text selection */}
-        {editor && (
-          <BubbleMenu
-            editor={editor}
-            tippyOptions={{
-              duration: 100,
-              placement: 'top',
-              offset: [0, 8],
-              maxWidth: 'none',
-              popperOptions: {
-                modifiers: [
-                  {
-                    name: 'preventOverflow',
-                    options: {
-                      boundary: 'viewport',
-                      padding: 8,
-                    },
-                  },
-                  {
-                    name: 'flip',
-                    options: {
-                      fallbackPlacements: ['bottom', 'top'],
-                    },
-                  },
-                ],
-              },
-            }}
-          >
-            <BubbleMenuComponent editor={editor} />
-          </BubbleMenu>
+    <Box>
+      <Paper p="md" withBorder>
+        {showStats && showStatsButton && (
+          <Box mb="md">
+            <Button
+              variant="light"
+              size="xs"
+              onClick={calculateStats}
+              style={{ marginBottom: '8px' }}
+            >
+              Show Word Count
+            </Button>
+            {stats.wordCount > 0 && (
+              <Group gap="xs">
+                <Badge variant="light" color="blue">
+                  {stats.wordCount} words
+                </Badge>
+                <Badge variant="light" color="green">
+                  {stats.charCount} characters
+                </Badge>
+              </Group>
+            )}
+          </Box>
         )}
 
-        {/* Document Stats */}
+        <EditorMenuBar editor={editor} />
+        <Divider my="sm" />
+        <EditorToolbar editor={editor} />
+
         <Box
           style={{
-            position: 'absolute',
-            bottom: 8,
-            right: 8,
-            display: 'flex',
-            gap: 4,
-            opacity: 0.7,
-            '&:hover': { opacity: 1 },
+            border: `1px solid ${isDark ? '#373A40' : '#DEE2E6'}`,
+            borderRadius: '4px',
+            padding: '12px',
+            minHeight: '300px',
+            backgroundColor: isDark ? '#25262B' : '#FFFFFF',
           }}
         >
-          <Badge variant="outline" size="sm">
-            {
-              editor
-                .getText()
-                .split(/\s+/)
-                .filter((word) => word.length > 0).length
-            }{' '}
-            words
-          </Badge>
-          <Badge variant="outline" size="sm">
-            {editor.getText().length} chars
-          </Badge>
-        </Box>
+          <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
+            <BubbleMenuComponent editor={editor} />
+          </BubbleMenu>
 
-        {/* Document Outline */}
-        <DocumentOutline editor={editor} />
-      </Box>
-    </Paper>
+          <EditorContent editor={editor} />
+
+          {showStats && <DocumentOutline editor={editor} />}
+        </Box>
+      </Paper>
+    </Box>
   );
 }

@@ -2,63 +2,56 @@
 
 import { useState, useMemo } from 'react';
 import {
-  DataGrid,
-  GridColDef,
-  GridRowsProp,
-  GridToolbarContainer,
-  GridToolbarFilterButton,
-  GridToolbarExport,
-  GridToolbarDensitySelector,
-  GridToolbarColumnsButton,
-  GridRowSelectionModel,
-  GridSortModel,
-  GridFilterModel,
-  GridPaginationModel,
-} from '@mui/x-data-grid';
-import {
+  Table,
+  Pagination,
+  TextInput,
+  Select,
+  ActionIcon,
+  Group,
   Box,
-  Typography,
   Paper,
-  Chip,
-  Button,
+  Text,
+  Badge,
   Menu,
-  MenuItem,
+  Button,
   Tooltip,
-  IconButton,
-  TextField,
-  InputAdornment,
   Divider,
-  useTheme,
-  alpha,
-} from '@mui/material';
+  Checkbox,
+  Stack,
+} from '@mantine/core';
 import {
-  Search,
-  FilterList,
-  MoreVert,
-  Refresh,
-  Delete,
-  Edit,
-  Visibility,
-  Download,
-  KeyboardArrowDown,
-} from '@mui/icons-material';
+  IconSearch,
+  IconFilter,
+  IconDotsVertical,
+  IconRefresh,
+  IconTrash,
+  IconEdit,
+  IconEye,
+  IconDownload,
+  IconChevronDown,
+} from '@tabler/icons-react';
 
 interface DataTableProps {
-  rows: GridRowsProp;
-  columns: GridColDef[];
+  rows: any[];
+  columns: Array<{
+    field: string;
+    headerName: string;
+    width?: number;
+    renderCell?: (value: any, row: any) => React.ReactNode;
+  }>;
   loading?: boolean;
-  onRowClick?: (params: any) => void;
-  onRowDoubleClick?: (params: any) => void;
-  onSelectionChange?: (selection: GridRowSelectionModel) => void;
-  onSortChange?: (sortModel: GridSortModel) => void;
-  onFilterChange?: (filterModel: GridFilterModel) => void;
-  onPaginationChange?: (paginationModel: GridPaginationModel) => void;
+  onRowClick?: (row: any) => void;
+  onRowDoubleClick?: (row: any) => void;
+  onSelectionChange?: (selection: string[]) => void;
+  onSortChange?: (field: string, direction: 'asc' | 'desc') => void;
+  onFilterChange?: (filters: any) => void;
+  onPaginationChange?: (page: number, pageSize: number) => void;
   onRefresh?: () => void;
-  onDelete?: (selection: GridRowSelectionModel) => void;
-  onEdit?: (selection: GridRowSelectionModel) => void;
-  onView?: (selection: GridRowSelectionModel) => void;
-  onExport?: (selection: GridRowSelectionModel) => void;
-  onCustomAction?: (action: string, selection: GridRowSelectionModel) => void;
+  onDelete?: (selection: string[]) => void;
+  onEdit?: (selection: string[]) => void;
+  onView?: (selection: string[]) => void;
+  onExport?: (selection: string[]) => void;
+  onCustomAction?: (action: string, selection: string[]) => void;
   customActions?: Array<{
     name: string;
     label: string;
@@ -66,25 +59,18 @@ interface DataTableProps {
   }>;
   title?: string;
   subtitle?: string;
-  initialState?: {
-    pagination?: {
-      paginationModel: GridPaginationModel;
-    };
-    sorting?: {
-      sortModel: GridSortModel;
-    };
-    filter?: {
-      filterModel: GridFilterModel;
-    };
+  pagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    pageCount: number;
   };
   disableRowSelectionOnClick?: boolean;
   checkboxSelection?: boolean;
-  disableColumnMenu?: boolean;
   hideFooter?: boolean;
   hideFooterPagination?: boolean;
   autoHeight?: boolean;
   height?: string | number;
-  density?: 'compact' | 'standard' | 'comfortable';
   pageSizeOptions?: number[];
   showToolbar?: boolean;
   showQuickFilter?: boolean;
@@ -103,188 +89,147 @@ function CustomToolbar({
   onCustomAction,
   customActions,
   showQuickFilter,
+  onSearch,
 }: {
   title?: string;
   subtitle?: string;
-  selection: GridRowSelectionModel;
+  selection: string[];
   onRefresh?: () => void;
-  onDelete?: (selection: GridRowSelectionModel) => void;
-  onEdit?: (selection: GridRowSelectionModel) => void;
-  onView?: (selection: GridRowSelectionModel) => void;
-  onExport?: (selection: GridRowSelectionModel) => void;
-  onCustomAction?: (action: string, selection: GridRowSelectionModel) => void;
+  onDelete?: (selection: string[]) => void;
+  onEdit?: (selection: string[]) => void;
+  onView?: (selection: string[]) => void;
+  onExport?: (selection: string[]) => void;
+  onCustomAction?: (action: string, selection: string[]) => void;
   customActions?: Array<{
     name: string;
     label: string;
     icon?: React.ReactNode;
   }>;
   showQuickFilter?: boolean;
+  onSearch?: (value: string) => void;
 }) {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const theme = useTheme();
+  const [searchValue, setSearchValue] = useState('');
+  const [menuOpened, setMenuOpened] = useState(false);
 
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+    onSearch?.(value);
   };
 
   const handleAction = (action: string) => {
     if (onCustomAction) {
       onCustomAction(action, selection);
     }
-    handleClose();
+    setMenuOpened(false);
   };
 
   return (
-    <Box sx={{ p: 1 }}>
+    <Box p="md">
       {/* Title and subtitle */}
       {(title || subtitle) && (
-        <Box sx={{ mb: 2 }}>
+        <Box mb="md">
           {title && (
-            <Typography variant="h6" component="h2">
+            <Text size="lg" fw={600}>
               {title}
-            </Typography>
+            </Text>
           )}
           {subtitle && (
-            <Typography variant="body2" color="text.secondary">
+            <Text size="sm" c="dimmed">
               {subtitle}
-            </Typography>
+            </Text>
           )}
         </Box>
       )}
 
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 1,
-        }}
-      >
+      <Group justify="space-between" align="center" wrap="wrap" gap="sm">
         {/* Left side - Selected items and actions */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Group gap="xs">
           {selection.length > 0 && (
             <>
-              <Chip
-                label={`${selection.length} selected`}
-                color="primary"
-                size="small"
-                sx={{ mr: 1 }}
-              />
+              <Badge color="blue" size="sm">
+                {selection.length} selected
+              </Badge>
 
               {onView && selection.length === 1 && (
-                <Tooltip title="View">
-                  <IconButton size="small" onClick={() => onView(selection)}>
-                    <Visibility fontSize="small" />
-                  </IconButton>
+                <Tooltip label="View">
+                  <ActionIcon size="sm" onClick={() => onView(selection)}>
+                    <IconEye size={16} />
+                  </ActionIcon>
                 </Tooltip>
               )}
 
               {onEdit && selection.length === 1 && (
-                <Tooltip title="Edit">
-                  <IconButton size="small" onClick={() => onEdit(selection)}>
-                    <Edit fontSize="small" />
-                  </IconButton>
+                <Tooltip label="Edit">
+                  <ActionIcon size="sm" onClick={() => onEdit(selection)}>
+                    <IconEdit size={16} />
+                  </ActionIcon>
                 </Tooltip>
               )}
 
               {onDelete && (
-                <Tooltip title="Delete">
-                  <IconButton
-                    size="small"
-                    onClick={() => onDelete(selection)}
-                    color="error"
-                  >
-                    <Delete fontSize="small" />
-                  </IconButton>
+                <Tooltip label="Delete">
+                  <ActionIcon size="sm" color="red" onClick={() => onDelete(selection)}>
+                    <IconTrash size={16} />
+                  </ActionIcon>
                 </Tooltip>
               )}
 
               {onExport && (
-                <Tooltip title="Export">
-                  <IconButton size="small" onClick={() => onExport(selection)}>
-                    <Download fontSize="small" />
-                  </IconButton>
+                <Tooltip label="Export">
+                  <ActionIcon size="sm" onClick={() => onExport(selection)}>
+                    <IconDownload size={16} />
+                  </ActionIcon>
                 </Tooltip>
               )}
 
               {customActions && customActions.length > 0 && (
                 <>
-                  <Button
-                    size="small"
-                    endIcon={<KeyboardArrowDown />}
-                    onClick={handleClick}
-                    variant="outlined"
-                    sx={{ ml: 1 }}
-                  >
-                    Actions
-                  </Button>
-                  <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-                    {customActions.map((action) => (
-                      <MenuItem
-                        key={action.name}
-                        onClick={() => handleAction(action.name)}
-                      >
-                        {action.icon && (
-                          <Box
-                            component="span"
-                            sx={{
-                              mr: 1,
-                              display: 'flex',
-                              alignItems: 'center',
-                            }}
-                          >
-                            {action.icon}
-                          </Box>
-                        )}
-                        {action.label}
-                      </MenuItem>
-                    ))}
+                  <Menu opened={menuOpened} onOpen={setMenuOpened}>
+                    <Menu.Target>
+                      <Button size="xs" variant="outline" rightSection={<IconChevronDown size={14} />}>
+                        Actions
+                      </Button>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      {customActions.map((action) => (
+                        <Menu.Item
+                          key={action.name}
+                          onClick={() => handleAction(action.name)}
+                          leftSection={action.icon}
+                        >
+                          {action.label}
+                        </Menu.Item>
+                      ))}
+                    </Menu.Dropdown>
                   </Menu>
                 </>
               )}
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+              <Divider orientation="vertical" />
             </>
           )}
 
           {onRefresh && (
-            <Tooltip title="Refresh">
-              <IconButton size="small" onClick={onRefresh}>
-                <Refresh fontSize="small" />
-              </IconButton>
+            <Tooltip label="Refresh">
+              <ActionIcon size="sm" onClick={onRefresh}>
+                <IconRefresh size={16} />
+              </ActionIcon>
             </Tooltip>
           )}
-        </Box>
+        </Group>
 
-        {/* Right side - Standard toolbar items */}
-        <GridToolbarContainer sx={{ justifyContent: 'flex-end' }}>
-          {showQuickFilter && (
-            <TextField
-              variant="outlined"
-              size="small"
-              placeholder="Search..."
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mr: 2, width: { xs: '100%', sm: 'auto' } }}
-            />
-          )}
-          <GridToolbarColumnsButton />
-          <GridToolbarFilterButton />
-          <GridToolbarDensitySelector />
-          <GridToolbarExport />
-        </GridToolbarContainer>
-      </Box>
+        {/* Right side - Search */}
+        {showQuickFilter && (
+          <TextInput
+            placeholder="Search..."
+            value={searchValue}
+            onChange={(event) => handleSearch(event.currentTarget.value)}
+            leftSection={<IconSearch size={16} />}
+            size="sm"
+            style={{ minWidth: 200 }}
+          />
+        )}
+      </Group>
     </Box>
   );
 }
@@ -308,35 +253,66 @@ export function DataTable({
   customActions,
   title,
   subtitle,
-  initialState,
+  pagination,
   disableRowSelectionOnClick = false,
   checkboxSelection = true,
-  disableColumnMenu = false,
   hideFooter = false,
   hideFooterPagination = false,
   autoHeight = false,
   height = 500,
-  density = 'standard',
   pageSizeOptions = [10, 25, 50, 100],
   showToolbar = true,
   showQuickFilter = true,
 }: DataTableProps) {
-  const [selection, setSelection] = useState<GridRowSelectionModel>([]);
-  const theme = useTheme();
+  const [selection, setSelection] = useState<string[]>([]);
+  const [searchValue, setSearchValue] = useState('');
 
   // Handle selection changes
-  const handleSelectionChange = (newSelection: GridRowSelectionModel) => {
+  const handleSelectionChange = (newSelection: string[]) => {
     setSelection(newSelection);
     if (onSelectionChange) {
       onSelectionChange(newSelection);
     }
   };
 
+  // Handle row selection
+  const handleRowSelect = (rowId: string, checked: boolean) => {
+    const newSelection = checked
+      ? [...selection, rowId]
+      : selection.filter(id => id !== rowId);
+    handleSelectionChange(newSelection);
+  };
+
+  // Handle select all
+  const handleSelectAll = (checked: boolean) => {
+    const newSelection = checked ? rows.map(row => row.id) : [];
+    handleSelectionChange(newSelection);
+  };
+
+  // Handle row click
+  const handleRowClick = (row: any) => {
+    if (!disableRowSelectionOnClick) {
+      onRowClick?.(row);
+    }
+  };
+
+  // Filter rows based on search
+  const filteredRows = useMemo(() => {
+    if (!searchValue) return rows;
+    
+    return rows.filter(row =>
+      columns.some(column => {
+        const value = row[column.field];
+        return value && value.toString().toLowerCase().includes(searchValue.toLowerCase());
+      })
+    );
+  }, [rows, searchValue, columns]);
+
   // Custom toolbar with selection info and actions
-  const CustomDataGridToolbar = useMemo(() => {
+  const CustomDataTableToolbar = useMemo(() => {
     if (!showToolbar) return null;
 
-    return () => (
+    return (
       <CustomToolbar
         title={title}
         subtitle={subtitle}
@@ -349,6 +325,7 @@ export function DataTable({
         onCustomAction={onCustomAction}
         customActions={customActions}
         showQuickFilter={showQuickFilter}
+        onSearch={setSearchValue}
       />
     );
   }, [
@@ -367,58 +344,87 @@ export function DataTable({
   ]);
 
   return (
-    <Paper
-      sx={{
-        height: autoHeight ? 'auto' : height,
-        width: '100%',
-        '& .MuiDataGrid-cell:focus': {
-          outline: 'none',
-        },
-        '& .MuiDataGrid-row:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.04),
-        },
-        '& .MuiDataGrid-row.Mui-selected': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.08),
-          '&:hover': {
-            backgroundColor: alpha(theme.palette.primary.main, 0.12),
-          },
-        },
-      }}
-      elevation={1}
-    >
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        loading={loading}
-        initialState={initialState}
-        checkboxSelection={checkboxSelection}
-        disableRowSelectionOnClick={disableRowSelectionOnClick}
-        disableColumnMenu={disableColumnMenu}
-        autoHeight={autoHeight}
-        hideFooter={hideFooter}
-        hideFooterPagination={hideFooterPagination}
-        pageSizeOptions={pageSizeOptions}
-        density={density}
-        onRowClick={onRowClick}
-        onRowDoubleClick={onRowDoubleClick}
-        onRowSelectionModelChange={handleSelectionChange}
-        onSortModelChange={onSortChange}
-        onFilterModelChange={onFilterChange}
-        onPaginationModelChange={onPaginationChange}
-        slots={{
-          toolbar: CustomDataGridToolbar,
-        }}
-        sx={{
-          border: 'none',
-          '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: alpha(theme.palette.primary.main, 0.04),
-            borderBottom: `1px solid ${theme.palette.divider}`,
-          },
-          '& .MuiDataGrid-footerContainer': {
-            borderTop: `1px solid ${theme.palette.divider}`,
-          },
-        }}
-      />
+    <Paper shadow="sm" radius="md" withBorder>
+      {CustomDataTableToolbar}
+      
+      <Box style={{ height: autoHeight ? 'auto' : height, overflow: 'auto' }}>
+        <Table highlightOnHover>
+          <Table.Thead>
+            <Table.Tr>
+              {checkboxSelection && (
+                <Table.Th style={{ width: 40 }}>
+                  <Checkbox
+                    checked={selection.length === rows.length && rows.length > 0}
+                    indeterminate={selection.length > 0 && selection.length < rows.length}
+                    onChange={(event) => handleSelectAll(event.currentTarget.checked)}
+                  />
+                </Table.Th>
+              )}
+              {columns.map((column) => (
+                <Table.Th key={column.field} style={{ width: column.width }}>
+                  {column.headerName}
+                </Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {filteredRows.map((row) => (
+              <Table.Tr
+                key={row.id}
+                onClick={() => handleRowClick(row)}
+                onDoubleClick={() => onRowDoubleClick?.(row)}
+                style={{ cursor: disableRowSelectionOnClick ? 'default' : 'pointer' }}
+              >
+                {checkboxSelection && (
+                  <Table.Td>
+                    <Checkbox
+                      checked={selection.includes(row.id)}
+                      onChange={(event) => handleRowSelect(row.id, event.currentTarget.checked)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </Table.Td>
+                )}
+                {columns.map((column) => (
+                  <Table.Td key={column.field}>
+                    {column.renderCell
+                      ? column.renderCell(row[column.field], row)
+                      : row[column.field]}
+                  </Table.Td>
+                ))}
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Box>
+
+      {!hideFooter && !hideFooterPagination && pagination && (
+        <Box p="md">
+          <Group justify="space-between" align="center">
+            <Text size="sm" c="dimmed">
+              Showing {((pagination.page - 1) * pagination.pageSize) + 1} to{' '}
+              {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
+              {pagination.total} results
+            </Text>
+            
+            <Group gap="xs">
+              <Select
+                size="xs"
+                value={pagination.pageSize.toString()}
+                onChange={(value) => onPaginationChange?.(1, parseInt(value || '10'))}
+                data={pageSizeOptions.map(size => ({ value: size.toString(), label: `${size} per page` }))}
+                style={{ width: 120 }}
+              />
+              
+              <Pagination
+                total={pagination.pageCount}
+                value={pagination.page}
+                onChange={(page) => onPaginationChange?.(page, pagination.pageSize)}
+                size="sm"
+              />
+            </Group>
+          </Group>
+        </Box>
+      )}
     </Paper>
   );
 }

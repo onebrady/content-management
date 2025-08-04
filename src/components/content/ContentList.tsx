@@ -103,18 +103,6 @@ export function ContentList({
   useEffect(() => {
     const safeContent = Array.isArray(content) ? content : [];
     setFilteredContent(safeContent);
-
-    // Debug: Log content data to check for heroImage
-    console.log('ContentList received content:', safeContent);
-    safeContent.forEach((item, index) => {
-      console.log(`Content ${index}:`, {
-        id: item.id,
-        title: item.title,
-        heroImage: item.heroImage,
-        hasHeroImage: !!item.heroImage,
-        heroImageType: typeof item.heroImage,
-      });
-    });
   }, [content]);
 
   const handleFilterChange = (field: string, value: string) => {
@@ -257,8 +245,6 @@ export function ContentList({
 
   // Enhanced hero image rendering with default placeholder
   const renderHeroImage = (item: Content) => {
-    console.log(`Rendering hero image for ${item.title}:`, item.heroImage);
-
     return (
       <Card.Section>
         <AspectRatio ratio={2.04 / 1}>
@@ -395,26 +381,6 @@ export function ContentList({
             />
           </Grid.Col>
         </Grid>
-      </Paper>
-
-      {/* Debug Info */}
-      <Paper
-        p="xs"
-        mb="md"
-        withBorder
-        style={{
-          backgroundColor: isDark
-            ? 'var(--mantine-color-dark-6)'
-            : 'var(--mantine-color-gray-0)',
-          borderColor: isDark
-            ? 'var(--mantine-color-dark-4)'
-            : 'var(--mantine-color-gray-3)',
-        }}
-      >
-        <Text size="xs" c="dimmed">
-          Debug: {filteredContent.length} content items loaded. Items with hero
-          images: {filteredContent.filter((item) => item.heroImage).length}
-        </Text>
       </Paper>
 
       {/* Content Grid */}

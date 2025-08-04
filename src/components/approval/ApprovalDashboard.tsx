@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Tabs,
@@ -48,69 +48,102 @@ export function ApprovalDashboard() {
     searchQuery: '',
   });
 
-  // Fetch approvals data
-  useEffect(() => {
-    const fetchApprovals = async () => {
-      setLoading(true);
-      setError(null);
+  // Fetch approvals data with proper error handling and loading states
+  const fetchApprovals = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        // Build query params based on filters
-        const params = new URLSearchParams();
+    try {
+      // Build query params based on filters
+      const params = new URLSearchParams();
 
-        if (filters.status.length > 0) {
-          params.append('status', filters.status.join(','));
-        }
-
-        if (filters.contentType.length > 0) {
-          params.append('contentType', filters.contentType.join(','));
-        }
-
-        if (filters.dateRange[0]) {
-          params.append('startDate', filters.dateRange[0].toISOString());
-        }
-
-        if (filters.dateRange[1]) {
-          params.append('endDate', filters.dateRange[1].toISOString());
-        }
-
-        if (filters.searchQuery) {
-          params.append('search', filters.searchQuery);
-        }
-
-        // Add tab-specific filters
-        if (activeTab === 'assigned') {
-          // Assigned to me
-          params.append('assignedTo', user?.id || '');
-        } else if (activeTab === 'my-approvals') {
-          // My approvals
-          params.append('approvedBy', user?.id || '');
-        }
-
-        // Fetch data
-        const response = await fetch(`/api/approvals?${params.toString()}`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch approvals');
-        }
-
-        const data = await response.json();
-        setApprovals(data.approvals);
-        setStats(data.stats);
-      } catch (err) {
-        console.error('Error fetching approvals:', err);
-        setError('Failed to load approvals. Please try again.');
-      } finally {
-        setLoading(false);
+      if (filters.status.length > 0) {
+        params.append('status', filters.status.join(','));
       }
-    };
 
-    fetchApprovals();
+      if (filters.contentType.length > 0) {
+        params.append('contentType', filters.contentType.join(','));
+      }
+
+      if (filters.dateRange[0]) {
+        params.append('startDate', filters.dateRange[0].toISOString());
+      }
+
+      if (filters.dateRange[1]) {
+        params.append('endDate', filters.dateRange[1].toISOString());
+      }
+
+      if (filters.searchQuery) {
+        params.append('search', filters.searchQuery);
+      }
+
+      // Add tab-specific filters
+      if (activeTab === 'pending') {
+        // Only show pending approvals
+        params.append('status', 'PENDING');
+      } else if (activeTab === 'assigned') {
+        // Assigned to me - content assigned to current user
+        params.append('assignedTo', user?.id || '');
+      } else if (activeTab === 'my-approvals') {
+        // My approvals - approvals created by current user
+        params.append('approvedBy', user?.id || '');
+      }
+      // 'all' tab shows everything without additional filters
+
+      // Fetch data
+      const response = await fetch(`/api/approvals?${params.toString()}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch approvals: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setApprovals(data.approvals || []);
+      setStats(
+        data.stats || {
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+          total: 0,
+        }
+      );
+    } catch (err) {
+      console.error('Error fetching approvals:', err);
+      setError('Failed to load approvals. Please try again.');
+      setApprovals([]);
+      setStats({
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        total: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [activeTab, filters, user?.id]);
+
+  // Fetch data when dependencies change
+  useEffect(() => {
+    fetchApprovals();
+  }, [fetchApprovals]);
 
   // Handle filter change
   const handleFilterChange = (newFilters: Partial<ApprovalFilters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  // Handle status change - refresh data after approval actions
+  const handleStatusChange = useCallback(() => {
+    fetchApprovals();
+  }, [fetchApprovals]);
+
+  // Handle tab change
+  const handleTabChange = (value: string | null) => {
+    if (value) {
+      setActiveTab(value);
+    }
   };
 
   return (
@@ -127,7 +160,7 @@ export function ApprovalDashboard() {
       >
         <Tabs
           value={activeTab}
-          onChange={(value) => setActiveTab(value || 'all')}
+          onChange={handleTabChange}
           variant="pills"
           color="blue"
         >
@@ -182,19 +215,20 @@ export function ApprovalDashboard() {
           </Alert>
         ) : approvals.length === 0 ? (
           <Box p="xl" ta="center">
-            <Text c="dimmed">No approvals found matching your criteria</Text>
+            <Text c="dimmed">
+              {activeTab === 'all' &&
+                'No approvals found matching your criteria'}
+              {activeTab === 'pending' && 'No pending approvals found'}
+              {activeTab === 'assigned' &&
+                'No content assigned to you for approval'}
+              {activeTab === 'my-approvals' &&
+                "You haven't made any approvals yet"}
+            </Text>
           </Box>
         ) : (
           <ApprovalList
             approvals={approvals}
-            onStatusChange={() => {
-              // Refresh data when status changes
-              const fetchApprovals = async () => {
-                setLoading(true);
-                // Fetch updated data...
-              };
-              fetchApprovals();
-            }}
+            onStatusChange={handleStatusChange}
           />
         )}
       </Box>

@@ -3,16 +3,21 @@
 import { signIn, getSession, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import {
   Button,
   Card,
-  CardContent,
-  Typography,
+  Text,
   Box,
   Alert,
-  TextField,
-} from '@mui/material';
-import { Microsoft } from '@mui/icons-material';
+  TextInput,
+  PasswordInput,
+  Stack,
+  Title,
+  Group,
+  Image,
+} from '@mantine/core';
+import { IconBrandWindows } from '@tabler/icons-react';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -22,6 +27,7 @@ export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [credentialsError, setCredentialsError] = useState<string | null>(null);
+  const { companyLogo, isLoading: logoLoading } = useCompanyLogo();
 
   useEffect(() => {
     // If user is already signed in, redirect to dashboard
@@ -66,19 +72,18 @@ export default function SignInPage() {
     setIsLoading(false);
   };
 
-  // Show loading state while checking session
-  if (status === 'loading') {
+  // Show loading state while checking session or loading logo
+  if (status === 'loading' || logoLoading) {
     return (
       <Box
-        sx={{
+        style={{
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'background.default',
         }}
       >
-        <Typography>Loading...</Typography>
+        <Text>Loading...</Text>
       </Box>
     );
   }
@@ -87,112 +92,107 @@ export default function SignInPage() {
   if (session && status === 'authenticated') {
     return (
       <Box
-        sx={{
+        style={{
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'background.default',
         }}
       >
-        <Typography>Redirecting to dashboard...</Typography>
+        <Text>Redirecting to dashboard...</Text>
       </Box>
     );
   }
 
   return (
     <Box
-      sx={{
+      style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
       }}
     >
-      <Card sx={{ maxWidth: 400, width: '100%', mx: 2 }}>
-        <CardContent sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Welcome Back
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Sign in to access the Content Management Tool
-          </Typography>
+      <Card style={{ maxWidth: 400, width: '100%', margin: '0 16px' }}>
+        <Box p="xl" style={{ textAlign: 'center' }}>
+          {companyLogo ? (
+            <Box mb="md">
+              <Image
+                src={companyLogo}
+                alt="Company Logo"
+                style={{ maxHeight: 80, maxWidth: 200, margin: '0 auto' }}
+                fallbackSrc="data:image/svg+xml,%3csvg width='200' height='80' xmlns='http://www.w3.org/2000/svg'%3e%3ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui, sans-serif' font-size='14' fill='%23666'%3eLogo%3c/text%3e%3c/svg%3e"
+              />
+            </Box>
+          ) : (
+            <Title order={1} mb="md">
+              Welcome Back
+            </Title>
+          )}
+          <Text c="dimmed" mb="xl">
+            Sign in to access the dashboard.
+          </Text>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert color="red" mb="md">
               {error}
             </Alert>
           )}
 
           <Button
-            variant="contained"
-            size="large"
-            startIcon={<Microsoft />}
+            variant="filled"
+            size="lg"
+            leftSection={<IconBrandWindows size={20} />}
             onClick={handleSignIn}
             disabled={isLoading}
-            sx={{
+            style={{
               width: '100%',
-              py: 1.5,
-              bgcolor: '#2f2f2f',
+              backgroundColor: '#2f2f2f',
               '&:hover': {
-                bgcolor: '#1f1f1f',
+                backgroundColor: '#1f1f1f',
               },
             }}
           >
             {isLoading ? 'Signing in...' : 'Sign in with Microsoft'}
           </Button>
+
           {/* Credentials login form */}
-          <Box
-            component="form"
-            onSubmit={handleCredentialsLogin}
-            sx={{ mt: 4 }}
-          >
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+          <Box component="form" onSubmit={handleCredentialsLogin} mt="xl">
+            <Text size="sm" mb="xs">
               Or sign in with email and password
-            </Typography>
-            <TextField
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              fullWidth
-              margin="normal"
-              required
-            />
-            <TextField
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-              margin="normal"
-              required
-            />
-            {credentialsError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {credentialsError}
-              </Alert>
-            )}
-            <Button
-              type="submit"
-              variant="outlined"
-              color="primary"
-              fullWidth
-              disabled={isLoading}
-              sx={{ mt: 2 }}
-            >
-              {isLoading ? 'Signing in...' : 'Sign in with Email'}
-            </Button>
+            </Text>
+            <Stack gap="md">
+              <TextInput
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <PasswordInput
+                label="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              {credentialsError && (
+                <Alert color="red">{credentialsError}</Alert>
+              )}
+              <Button
+                type="submit"
+                variant="outline"
+                fullWidth
+                disabled={isLoading}
+              >
+                {isLoading ? 'Signing in...' : 'Sign in with Email'}
+              </Button>
+            </Stack>
           </Box>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ mt: 2, display: 'block' }}
-          >
+
+          <Text size="xs" c="dimmed" mt="md">
             You'll be redirected to Microsoft Azure AD for authentication
-          </Typography>
-        </CardContent>
+          </Text>
+        </Box>
       </Card>
     </Box>
   );

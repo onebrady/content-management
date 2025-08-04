@@ -3,19 +3,19 @@
 import { useState, useEffect } from 'react';
 import {
   Box,
-  Typography,
+  Text,
   Paper,
   Grid,
   Divider,
-  Chip,
-  CircularProgress,
+  Badge,
+  Loader,
   Alert,
   Button,
-} from '@mui/material';
-import {
-  Compare as CompareIcon,
-  ArrowBack as ArrowBackIcon,
-} from '@mui/icons-material';
+  Group,
+  Stack,
+  Title,
+} from '@mantine/core';
+import { IconArrowsCompare, IconArrowLeft } from '@tabler/icons-react';
 import { formatDistanceToNow } from 'date-fns';
 import { diff as DiffEditor } from 'react-ace';
 import 'ace-builds/src-noconflict/mode-json';
@@ -115,8 +115,10 @@ export function VersionCompare({
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
+      <Box
+        style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}
+      >
+        <Loader />
       </Box>
     );
   }
@@ -124,10 +126,10 @@ export function VersionCompare({
   if (error) {
     return (
       <Box>
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert color="red" mb="md">
           {error}
         </Alert>
-        <Button startIcon={<ArrowBackIcon />} onClick={onBack}>
+        <Button leftSection={<IconArrowLeft size={16} />} onClick={onBack}>
           Back to Version History
         </Button>
       </Box>
@@ -137,10 +139,10 @@ export function VersionCompare({
   if (!comparison || !comparison.version1 || !comparison.version2) {
     return (
       <Box>
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert color="red" mb="md">
           Could not load comparison data
         </Alert>
-        <Button startIcon={<ArrowBackIcon />} onClick={onBack}>
+        <Button leftSection={<IconArrowLeft size={16} />} onClick={onBack}>
           Back to Version History
         </Button>
       </Box>
@@ -151,250 +153,242 @@ export function VersionCompare({
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-        >
-          <CompareIcon />
-          Comparing Versions
-        </Typography>
-        <Button startIcon={<ArrowBackIcon />} onClick={onBack}>
+      <Group justify="space-between" align="center" mb="lg">
+        <Group gap="xs">
+          <IconArrowsCompare size={20} />
+          <Title order={4}>Comparing Versions</Title>
+        </Group>
+        <Button leftSection={<IconArrowLeft size={16} />} onClick={onBack}>
           Back to Version History
         </Button>
-      </Box>
+      </Group>
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={6}>
-          <Paper sx={{ p: 2, height: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Typography variant="subtitle1">
-                Version {v1.versionNumber}
-              </Typography>
-              <Chip
-                label={`v${v1.versionNumber}`}
-                size="small"
-                color="primary"
-              />
-            </Box>
-            <Typography variant="body2" color="text.secondary">
+      <Grid gutter="md" mb="lg">
+        <Grid.Col span={6}>
+          <Paper p="md" h="100%">
+            <Group gap="xs" mb="xs">
+              <Text fw={500}>Version {v1.versionNumber}</Text>
+              <Badge size="sm" variant="filled">
+                v{v1.versionNumber}
+              </Badge>
+            </Group>
+            <Text size="sm" c="dimmed">
               Created by {v1.createdBy.name} {formatDate(v1.createdAt)}
-            </Typography>
+            </Text>
             {v1.changeDescription && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
+              <Text size="sm" mt="xs">
                 {v1.changeDescription}
-              </Typography>
+              </Text>
             )}
           </Paper>
-        </Grid>
-        <Grid item xs={6}>
-          <Paper sx={{ p: 2, height: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Typography variant="subtitle1">
-                Version {v2.versionNumber}
-              </Typography>
-              <Chip
-                label={`v${v2.versionNumber}`}
-                size="small"
-                color="primary"
-              />
-            </Box>
-            <Typography variant="body2" color="text.secondary">
+        </Grid.Col>
+        <Grid.Col span={6}>
+          <Paper p="md" h="100%">
+            <Group gap="xs" mb="xs">
+              <Text fw={500}>Version {v2.versionNumber}</Text>
+              <Badge size="sm" variant="filled">
+                v{v2.versionNumber}
+              </Badge>
+            </Group>
+            <Text size="sm" c="dimmed">
               Created by {v2.createdBy.name} {formatDate(v2.createdAt)}
-            </Typography>
+            </Text>
             {v2.changeDescription && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
+              <Text size="sm" mt="xs">
                 {v2.changeDescription}
-              </Typography>
+              </Text>
             )}
           </Paper>
-        </Grid>
+        </Grid.Col>
       </Grid>
 
-      <Typography variant="h6" sx={{ mb: 2 }}>
+      <Title order={4} mb="md">
         Changes
-      </Typography>
+      </Title>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={3}>
+      <Paper p="lg" mb="lg">
+        <Stack gap="lg">
           {/* Title comparison */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>
-              Title{' '}
+          <Box>
+            <Group gap="xs" mb="xs">
+              <Text fw={500}>Title</Text>
               {comparison.titleChanged && (
-                <Chip label="Changed" size="small" color="warning" />
+                <Badge size="sm" color="yellow">
+                  Changed
+                </Badge>
               )}
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
+            </Group>
+            <Grid gutter="sm">
+              <Grid.Col span={6}>
                 <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    bgcolor: comparison.titleChanged
-                      ? 'error.50'
-                      : 'background.default',
+                  variant="outline"
+                  p="md"
+                  style={{
+                    backgroundColor: comparison.titleChanged
+                      ? 'var(--mantine-color-red-0)'
+                      : 'var(--mantine-color-gray-0)',
                   }}
                 >
-                  <Typography>{v1.title}</Typography>
+                  <Text>{v1.title}</Text>
                 </Paper>
-              </Grid>
-              <Grid item xs={6}>
+              </Grid.Col>
+              <Grid.Col span={6}>
                 <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    bgcolor: comparison.titleChanged
-                      ? 'success.50'
-                      : 'background.default',
+                  variant="outline"
+                  p="md"
+                  style={{
+                    backgroundColor: comparison.titleChanged
+                      ? 'var(--mantine-color-green-0)'
+                      : 'var(--mantine-color-gray-0)',
                   }}
                 >
-                  <Typography>{v2.title}</Typography>
+                  <Text>{v2.title}</Text>
                 </Paper>
-              </Grid>
+              </Grid.Col>
             </Grid>
-          </Grid>
+          </Box>
 
           {/* Status comparison */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>
-              Status{' '}
+          <Box>
+            <Group gap="xs" mb="xs">
+              <Text fw={500}>Status</Text>
               {comparison.statusChanged && (
-                <Chip label="Changed" size="small" color="warning" />
+                <Badge size="sm" color="yellow">
+                  Changed
+                </Badge>
               )}
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
+            </Group>
+            <Grid gutter="sm">
+              <Grid.Col span={6}>
                 <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    bgcolor: comparison.statusChanged
-                      ? 'error.50'
-                      : 'background.default',
+                  variant="outline"
+                  p="md"
+                  style={{
+                    backgroundColor: comparison.statusChanged
+                      ? 'var(--mantine-color-red-0)'
+                      : 'var(--mantine-color-gray-0)',
                   }}
                 >
-                  <Chip label={v1.status} />
+                  <Badge>{v1.status}</Badge>
                 </Paper>
-              </Grid>
-              <Grid item xs={6}>
+              </Grid.Col>
+              <Grid.Col span={6}>
                 <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    bgcolor: comparison.statusChanged
-                      ? 'success.50'
-                      : 'background.default',
+                  variant="outline"
+                  p="md"
+                  style={{
+                    backgroundColor: comparison.statusChanged
+                      ? 'var(--mantine-color-green-0)'
+                      : 'var(--mantine-color-gray-0)',
                   }}
                 >
-                  <Chip label={v2.status} />
+                  <Badge>{v2.status}</Badge>
                 </Paper>
-              </Grid>
+              </Grid.Col>
             </Grid>
-          </Grid>
+          </Box>
 
           {/* Priority comparison */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>
-              Priority{' '}
+          <Box>
+            <Group gap="xs" mb="xs">
+              <Text fw={500}>Priority</Text>
               {comparison.priorityChanged && (
-                <Chip label="Changed" size="small" color="warning" />
+                <Badge size="sm" color="yellow">
+                  Changed
+                </Badge>
               )}
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
+            </Group>
+            <Grid gutter="sm">
+              <Grid.Col span={6}>
                 <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    bgcolor: comparison.priorityChanged
-                      ? 'error.50'
-                      : 'background.default',
+                  variant="outline"
+                  p="md"
+                  style={{
+                    backgroundColor: comparison.priorityChanged
+                      ? 'var(--mantine-color-red-0)'
+                      : 'var(--mantine-color-gray-0)',
                   }}
                 >
-                  <Chip label={v1.priority} />
+                  <Badge>{v1.priority}</Badge>
                 </Paper>
-              </Grid>
-              <Grid item xs={6}>
+              </Grid.Col>
+              <Grid.Col span={6}>
                 <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    bgcolor: comparison.priorityChanged
-                      ? 'success.50'
-                      : 'background.default',
+                  variant="outline"
+                  p="md"
+                  style={{
+                    backgroundColor: comparison.priorityChanged
+                      ? 'var(--mantine-color-green-0)'
+                      : 'var(--mantine-color-gray-0)',
                   }}
                 >
-                  <Chip label={v2.priority} />
+                  <Badge>{v2.priority}</Badge>
                 </Paper>
-              </Grid>
+              </Grid.Col>
             </Grid>
-          </Grid>
+          </Box>
 
           {/* Due date comparison */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>
-              Due Date{' '}
+          <Box>
+            <Group gap="xs" mb="xs">
+              <Text fw={500}>Due Date</Text>
               {comparison.dueDateChanged && (
-                <Chip label="Changed" size="small" color="warning" />
+                <Badge size="sm" color="yellow">
+                  Changed
+                </Badge>
               )}
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
+            </Group>
+            <Grid gutter="sm">
+              <Grid.Col span={6}>
                 <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    bgcolor: comparison.dueDateChanged
-                      ? 'error.50'
-                      : 'background.default',
+                  variant="outline"
+                  p="md"
+                  style={{
+                    backgroundColor: comparison.dueDateChanged
+                      ? 'var(--mantine-color-red-0)'
+                      : 'var(--mantine-color-gray-0)',
                   }}
                 >
-                  <Typography>
+                  <Text>
                     {v1.dueDate
                       ? new Date(v1.dueDate).toLocaleDateString()
                       : 'Not set'}
-                  </Typography>
+                  </Text>
                 </Paper>
-              </Grid>
-              <Grid item xs={6}>
+              </Grid.Col>
+              <Grid.Col span={6}>
                 <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    bgcolor: comparison.dueDateChanged
-                      ? 'success.50'
-                      : 'background.default',
+                  variant="outline"
+                  p="md"
+                  style={{
+                    backgroundColor: comparison.dueDateChanged
+                      ? 'var(--mantine-color-green-0)'
+                      : 'var(--mantine-color-gray-0)',
                   }}
                 >
-                  <Typography>
+                  <Text>
                     {v2.dueDate
                       ? new Date(v2.dueDate).toLocaleDateString()
                       : 'Not set'}
-                  </Typography>
+                  </Text>
                 </Paper>
-              </Grid>
+              </Grid.Col>
             </Grid>
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </Paper>
 
       {/* Content body comparison */}
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Content Body{' '}
+      <Group gap="xs" mb="md">
+        <Title order={4}>Content Body</Title>
         {comparison.bodyChanged && (
-          <Chip label="Changed" size="small" color="warning" />
+          <Badge size="sm" color="yellow">
+            Changed
+          </Badge>
         )}
-      </Typography>
+      </Group>
 
-      <Paper sx={{ p: 0, mb: 3, overflow: 'hidden' }}>
+      <Paper p={0} mb="lg" style={{ overflow: 'hidden' }}>
         <DiffEditor
           mode="json"
           theme="github"

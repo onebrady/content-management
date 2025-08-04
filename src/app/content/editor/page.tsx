@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Box,
-  Typography,
+  Text,
   Card,
-  CardContent,
   Button,
   Alert,
   Grid,
-  Chip,
-} from '@mui/material';
-import { Save, Preview } from '@mui/icons-material';
+  Badge,
+  Group,
+  Title,
+  Stack,
+} from '@mantine/core';
+import { IconDeviceFloppy, IconEye } from '@tabler/icons-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -31,7 +33,6 @@ export default function EditorTestPage() {
     content,
     onSave: (savedContent) => {
       setSavedContent(savedContent);
-      console.log('Auto-saved content:', savedContent);
     },
     enabled: true,
     delay: 2000, // 2 seconds
@@ -45,10 +46,17 @@ export default function EditorTestPage() {
     return null;
   }
 
-  const handleSave = () => {
-    setSavedContent(content);
-    console.log('Manually saved content:', content);
-  };
+  const handleAutoSave = useCallback((content: string) => {
+    if (content.trim()) {
+      localStorage.setItem('editor-content', content);
+    }
+  }, []);
+
+  const handleManualSave = useCallback((content: string) => {
+    if (content.trim()) {
+      localStorage.setItem('editor-content', content);
+    }
+  }, []);
 
   const handlePreview = () => {
     setShowPreview(!showPreview);
@@ -56,7 +64,7 @@ export default function EditorTestPage() {
 
   const sampleContent = `
     <h1>Welcome to the Rich Text Editor</h1>
-    <p>This is a <strong>powerful</strong> rich text editor built with <em>Tiptap</em> and Material-UI.</p>
+    <p>This is a <strong>powerful</strong> rich text editor built with <em>Tiptap</em> and Mantine.</p>
     <h2>Features</h2>
     <ul>
       <li>Text formatting (bold, italic, underline, strikethrough)</li>
@@ -75,159 +83,134 @@ export default function EditorTestPage() {
 
   return (
     <DashboardLayout>
-      <Box sx={{ p: 3 }}>
+      <Box p="md">
         <Breadcrumbs />
 
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 3,
-          }}
-        >
-          <Typography variant="h4" component="h1">
-            Rich Text Editor Test
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Chip
-              label={isDirty ? 'Unsaved changes' : 'All changes saved'}
-              color={isDirty ? 'warning' : 'success'}
-              size="small"
-            />
-          </Box>
-        </Box>
+        <Group justify="space-between" align="center" mb="lg">
+          <Title order={1}>Rich Text Editor Test</Title>
+          <Badge color={isDirty ? 'yellow' : 'green'} size="sm">
+            {isDirty ? 'Unsaved changes' : 'All changes saved'}
+          </Badge>
+        </Group>
 
         <PermissionGuard permission={PERMISSIONS.CONTENT_CREATE}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
+          <Grid gutter="md">
+            <Grid.Col span={12}>
               <Card>
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      mb: 2,
-                    }}
-                  >
-                    <Typography variant="h6">Editor</Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box p="md">
+                  <Group justify="space-between" align="center" mb="md">
+                    <Title order={3}>Editor</Title>
+                    <Group gap="xs">
                       <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<Preview />}
+                        variant="outline"
+                        size="sm"
+                        leftSection={<IconEye size={16} />}
                         onClick={handlePreview}
                       >
                         {showPreview ? 'Hide Preview' : 'Show Preview'}
                       </Button>
                       <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<Save />}
+                        variant="filled"
+                        size="sm"
+                        leftSection={<IconDeviceFloppy size={16} />}
                         onClick={handleSave}
                         disabled={!isDirty}
                       >
                         Save
                       </Button>
-                    </Box>
-                  </Box>
+                    </Group>
+                  </Group>
 
                   <TiptapEditor
                     content={content}
                     onChange={setContent}
                     placeholder="Start writing your content..."
-                    onSave={handleSave}
-                    onPreview={handlePreview}
                   />
-                </CardContent>
+                </Box>
               </Card>
-            </Grid>
+            </Grid.Col>
 
             {showPreview && (
-              <Grid item xs={12}>
+              <Grid.Col span={12}>
                 <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                  <Box p="md">
+                    <Title order={3} mb="md">
                       Preview
-                    </Typography>
+                    </Title>
                     <Box
-                      sx={{
-                        p: 2,
-                        border: 1,
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        bgcolor: 'background.paper',
+                      p="md"
+                      style={{
+                        border: '1px solid var(--mantine-color-gray-3)',
+                        borderRadius: 'var(--mantine-radius-sm)',
+                        backgroundColor: 'var(--mantine-color-gray-0)',
                       }}
                       dangerouslySetInnerHTML={{ __html: content }}
                     />
-                  </CardContent>
+                  </Box>
                 </Card>
-              </Grid>
+              </Grid.Col>
             )}
 
-            <Grid item xs={12} md={6}>
+            <Grid.Col span={{ base: 12, md: 6 }}>
               <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
+                <Box p="md">
+                  <Title order={3} mb="md">
                     Sample Content
-                  </Typography>
+                  </Title>
                   <Button
-                    variant="outlined"
+                    variant="outline"
                     onClick={() => setContent(sampleContent)}
-                    sx={{ mb: 2 }}
+                    mb="md"
                   >
                     Load Sample Content
                   </Button>
-                  <Alert severity="info">
+                  <Alert color="blue">
                     Click the button above to load sample content and test the
                     editor features.
                   </Alert>
-                </CardContent>
+                </Box>
               </Card>
-            </Grid>
+            </Grid.Col>
 
-            <Grid item xs={12} md={6}>
+            <Grid.Col span={{ base: 12, md: 6 }}>
               <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
+                <Box p="md">
+                  <Title order={3} mb="md">
                     Editor Information
-                  </Typography>
-                  <Box
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
-                  >
-                    <Chip
-                      label={`Content length: ${content.length} characters`}
-                      size="small"
-                      variant="outlined"
-                    />
-                    <Chip
-                      label={`Word count: ${content.split(/\s+/).filter((word) => word.length > 0).length} words`}
-                      size="small"
-                      variant="outlined"
-                    />
-                    <Chip
-                      label={`Last saved: ${savedContent ? new Date().toLocaleTimeString() : 'Never'}`}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </Box>
-                </CardContent>
+                  </Title>
+                  <Stack gap="xs">
+                    <Badge variant="outline" size="sm">
+                      Content length: {content.length} characters
+                    </Badge>
+                    <Badge variant="outline" size="sm">
+                      Word count:{' '}
+                      {
+                        content.split(/\s+/).filter((word) => word.length > 0)
+                          .length
+                      }{' '}
+                      words
+                    </Badge>
+                    <Badge variant="outline" size="sm">
+                      Last saved:{' '}
+                      {savedContent ? new Date().toLocaleTimeString() : 'Never'}
+                    </Badge>
+                  </Stack>
+                </Box>
               </Card>
-            </Grid>
+            </Grid.Col>
 
-            <Grid item xs={12}>
+            <Grid.Col span={12}>
               <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
+                <Box p="md">
+                  <Title order={3} mb="md">
                     Raw HTML Output
-                  </Typography>
+                  </Title>
                   <Box
                     component="pre"
-                    sx={{
-                      p: 2,
-                      bgcolor: 'grey.100',
-                      borderRadius: 1,
+                    p="md"
+                    style={{
+                      backgroundColor: 'var(--mantine-color-gray-1)',
+                      borderRadius: 'var(--mantine-radius-sm)',
                       overflow: 'auto',
                       fontSize: '0.875rem',
                       maxHeight: 200,
@@ -235,9 +218,9 @@ export default function EditorTestPage() {
                   >
                     {content || '<p>No content yet...</p>'}
                   </Box>
-                </CardContent>
+                </Box>
               </Card>
-            </Grid>
+            </Grid.Col>
           </Grid>
         </PermissionGuard>
       </Box>

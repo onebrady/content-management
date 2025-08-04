@@ -22,7 +22,7 @@ export default function ApprovalsPage() {
   return (
     <MinimumRoleGuard minimumRole={UserRole.MODERATOR} redirectTo="/dashboard">
       <AppLayout>
-        <Container size="xl" py="xl">
+        <Box p="xl">
           {/* Breadcrumbs */}
           <Breadcrumbs
             items={[
@@ -59,7 +59,7 @@ export default function ApprovalsPage() {
           >
             <ApprovalDashboard />
           </Paper>
-        </Container>
+        </Box>
       </AppLayout>
     </MinimumRoleGuard>
   );

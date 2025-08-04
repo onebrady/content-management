@@ -6,22 +6,20 @@ import {
   Box,
   Paper,
   List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-} from '@mui/material';
+  Text,
+  Group,
+  Stack,
+} from '@mantine/core';
 import {
-  Title,
-  TextFields,
-  FormatListBulleted,
-  FormatListNumbered,
-  FormatQuote,
-  Code,
-  Image,
-  Link,
-} from '@mui/icons-material';
+  IconHeading,
+  IconText,
+  IconList,
+  IconListNumbers,
+  IconQuote,
+  IconCode,
+  IconPhoto,
+  IconLink,
+} from '@tabler/icons-react';
 
 interface SlashCommandsProps {
   items: any[];
@@ -31,22 +29,31 @@ interface SlashCommandsProps {
 const SlashCommandsComponent = ({ items, command }: SlashCommandsProps) => {
   return (
     <Paper
-      elevation={8}
-      sx={{ maxWidth: 300, maxHeight: 300, overflow: 'auto' }}
+      shadow="md"
+      style={{ maxWidth: 300, maxHeight: 300, overflow: 'auto' }}
     >
-      <List dense>
+      <List>
         {items.map((item, index) => (
-          <ListItem key={index} disablePadding>
-            <ListItemButton onClick={() => command(item)}>
-              <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
-              <ListItemText
-                primary={item.title}
-                secondary={item.description}
-                primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                secondaryTypographyProps={{ variant: 'caption' }}
-              />
-            </ListItemButton>
-          </ListItem>
+          <List.Item key={index}>
+            <Box
+              onClick={() => command(item)}
+              style={{ cursor: 'pointer', padding: '8px 12px' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <Group gap="sm">
+                <Box style={{ minWidth: 24 }}>{item.icon}</Box>
+                <Stack gap={2}>
+                  <Text size="sm" fw={500}>{item.title}</Text>
+                  <Text size="xs" c="dimmed">{item.description}</Text>
+                </Stack>
+              </Group>
+            </Box>
+          </List.Item>
         ))}
       </List>
     </Paper>
@@ -59,7 +66,7 @@ export const SlashCommands = {
       {
         title: 'Heading 1',
         description: 'Large section heading',
-        icon: <Title fontSize="small" />,
+        icon: <IconHeading size={16} />,
         command: ({ editor, range }: any) => {
           editor
             .chain()
@@ -72,7 +79,7 @@ export const SlashCommands = {
       {
         title: 'Heading 2',
         description: 'Medium section heading',
-        icon: <TextFields fontSize="small" />,
+        icon: <IconText size={16} />,
         command: ({ editor, range }: any) => {
           editor
             .chain()
@@ -85,7 +92,7 @@ export const SlashCommands = {
       {
         title: 'Heading 3',
         description: 'Small section heading',
-        icon: <TextFields fontSize="small" />,
+        icon: <IconText size={16} />,
         command: ({ editor, range }: any) => {
           editor
             .chain()
@@ -98,7 +105,7 @@ export const SlashCommands = {
       {
         title: 'Bullet List',
         description: 'Create a bullet list',
-        icon: <FormatListBulleted fontSize="small" />,
+        icon: <IconList size={16} />,
         command: ({ editor, range }: any) => {
           editor.chain().focus().deleteRange(range).toggleBulletList().run();
         },
@@ -106,7 +113,7 @@ export const SlashCommands = {
       {
         title: 'Numbered List',
         description: 'Create a numbered list',
-        icon: <FormatListNumbered fontSize="small" />,
+        icon: <IconListNumbers size={16} />,
         command: ({ editor, range }: any) => {
           editor.chain().focus().deleteRange(range).toggleOrderedList().run();
         },
@@ -114,7 +121,7 @@ export const SlashCommands = {
       {
         title: 'Blockquote',
         description: 'Create a blockquote',
-        icon: <FormatQuote fontSize="small" />,
+        icon: <IconQuote size={16} />,
         command: ({ editor, range }: any) => {
           editor.chain().focus().deleteRange(range).toggleBlockquote().run();
         },
@@ -122,7 +129,7 @@ export const SlashCommands = {
       {
         title: 'Code Block',
         description: 'Create a code block',
-        icon: <Code fontSize="small" />,
+        icon: <IconCode size={16} />,
         command: ({ editor, range }: any) => {
           editor.chain().focus().deleteRange(range).toggleCodeBlock().run();
         },
@@ -130,7 +137,7 @@ export const SlashCommands = {
       {
         title: 'Image',
         description: 'Insert an image',
-        icon: <Image fontSize="small" />,
+        icon: <IconPhoto size={16} />,
         command: ({ editor, range }: any) => {
           const url = window.prompt('Enter the image URL');
           if (url) {
@@ -146,7 +153,7 @@ export const SlashCommands = {
       {
         title: 'Link',
         description: 'Insert a link',
-        icon: <Link fontSize="small" />,
+        icon: <IconLink size={16} />,
         command: ({ editor, range }: any) => {
           const url = window.prompt('Enter the URL');
           if (url) {
@@ -172,7 +179,7 @@ export const SlashCommands = {
 
     return {
       onStart: (props: any) => {
-        component = new ReactRenderer(SlashCommands, {
+        component = new ReactRenderer(SlashCommandsComponent, {
           props,
           editor: props.editor,
         });

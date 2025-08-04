@@ -65,7 +65,7 @@ export default function SearchClient({
   return (
     <PermissionGuard permission={PERMISSIONS.CONTENT_VIEW}>
       <AppLayout>
-        <Container size="xl" py="xl">
+        <Box p="xl">
           {/* Breadcrumbs */}
           <Breadcrumbs
             items={[
@@ -110,7 +110,7 @@ export default function SearchClient({
             onEditContent={handleEditContent}
             onDeleteContent={handleDeleteContent}
           />
-        </Container>
+        </Box>
       </AppLayout>
     </PermissionGuard>
   );

@@ -3,12 +3,14 @@
 import {
   Button,
   Card,
-  CardContent,
-  Typography,
+  Text,
   Box,
   Alert,
-} from '@mui/material';
-import { Error, ArrowBack } from '@mui/icons-material';
+  Group,
+  Stack,
+  Title,
+} from '@mantine/core';
+import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react';
 import Link from 'next/link';
 
 export default function ErrorClient({
@@ -45,42 +47,41 @@ export default function ErrorClient({
 
   return (
     <Box
-      sx={{
+      style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
       }}
     >
-      <Card sx={{ maxWidth: 500, width: '100%', mx: 2 }}>
-        <CardContent sx={{ p: 4, textAlign: 'center' }}>
-          <Error sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
-          <Typography variant="h4" component="h1" gutterBottom>
+      <Card style={{ maxWidth: 500, width: '100%', margin: '0 16px' }}>
+        <Box p="xl" style={{ textAlign: 'center' }}>
+          <IconAlertCircle size={64} color="red" style={{ marginBottom: 16 }} />
+          <Title order={1} mb="md">
             Authentication Error
-          </Typography>
-          <Alert severity="error" sx={{ mb: 3 }}>
+          </Title>
+          <Alert icon={<IconAlertCircle size={16} />} color="red" mb="lg">
             {getErrorMessage(error)}
           </Alert>
           {error && (
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Text size="sm" c="dimmed" mb="lg">
               Error code: {error}
-            </Typography>
+            </Text>
           )}
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+          <Group justify="center" gap="md">
             <Button
               component={Link}
               href="/auth/signin"
-              variant="contained"
-              startIcon={<ArrowBack />}
+              variant="filled"
+              leftSection={<IconArrowLeft size={16} />}
             >
               Try Again
             </Button>
-            <Button component={Link} href="/" variant="outlined">
+            <Button component={Link} href="/" variant="outline">
               Go Home
             </Button>
-          </Box>
-        </CardContent>
+          </Group>
+        </Box>
       </Card>
     </Box>
   );

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedHandler, requirePermission } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
-import { ApprovalStatus } from '@prisma/client';
+import { ApprovalStatus, ContentStatus } from '@prisma/client';
 
 // GET /api/content/[id]/approval/[approvalId] - Get a specific approval
 export const GET = createProtectedHandler(async (req) => {
@@ -138,7 +138,7 @@ export const PUT = createProtectedHandler(async (req) => {
     });
 
     // Update content status based on approvals
-    await updateContentStatus(contentId);
+    const newStatus = await updateContentStatus(contentId);
 
     return NextResponse.json(approval);
   } catch (error) {
@@ -213,7 +213,7 @@ export const DELETE = createProtectedHandler(async (req, context) => {
 }, requirePermission(PERMISSIONS.APPROVAL_APPROVE));
 
 // Helper function to update content status based on approvals
-async function updateContentStatus(contentId: string) {
+async function updateContentStatus(contentId: string): Promise<ContentStatus> {
   // Get all approvals for the content
   const approvals = await prisma.approval.findMany({
     where: { contentId },
@@ -222,12 +222,11 @@ async function updateContentStatus(contentId: string) {
   // Get content
   const content = await prisma.content.findUnique({
     where: { id: contentId },
-    include: {
-      approvals: true,
-    },
   });
 
-  if (!content) return;
+  if (!content) {
+    throw new Error('Content not found');
+  }
 
   // Count approvals by status
   const approvalCounts = {
@@ -240,26 +239,32 @@ async function updateContentStatus(contentId: string) {
   };
 
   // Determine new content status based on approval counts
-  let newStatus = content.status;
+  let newStatus: ContentStatus = content.status;
 
   // If there are any rejections, set to REJECTED
   if (approvalCounts.REJECTED > 0) {
     newStatus = 'REJECTED';
   }
-  // If there are no rejections and at least 2 approvals, set to APPROVED
-  else if (approvalCounts.APPROVED >= 2 && approvalCounts.REJECTED === 0) {
+  // If there are no rejections and at least 1 approval, set to APPROVED
+  else if (approvalCounts.APPROVED >= 1 && approvalCounts.REJECTED === 0) {
     newStatus = 'APPROVED';
   }
   // If there are approvals in progress, set to IN_REVIEW
   else if (approvals.length > 0) {
     newStatus = 'IN_REVIEW';
   }
+  // If no approvals exist, keep current status (should be DRAFT or IN_REVIEW)
 
   // Update content status if it's different
   if (newStatus !== content.status) {
     await prisma.content.update({
       where: { id: contentId },
-      data: { status: newStatus },
+      data: {
+        status: newStatus,
+        updatedAt: new Date(),
+      },
     });
   }
+
+  return newStatus;
 }

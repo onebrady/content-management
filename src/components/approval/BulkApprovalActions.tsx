@@ -2,21 +2,21 @@
 
 import { useState } from 'react';
 import {
-  Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  TextField,
-  Snackbar,
+  Group,
+  Text,
   Alert,
-} from '@mui/material';
+  Modal,
+  Stack,
+  Badge,
+  Box,
+} from '@mantine/core';
 import {
-  CheckCircle as ApproveIcon,
-  Cancel as RejectIcon,
-} from '@mui/icons-material';
+  IconCheck,
+  IconX,
+  IconAlertTriangle,
+  IconTrash,
+} from '@tabler/icons-react';
 
 interface BulkApprovalActionsProps {
   selectedApprovals: string[];
@@ -152,7 +152,7 @@ export function BulkApprovalActions({
         <Button
           variant="contained"
           color="success"
-          startIcon={<ApproveIcon />}
+          startIcon={<IconCheck />}
           onClick={() => handleOpenDialog('approve')}
           disabled={selectedApprovals.length === 0}
         >
@@ -161,7 +161,7 @@ export function BulkApprovalActions({
         <Button
           variant="contained"
           color="error"
-          startIcon={<RejectIcon />}
+          startIcon={<IconX />}
           onClick={() => handleOpenDialog('reject')}
           disabled={selectedApprovals.length === 0}
         >
@@ -170,28 +170,25 @@ export function BulkApprovalActions({
       </Box>
 
       {/* Approve Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'approve'}
+      <Modal
+        opened={dialogOpen.open && dialogOpen.type === 'approve'}
         onClose={handleCloseDialog}
+        title="Approve Selected Content"
       >
-        <DialogTitle>Approve Selected Content</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack>
+          <Text>
             You are approving {selectedApprovals.length} items. Please provide
             any comments (optional).
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Comments"
-            fullWidth
-            multiline
-            rows={4}
-            value={comments}
-            onChange={(e) => setComments(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
+          </Text>
+          <Box>
+            <Textarea
+              label="Comments"
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+            />
+          </Box>
+        </Stack>
+        <Group position="right" mt="md">
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button
             onClick={handleApprove}
@@ -201,33 +198,30 @@ export function BulkApprovalActions({
           >
             Approve
           </Button>
-        </DialogActions>
-      </Dialog>
+        </Group>
+      </Modal>
 
       {/* Reject Dialog */}
-      <Dialog
-        open={dialogOpen.open && dialogOpen.type === 'reject'}
+      <Modal
+        opened={dialogOpen.open && dialogOpen.type === 'reject'}
         onClose={handleCloseDialog}
+        title="Reject Selected Content"
       >
-        <DialogTitle>Reject Selected Content</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        <Stack>
+          <Text>
             You are rejecting {selectedApprovals.length} items. Please provide a
             reason for rejection.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Reason for Rejection"
-            fullWidth
-            multiline
-            rows={4}
-            value={comments}
-            onChange={(e) => setComments(e.target.value)}
-            required
-          />
-        </DialogContent>
-        <DialogActions>
+          </Text>
+          <Box>
+            <Textarea
+              label="Reason for Rejection"
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              required
+            />
+          </Box>
+        </Stack>
+        <Group position="right" mt="md">
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button
             onClick={handleReject}
@@ -237,23 +231,18 @@ export function BulkApprovalActions({
           >
             Reject
           </Button>
-        </DialogActions>
-      </Dialog>
+        </Group>
+      </Modal>
 
       {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
+      <Alert
+        title={snackbar.severity === 'success' ? 'Success' : 'Error'}
+        color={snackbar.severity}
+        icon={snackbar.severity === 'success' ? <IconCheck /> : <IconAlertTriangle />}
         onClose={handleCloseSnackbar}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        {snackbar.message}
+      </Alert>
     </>
   );
 }

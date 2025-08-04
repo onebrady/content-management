@@ -6,6 +6,7 @@ import {
   forwardRef,
   useImperativeHandle,
   useCallback,
+  useMemo,
 } from 'react';
 import {
   Box,
@@ -67,6 +68,18 @@ interface UploadedFile {
   type: string;
 }
 
+// Memoized form data structure to reduce serialization overhead
+const createInitialFormData = (initialData?: any) => ({
+  title: initialData?.title || '',
+  body: initialData?.body || '',
+  type: initialData?.type || 'ARTICLE',
+  priority: initialData?.priority || 'MEDIUM',
+  dueDate: initialData?.dueDate || '',
+  assigneeId: initialData?.assigneeId || '',
+  tags: initialData?.tags?.map((tag: any) => tag.id) || [],
+  heroImage: initialData?.heroImage || '',
+});
+
 export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
   (
     {
@@ -82,17 +95,14 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
     const { user } = useAuth();
     const { colorScheme } = useMantineColorScheme();
     const isDark = colorScheme === 'dark';
-    
-    const [formData, setFormData] = useState({
-      title: '',
-      body: '',
-      type: 'ARTICLE',
-      priority: 'MEDIUM',
-      dueDate: '',
-      assigneeId: '',
-      tags: [] as string[],
-      heroImage: '',
-    });
+
+    // Memoize initial form data to prevent unnecessary re-renders
+    const initialFormData = useMemo(
+      () => createInitialFormData(initialData),
+      [initialData]
+    );
+
+    const [formData, setFormData] = useState(initialFormData);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
     const [showFileUpload, setShowFileUpload] = useState(false);
@@ -212,7 +222,7 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
     };
 
     const handleContentChange = (content: string) => {
-      setFormData((prev) => ({ ...prev, body: content }));
+      debouncedContentChange(content);
       if (errors.body) {
         setErrors((prev) => ({ ...prev, body: '' }));
       }
@@ -286,15 +296,30 @@ export const ContentForm = forwardRef<{ submit: () => void }, ContentFormProps>(
       setHeroImageUploading(false);
     };
 
-    const tagOptions = tags.map((tag) => ({
-      value: tag.id,
-      label: tag.name,
-    }));
+    // Memoize tag and user options to prevent recreation
+    const tagOptions = useMemo(
+      () => tags.map((tag) => ({ value: tag.id, label: tag.name })),
+      [tags]
+    );
 
-    const userOptions = users.map((user) => ({
-      value: user.id,
-      label: `${user.name} (${user.email})`,
-    }));
+    const userOptions = useMemo(
+      () => users.map((user) => ({ value: user.id, label: user.name })),
+      [users]
+    );
+
+    // Debounced content change handler to reduce serialization overhead
+    const debouncedContentChange = useCallback(
+      (() => {
+        let timeoutId: NodeJS.Timeout;
+        return (content: string) => {
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            setFormData((prev) => ({ ...prev, body: content }));
+          }, 500); // 500ms debounce for content changes
+        };
+      })(),
+      []
+    );
 
     return (
       <Box component="form" onSubmit={handleSubmit}>

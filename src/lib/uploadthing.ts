@@ -99,6 +99,32 @@ export const uploadRouter = {
       console.log('Profile image uploaded for userId:', metadata.userId);
       return { uploadedBy: metadata.userId, url: file.url };
     }),
+
+  // Company logo upload route
+  companyLogo: f({
+    image: {
+      maxFileSize: '2MB',
+      maxFileCount: 1,
+      acceptedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
+    },
+  })
+    .middleware(async ({ req }) => {
+      const session = await getServerSession(authOptions);
+      if (!session?.user) {
+        throw new Error('Unauthorized');
+      }
+
+      // Check permissions for settings management
+      if (!hasPermission(session.user.role as any, PERMISSIONS.SETTINGS_EDIT)) {
+        throw new Error('Insufficient permissions');
+      }
+
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log('Company logo uploaded for userId:', metadata.userId);
+      return { uploadedBy: metadata.userId, url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof uploadRouter;

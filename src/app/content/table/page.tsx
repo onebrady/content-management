@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Alert, Snackbar } from '@mui/material';
+import { Box, Alert } from '@mantine/core';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -549,19 +549,11 @@ export default function ContentTablePage() {
           onBulkAction={handleBulkAction}
         />
 
-        <Snackbar
-          open={notification.open}
-          autoHideDuration={6000}
+        <Alert
           onClose={handleCloseNotification}
-        >
-          <Alert
-            onClose={handleCloseNotification}
-            severity={notification.severity}
-            sx={{ width: '100%' }}
-          >
-            {notification.message}
-          </Alert>
-        </Snackbar>
+          color={notification.severity}
+          title={notification.message}
+        />
       </Box>
     </DashboardLayout>
   );

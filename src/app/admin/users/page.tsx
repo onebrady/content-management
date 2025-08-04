@@ -5,42 +5,31 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import {
   Box,
-  Card,
-  CardContent,
-  Typography,
+  Paper,
+  Text,
   Button,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
+  Badge,
+  ActionIcon,
+  Modal,
   Select,
-  MenuItem,
-  TextField,
+  TextInput,
   Alert,
-  Snackbar,
-} from '@mui/material';
+  Group,
+  Stack,
+  Title,
+} from '@mantine/core';
 import {
-  Edit,
-  Delete,
-  Add,
-  Person,
-  AdminPanelSettings,
-  SupervisorAccount,
-  Create,
-  Visibility,
-} from '@mui/icons-material';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+  IconEdit,
+  IconTrash,
+  IconPlus,
+  IconUser,
+  IconShieldLock,
+  IconUserCheck,
+  IconPencil,
+  IconEye,
+} from '@tabler/icons-react';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
@@ -87,22 +76,19 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      console.log('Fetching users...');
-      const response = await fetch('/api/users');
-      console.log('Users API response status:', response.status);
-
+      const response = await fetch('/api/users', {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
-        console.log('Users data received:', data);
-        setUsers(data);
+        setUsers(data || []); // API returns users directly, not in a users property
       } else {
-        const errorText = await response.text();
-        console.error('Failed to fetch users:', response.status, errorText);
+        console.error('Failed to fetch users:', response.status);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
-      setLoading(false);
+      setLoading(false); // Always set loading to false when the request completes
     }
   };
 
@@ -121,7 +107,6 @@ export default function UsersPage() {
     if (!selectedUser) return;
 
     try {
-      console.log('Updating user:', selectedUser.id, 'with data:', editForm);
       const response = await fetch(`/api/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
@@ -129,11 +114,9 @@ export default function UsersPage() {
         },
         body: JSON.stringify(editForm),
       });
-      console.log('Update user response status:', response.status);
 
       if (response.ok) {
         const updatedUser = await response.json();
-        console.log('User updated successfully:', updatedUser);
         setNotification({
           open: true,
           message: 'User updated successfully',
@@ -208,30 +191,30 @@ export default function UsersPage() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return <AdminPanelSettings />;
+        return <IconShieldLock size={16} />;
       case 'MODERATOR':
-        return <SupervisorAccount />;
+        return <IconUserCheck size={16} />;
       case 'CONTRIBUTOR':
-        return <Create />;
+        return <IconPencil size={16} />;
       case 'VIEWER':
-        return <Visibility />;
+        return <IconEye size={16} />;
       default:
-        return <Person />;
+        return <IconUser size={16} />;
     }
   };
 
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'error';
+        return 'red';
       case 'MODERATOR':
-        return 'warning';
+        return 'yellow';
       case 'CONTRIBUTOR':
-        return 'primary';
+        return 'blue';
       case 'VIEWER':
-        return 'default';
+        return 'gray';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -244,183 +227,152 @@ export default function UsersPage() {
   }
 
   return (
-    <DashboardLayout>
-      <Box sx={{ p: 3 }}>
+    <AppLayout>
+      <Box p="md">
         <Breadcrumbs />
 
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 3,
-          }}
-        >
-          <Typography variant="h4" component="h1">
-            User Management
-          </Typography>
+        <Group justify="space-between" align="center" mb="lg">
+          <Title order={1}>User Management</Title>
           <PermissionGuard permission={PERMISSIONS.USER_CREATE}>
             <Button
-              variant="contained"
-              startIcon={<Add />}
+              leftSection={<IconPlus size={16} />}
               onClick={() => router.push('/admin/users/create')}
             >
               Add User
             </Button>
           </PermissionGuard>
-        </Box>
+        </Group>
 
-        <Card>
-          <CardContent>
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>User</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Role</TableCell>
-                    <TableCell>Department</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                          }}
+        <Paper p="md">
+          <Table>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>User</Table.Th>
+                <Table.Th>Email</Table.Th>
+                <Table.Th>Role</Table.Th>
+                <Table.Th>Department</Table.Th>
+                <Table.Th ta="right">Actions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {users.map((user) => (
+                <Table.Tr key={user.id}>
+                  <Table.Td>
+                    <Group gap="xs">
+                      <IconUser size={16} />
+                      <Text size="sm">{user.name}</Text>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td>{user.email}</Table.Td>
+                  <Table.Td>
+                    <Badge
+                      leftSection={getRoleIcon(user.role)}
+                      color={getRoleColor(user.role)}
+                      size="sm"
+                    >
+                      {user.role}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>{user.department || '-'}</Table.Td>
+                  <Table.Td>
+                    <Group gap="xs" justify="flex-end">
+                      <PermissionGuard permission={PERMISSIONS.USER_EDIT}>
+                        <ActionIcon
+                          size="sm"
+                          onClick={() => handleEditUser(user)}
+                          color="blue"
                         >
-                          <Person />
-                          <Typography variant="body2">{user.name}</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={getRoleIcon(user.role)}
-                          label={user.role}
-                          color={getRoleColor(user.role) as any}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{user.department || '-'}</TableCell>
-                      <TableCell align="right">
-                        <PermissionGuard permission={PERMISSIONS.USER_EDIT}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditUser(user)}
-                            color="primary"
-                          >
-                            <Edit />
-                          </IconButton>
-                        </PermissionGuard>
-                        <PermissionGuard
-                          permission={PERMISSIONS.USER_DELETE}
-                          fallback={
-                            <span style={{ color: 'red' }}>
-                              No delete permission
-                            </span>
-                          }
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                      </PermissionGuard>
+                      <PermissionGuard
+                        permission={PERMISSIONS.USER_DELETE}
+                        fallback={
+                          <Text size="xs" c="red">
+                            No delete permission
+                          </Text>
+                        }
+                      >
+                        <ActionIcon
+                          size="sm"
+                          onClick={() => handleDeleteUser(user.id)}
+                          color="red"
                         >
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteUser(user.id)}
-                            color="error"
-                            aria-label={`Delete user ${user.name}`}
-                          >
-                            <Delete />
-                          </IconButton>
-                        </PermissionGuard>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </PermissionGuard>
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Paper>
 
-        {/* Edit User Dialog */}
-        <Dialog
-          open={editDialogOpen}
+        {/* Edit User Modal */}
+        <Modal
+          opened={editDialogOpen}
           onClose={() => setEditDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
+          title="Edit User"
         >
-          <DialogTitle>Edit User</DialogTitle>
-          <DialogContent>
-            <Box
-              sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
-            >
-              <TextField
-                label="Name"
-                value={editForm.name}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, name: e.target.value })
-                }
-                fullWidth
-              />
-              <TextField
-                label="Email"
-                value={editForm.email}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, email: e.target.value })
-                }
-                fullWidth
-                type="email"
-              />
-              <FormControl fullWidth>
-                <InputLabel>Role</InputLabel>
-                <Select
-                  value={editForm.role}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, role: e.target.value })
-                  }
-                  label="Role"
-                >
-                  <MenuItem value="VIEWER">Viewer</MenuItem>
-                  <MenuItem value="CONTRIBUTOR">Contributor</MenuItem>
-                  <MenuItem value="MODERATOR">Moderator</MenuItem>
-                  <MenuItem value="ADMIN">Admin</MenuItem>
-                </Select>
-              </FormControl>
-              <TextField
-                label="Department"
-                value={editForm.department}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, department: e.target.value })
-                }
-                fullWidth
-              />
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveUser} variant="contained">
-              Save
+          <Stack gap="md">
+            <TextInput
+              label="Name"
+              value={editForm.name}
+              onChange={(e) =>
+                setEditForm({ ...editForm, name: e.target.value })
+              }
+            />
+            <TextInput
+              label="Email"
+              value={editForm.email}
+              onChange={(e) =>
+                setEditForm({ ...editForm, email: e.target.value })
+              }
+              type="email"
+            />
+            <Select
+              label="Role"
+              value={editForm.role}
+              onChange={(value) =>
+                setEditForm({ ...editForm, role: value || '' })
+              }
+              data={[
+                { value: 'VIEWER', label: 'Viewer' },
+                { value: 'CONTRIBUTOR', label: 'Contributor' },
+                { value: 'MODERATOR', label: 'Moderator' },
+                { value: 'ADMIN', label: 'Admin' },
+              ]}
+            />
+            <TextInput
+              label="Department"
+              value={editForm.department}
+              onChange={(e) =>
+                setEditForm({ ...editForm, department: e.target.value })
+              }
+            />
+          </Stack>
+
+          <Group justify="flex-end" gap="xs" mt="md">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
             </Button>
-          </DialogActions>
-        </Dialog>
+            <Button onClick={handleSaveUser}>Save</Button>
+          </Group>
+        </Modal>
 
         {/* Notification */}
-        <Snackbar
-          open={notification.open}
-          autoHideDuration={6000}
-          onClose={() => setNotification({ ...notification, open: false })}
-        >
+        {notification.open && (
           <Alert
+            color={notification.severity === 'success' ? 'green' : 'red'}
+            title={notification.severity === 'success' ? 'Success' : 'Error'}
             onClose={() => setNotification({ ...notification, open: false })}
-            severity={notification.severity}
-            sx={{ width: '100%' }}
+            style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}
           >
             {notification.message}
           </Alert>
-        </Snackbar>
+        )}
       </Box>
-    </DashboardLayout>
+    </AppLayout>
   );
 }

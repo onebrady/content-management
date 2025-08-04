@@ -3,31 +3,26 @@
 import { useState, useEffect } from 'react';
 import {
   Box,
-  Typography,
+  Text,
   List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
   Button,
-  Chip,
+  Badge,
   Tooltip,
-  CircularProgress,
+  Loader,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
+  Modal,
   Menu,
-  MenuItem,
-} from '@mui/material';
+  Group,
+  Stack,
+  Paper,
+  Divider,
+} from '@mantine/core';
 import {
-  Restore as RestoreIcon,
-  Compare as CompareIcon,
-  MoreVert as MoreIcon,
-  History as HistoryIcon,
-} from '@mui/icons-material';
+  IconDotsVertical,
+  IconGitCompare,
+  IconHistory,
+  IconArrowBackUp,
+} from '@tabler/icons-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { CONTENT_PERMISSIONS } from '@/lib/permissions';
@@ -63,7 +58,6 @@ export function VersionHistory({
   const [error, setError] = useState<string | null>(null);
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [versionToRestore, setVersionToRestore] = useState<number | null>(null);
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [compareVersions, setCompareVersions] = useState<number[]>([]);
@@ -128,24 +122,9 @@ export function VersionHistory({
     }
   };
 
-  // Handle menu
-  const handleMenuOpen = (
-    event: React.MouseEvent<HTMLElement>,
-    versionNumber: number
-  ) => {
-    setMenuAnchorEl(event.currentTarget);
-    setSelectedVersion(versionNumber);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-    setSelectedVersion(null);
-  };
-
   // Handle compare mode
   const handleCompareClick = () => {
     setCompareMode(true);
-    handleMenuClose();
   };
 
   const handleVersionSelect = (versionNumber: number) => {
@@ -175,88 +154,69 @@ export function VersionHistory({
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-        >
-          <HistoryIcon fontSize="small" />
-          Version History
-        </Typography>
+      <Group justify="space-between" align="center" mb="md">
+        <Group gap="xs">
+          <IconHistory size={20} />
+          <Text size="lg" fw={600}>
+            Version History
+          </Text>
+        </Group>
 
         {compareMode ? (
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Group gap="xs">
             <Button
-              variant="outlined"
-              color="primary"
+              variant="outline"
               onClick={handleCompare}
               disabled={compareVersions.length !== 2}
             >
               Compare ({compareVersions.length}/2)
             </Button>
-            <Button
-              variant="text"
-              color="inherit"
-              onClick={handleCancelCompare}
-            >
+            <Button variant="subtle" onClick={handleCancelCompare}>
               Cancel
             </Button>
-          </Box>
+          </Group>
         ) : (
           <Button
-            variant="outlined"
-            startIcon={<CompareIcon />}
+            variant="outline"
+            leftSection={<IconGitCompare size={16} />}
             onClick={() => setCompareMode(true)}
             disabled={versions.length < 2}
           >
             Compare Versions
           </Button>
         )}
-      </Box>
+      </Group>
 
       {/* Error message */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert color="red" title="Error" mb="md">
           {error}
         </Alert>
       )}
 
       {/* Version list */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-          <CircularProgress />
+        <Box ta="center" py="xl">
+          <Loader />
         </Box>
       ) : versions.length === 0 ? (
-        <Alert severity="info">No version history available</Alert>
+        <Alert color="blue" title="No versions">
+          No version history available
+        </Alert>
       ) : (
-        <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+        <Stack gap="xs">
           {versions.map((version) => (
-            <ListItem
+            <Paper
               key={version.id}
-              alignItems="flex-start"
-              sx={{
+              p="md"
+              withBorder
+              style={{
                 borderLeft: compareVersions.includes(version.versionNumber)
-                  ? '4px solid'
+                  ? '4px solid var(--mantine-color-blue-6)'
                   : version.versionNumber === currentVersion
-                    ? '4px dashed'
+                    ? '4px dashed var(--mantine-color-gray-4)'
                     : '4px solid transparent',
-                borderColor: compareVersions.includes(version.versionNumber)
-                  ? 'primary.main'
-                  : version.versionNumber === currentVersion
-                    ? 'grey.400'
-                    : 'transparent',
-                pl: 2,
                 cursor: compareMode ? 'pointer' : 'default',
-                '&:hover': {
-                  bgcolor: compareMode ? 'action.hover' : 'transparent',
-                },
               }}
               onClick={
                 compareMode
@@ -264,127 +224,113 @@ export function VersionHistory({
                   : undefined
               }
             >
-              <ListItemText
-                primaryTypographyProps={{ component: 'div' }}
-                secondaryTypographyProps={{ component: 'div' }}
-                primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle1" component="span">
+              <Group justify="space-between" align="flex-start">
+                <Box style={{ flex: 1 }}>
+                  <Group gap="xs" mb="xs">
+                    <Text size="sm" fw={500}>
                       {version.title}
-                    </Typography>
-                    <Chip
-                      label={`v${version.versionNumber}`}
-                      size="small"
-                      color={
-                        version.versionNumber === currentVersion
-                          ? 'primary'
-                          : 'default'
-                      }
+                    </Text>
+                    <Badge
+                      size="sm"
                       variant={
                         version.versionNumber === currentVersion
                           ? 'filled'
-                          : 'outlined'
+                          : 'outline'
                       }
-                    />
+                      color={
+                        version.versionNumber === currentVersion
+                          ? 'blue'
+                          : 'gray'
+                      }
+                    >
+                      v{version.versionNumber}
+                    </Badge>
                     {version.versionNumber === currentVersion && (
-                      <Chip label="Current" size="small" color="success" />
+                      <Badge size="sm" color="green">
+                        Current
+                      </Badge>
                     )}
-                  </Box>
-                }
-                secondary={
-                  <Box sx={{ mt: 1 }}>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      component="span"
-                    >
-                      {version.changeDescription || 'No description provided'}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      component="span"
-                      sx={{ display: 'block', mt: 0.5 }}
-                    >
-                      Created by {version.createdBy.name}{' '}
-                      {formatDate(version.createdAt)}
-                    </Typography>
-                  </Box>
-                }
-              />
+                  </Group>
+                  <Text size="sm" c="dimmed" mb="xs">
+                    {version.changeDescription || 'No description provided'}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    Created by {version.createdBy.name}{' '}
+                    {formatDate(version.createdAt)}
+                  </Text>
+                </Box>
 
-              {!compareMode && version.versionNumber !== currentVersion && (
-                <ListItemSecondaryAction>
-                  {canRestoreVersion && (
-                    <Tooltip title="Restore this version">
-                      <IconButton
-                        edge="end"
-                        onClick={() =>
-                          handleRestoreClick(version.versionNumber)
-                        }
-                      >
-                        <RestoreIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  <IconButton
-                    edge="end"
-                    onClick={(e) => handleMenuOpen(e, version.versionNumber)}
-                  >
-                    <MoreIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              )}
-            </ListItem>
+                {!compareMode && version.versionNumber !== currentVersion && (
+                  <Group gap="xs">
+                    {canRestoreVersion && (
+                      <Tooltip label="Restore this version">
+                        <Button
+                          size="xs"
+                          variant="subtle"
+                          leftSection={<IconArrowBackUp size={14} />}
+                          onClick={() =>
+                            handleRestoreClick(version.versionNumber)
+                          }
+                        >
+                          Restore
+                        </Button>
+                      </Tooltip>
+                    )}
+                    <Menu>
+                      <Menu.Target>
+                        <Button size="xs" variant="subtle">
+                          <IconDotsVertical size={14} />
+                        </Button>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        <Menu.Item
+                          leftSection={<IconGitCompare size={14} />}
+                          onClick={handleCompareClick}
+                        >
+                          Compare with another version
+                        </Menu.Item>
+                        {canRestoreVersion &&
+                          selectedVersion !== currentVersion && (
+                            <Menu.Item
+                              leftSection={<IconArrowBackUp size={14} />}
+                              onClick={() => {
+                                if (selectedVersion !== null) {
+                                  handleRestoreClick(selectedVersion);
+                                }
+                              }}
+                            >
+                              Restore this version
+                            </Menu.Item>
+                          )}
+                      </Menu.Dropdown>
+                    </Menu>
+                  </Group>
+                )}
+              </Group>
+            </Paper>
           ))}
-        </List>
+        </Stack>
       )}
 
-      {/* Version action menu */}
-      <Menu
-        anchorEl={menuAnchorEl}
-        open={Boolean(menuAnchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={handleCompareClick}>
-          <CompareIcon fontSize="small" sx={{ mr: 1 }} />
-          Compare with another version
-        </MenuItem>
-        {canRestoreVersion && selectedVersion !== currentVersion && (
-          <MenuItem
-            onClick={() => {
-              if (selectedVersion !== null) {
-                handleRestoreClick(selectedVersion);
-              }
-              handleMenuClose();
-            }}
-          >
-            <RestoreIcon fontSize="small" sx={{ mr: 1 }} />
-            Restore this version
-          </MenuItem>
-        )}
-      </Menu>
-
-      {/* Restore confirmation dialog */}
-      <Dialog
-        open={restoreDialogOpen}
+      {/* Restore confirmation modal */}
+      <Modal
+        opened={restoreDialogOpen}
         onClose={() => setRestoreDialogOpen(false)}
+        title="Restore Version"
       >
-        <DialogTitle>Restore Version</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to restore version {versionToRestore}? This
-            will replace the current content with the content from this version.
-            A backup of the current version will be created automatically.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRestoreDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleRestoreConfirm} color="primary" autoFocus>
-            Restore
+        <Text mb="md">
+          Are you sure you want to restore version {versionToRestore}? This will
+          replace the current content with the content from this version. A
+          backup of the current version will be created automatically.
+        </Text>
+
+        <Group justify="flex-end" gap="xs">
+          <Button variant="outline" onClick={() => setRestoreDialogOpen(false)}>
+            Cancel
           </Button>
-        </DialogActions>
-      </Dialog>
+          <Button onClick={handleRestoreConfirm}>Restore</Button>
+        </Group>
+      </Modal>
     </Box>
   );
 }

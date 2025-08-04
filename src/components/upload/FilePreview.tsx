@@ -3,31 +3,30 @@
 import { useState } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
-  Typography,
-  IconButton,
+  Paper,
+  Text,
+  ActionIcon,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Modal,
   Button,
-  Chip,
+  Badge,
   Grid,
-} from '@mui/material';
-import {
-  Visibility,
-  Download,
-  Delete,
-  FileCopy,
+  Group,
   Image,
-  PictureAsPdf,
-  VideoFile,
-  AudioFile,
-  Description,
-  InsertDriveFile,
-} from '@mui/icons-material';
+  Stack,
+} from '@mantine/core';
+import {
+  IconEye,
+  IconDownload,
+  IconTrash,
+  IconCopy,
+  IconPhoto,
+  IconFileText,
+  IconVideo,
+  IconMusic,
+  IconFile,
+  IconFileTypePdf,
+} from '@tabler/icons-react';
 
 interface FilePreviewProps {
   files: Array<{
@@ -54,21 +53,21 @@ export function FilePreview({
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const getFileIcon = (type: string) => {
-    if (type.startsWith('image/')) return <Image />;
-    if (type.includes('pdf')) return <PictureAsPdf />;
-    if (type.startsWith('video/')) return <VideoFile />;
-    if (type.startsWith('audio/')) return <AudioFile />;
-    if (type.startsWith('text/')) return <Description />;
-    return <InsertDriveFile />;
+    if (type.startsWith('image/')) return <IconPhoto size={20} />;
+    if (type.includes('pdf')) return <IconFileTypePdf size={20} />;
+    if (type.startsWith('video/')) return <IconVideo size={20} />;
+    if (type.startsWith('audio/')) return <IconMusic size={20} />;
+    if (type.startsWith('text/')) return <IconFileText size={20} />;
+    return <IconFile size={20} />;
   };
 
   const getFileColor = (type: string) => {
-    if (type.startsWith('image/')) return 'success';
-    if (type.includes('pdf')) return 'error';
-    if (type.startsWith('video/')) return 'warning';
-    if (type.startsWith('audio/')) return 'info';
-    if (type.startsWith('text/')) return 'primary';
-    return 'default';
+    if (type.startsWith('image/')) return 'green';
+    if (type.includes('pdf')) return 'red';
+    if (type.startsWith('video/')) return 'yellow';
+    if (type.startsWith('audio/')) return 'blue';
+    if (type.startsWith('text/')) return 'blue';
+    return 'gray';
   };
 
   const formatFileSize = (bytes: number) => {
@@ -97,7 +96,11 @@ export function FilePreview({
   };
 
   const canPreview = (type: string) => {
-    return type.startsWith('image/') || type.includes('pdf') || type.startsWith('text/');
+    return (
+      type.startsWith('image/') ||
+      type.includes('pdf') ||
+      type.startsWith('text/')
+    );
   };
 
   const renderPreview = () => {
@@ -105,7 +108,7 @@ export function FilePreview({
 
     if (previewFile.type.startsWith('image/')) {
       return (
-        <img
+        <Image
           src={previewFile.url}
           alt={previewFile.name}
           style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }}
@@ -128,157 +131,144 @@ export function FilePreview({
       return (
         <Box
           component="pre"
-          sx={{
+          style={{
             maxHeight: '70vh',
             overflow: 'auto',
-            bgcolor: 'grey.100',
-            p: 2,
-            borderRadius: 1,
+            backgroundColor: 'var(--mantine-color-gray-1)',
+            padding: 'var(--mantine-spacing-md)',
+            borderRadius: 'var(--mantine-radius-sm)',
             fontSize: '0.875rem',
           }}
         >
           {/* For text files, you might want to fetch and display the content */}
-          <Typography>Text file: {previewFile.name}</Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Text>Text file: {previewFile.name}</Text>
+          <Text size="xs" c="dimmed">
             Click download to view the full content
-          </Typography>
+          </Text>
         </Box>
       );
     }
 
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography variant="h6" gutterBottom>
+      <Box ta="center" py="xl">
+        <Text size="lg" fw={600} mb="md">
           Preview not available
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          This file type cannot be previewed. Use the download button to view the file.
-        </Typography>
+        </Text>
+        <Text size="sm" c="dimmed">
+          This file type cannot be previewed. Use the download button to view
+          the file.
+        </Text>
       </Box>
     );
   };
 
   if (files.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography variant="body2" color="text.secondary">
+      <Box ta="center" py="xl">
+        <Text size="sm" c="dimmed">
           No files uploaded yet
-        </Typography>
+        </Text>
       </Box>
     );
   }
 
   return (
     <Box>
-      <Grid container spacing={2}>
+      <Grid>
         {files.slice(0, maxFiles).map((file, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card variant="outlined">
-              <CardContent sx={{ py: 2, px: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <Box sx={{ color: `${getFileColor(file.type)}.main` }}>
-                    {getFileIcon(file.type)}
-                  </Box>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="body2" noWrap>
-                      {file.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatFileSize(file.size)}
-                    </Typography>
-                  </Box>
+          <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={index}>
+            <Paper p="md" withBorder>
+              <Group gap="sm" mb="xs">
+                <Box c={`var(--mantine-color-${getFileColor(file.type)}-6)`}>
+                  {getFileIcon(file.type)}
                 </Box>
+                <Box style={{ flex: 1, minWidth: 0 }}>
+                  <Text size="sm" fw={500} truncate>
+                    {file.name}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {formatFileSize(file.size)}
+                  </Text>
+                </Box>
+              </Group>
 
-                {showActions && (
-                  <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                    {canPreview(file.type) && (
-                      <Tooltip title="Preview">
-                        <IconButton
-                          size="small"
-                          onClick={() => handlePreview(file)}
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                    <Tooltip title="Copy URL">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleCopyUrl(file.url)}
-                      >
-                        <FileCopy />
-                      </IconButton>
+              {showActions && (
+                <Group gap="xs" justify="flex-end">
+                  {canPreview(file.type) && (
+                    <Tooltip label="Preview">
+                      <ActionIcon size="sm" onClick={() => handlePreview(file)}>
+                        <IconEye size={16} />
+                      </ActionIcon>
                     </Tooltip>
-                    <Tooltip title="Download">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDownload(file)}
+                  )}
+                  <Tooltip label="Copy URL">
+                    <ActionIcon
+                      size="sm"
+                      onClick={() => handleCopyUrl(file.url)}
+                    >
+                      <IconCopy size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label="Download">
+                    <ActionIcon size="sm" onClick={() => handleDownload(file)}>
+                      <IconDownload size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                  {onRemove && (
+                    <Tooltip label="Remove">
+                      <ActionIcon
+                        size="sm"
+                        color="red"
+                        onClick={() => onRemove(index)}
                       >
-                        <Download />
-                      </IconButton>
+                        <IconTrash size={16} />
+                      </ActionIcon>
                     </Tooltip>
-                    {onRemove && (
-                      <Tooltip title="Remove">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => onRemove(index)}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+                  )}
+                </Group>
+              )}
+            </Paper>
+          </Grid.Col>
         ))}
       </Grid>
 
       {files.length > maxFiles && (
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Chip
-            label={`+${files.length - maxFiles} more files`}
-            variant="outlined"
-            color="primary"
-          />
+        <Box ta="center" mt="md">
+          <Badge variant="outline" size="sm">
+            +{files.length - maxFiles} more files
+          </Badge>
         </Box>
       )}
 
-      {/* Preview Dialog */}
-      <Dialog
-        open={previewOpen}
+      {/* Preview Modal */}
+      <Modal
+        opened={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">
-              {previewFile?.name}
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+        size="lg"
+        title={
+          <Group justify="space-between" align="center">
+            <Text fw={600}>{previewFile?.name}</Text>
+            <Group gap="xs">
               <Button
-                size="small"
-                startIcon={<Download />}
+                size="xs"
+                leftSection={<IconDownload size={14} />}
                 onClick={() => handleDownload(previewFile)}
               >
                 Download
               </Button>
               <Button
-                size="small"
+                size="xs"
+                variant="outline"
                 onClick={() => setPreviewOpen(false)}
               >
                 Close
               </Button>
-            </Box>
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {renderPreview()}
-        </DialogContent>
-      </Dialog>
+            </Group>
+          </Group>
+        }
+      >
+        {renderPreview()}
+      </Modal>
     </Box>
   );
-} 
+}

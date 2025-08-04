@@ -1,12 +1,5 @@
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Alert,
-} from '@mui/material';
-import { Security, ArrowBack } from '@mui/icons-material';
+import { Box, Paper, Text, Button, Alert, Stack } from '@mantine/core';
+import { IconShieldLock, IconArrowLeft } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 
 interface PermissionErrorProps {
@@ -24,34 +17,33 @@ export function PermissionError({
 
   return (
     <Box
-      sx={{
+      style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '50vh',
-        p: 3,
+        padding: 'var(--mantine-spacing-lg)',
       }}
     >
-      <Card sx={{ maxWidth: 500, width: '100%' }}>
-        <CardContent sx={{ textAlign: 'center', p: 4 }}>
-          <Security sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
-          <Typography variant="h4" component="h1" gutterBottom>
+      <Paper p="xl" style={{ maxWidth: 500, width: '100%' }}>
+        <Stack align="center" gap="md">
+          <IconShieldLock size={64} color="var(--mantine-color-red-6)" />
+          <Text size="xl" fw={700} ta="center">
             {title}
-          </Typography>
-          <Alert severity="error" sx={{ mb: 3 }}>
+          </Text>
+          <Alert color="red" title="Permission Error" style={{ width: '100%' }}>
             {message}
           </Alert>
           {showBackButton && (
             <Button
-              variant="contained"
-              startIcon={<ArrowBack />}
+              leftSection={<IconArrowLeft size={16} />}
               onClick={() => router.back()}
             >
               Go Back
             </Button>
           )}
-        </CardContent>
-      </Card>
+        </Stack>
+      </Paper>
     </Box>
   );
 }

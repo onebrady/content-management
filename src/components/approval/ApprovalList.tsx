@@ -164,28 +164,53 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
     if (!selectedApproval) return;
 
     try {
-      const response = await fetch(
-        `/api/content/${selectedApproval.content.id}/approval/${selectedApproval.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            status: ApprovalStatus.APPROVED,
-            comments,
-          }),
-        }
-      );
+      // Check if this is a pending approval (no existing approval record)
+      const isPendingApproval = selectedApproval._isPendingApproval;
 
-      if (!response.ok) {
-        throw new Error('Failed to approve content');
+      let response;
+      if (isPendingApproval) {
+        // Create new approval record
+        response = await fetch(
+          `/api/content/${selectedApproval.content.id}/approval`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              status: ApprovalStatus.APPROVED,
+              comments,
+            }),
+          }
+        );
+      } else {
+        // Update existing approval record
+        response = await fetch(
+          `/api/content/${selectedApproval.content.id}/approval/${selectedApproval.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              status: ApprovalStatus.APPROVED,
+              comments,
+            }),
+          }
+        );
       }
 
-      onStatusChange();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to approve content');
+      }
+
+      // Close modal and refresh data
       handleCloseModal();
+      onStatusChange();
     } catch (error) {
       console.error('Error approving content:', error);
+      // You might want to show a notification here
     }
   };
 
@@ -193,28 +218,53 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
     if (!selectedApproval) return;
 
     try {
-      const response = await fetch(
-        `/api/content/${selectedApproval.content.id}/approval/${selectedApproval.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            status: ApprovalStatus.REJECTED,
-            comments,
-          }),
-        }
-      );
+      // Check if this is a pending approval (no existing approval record)
+      const isPendingApproval = selectedApproval._isPendingApproval;
 
-      if (!response.ok) {
-        throw new Error('Failed to reject content');
+      let response;
+      if (isPendingApproval) {
+        // Create new approval record
+        response = await fetch(
+          `/api/content/${selectedApproval.content.id}/approval`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              status: ApprovalStatus.REJECTED,
+              comments,
+            }),
+          }
+        );
+      } else {
+        // Update existing approval record
+        response = await fetch(
+          `/api/content/${selectedApproval.content.id}/approval/${selectedApproval.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              status: ApprovalStatus.REJECTED,
+              comments,
+            }),
+          }
+        );
       }
 
-      onStatusChange();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to reject content');
+      }
+
+      // Close modal and refresh data
       handleCloseModal();
+      onStatusChange();
     } catch (error) {
       console.error('Error rejecting content:', error);
+      // You might want to show a notification here
     }
   };
 
@@ -247,8 +297,14 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
     }
   };
 
-  const handleViewContent = (contentId: string) => {
-    router.push(`/content?view=${contentId}`);
+  const handleViewContent = (contentId: string, slug?: string) => {
+    if (slug) {
+      // Link to the actual article page using slug
+      router.push(`/content/${slug}`);
+    } else {
+      // Fallback to the content view if no slug is available
+      router.push(`/content?view=${contentId}`);
+    }
   };
 
   // Get status color
@@ -477,11 +533,16 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
                   <Table.Td>{formatDate(row.updatedAt)}</Table.Td>
                   <Table.Td>
                     <Group gap="xs">
-                      <Tooltip label="View Content">
+                      <Tooltip label="View Article">
                         <ActionIcon
                           size="sm"
                           variant="light"
-                          onClick={() => handleViewContent(row.content?.id)}
+                          onClick={() =>
+                            handleViewContent(
+                              row.content?.id,
+                              row.content?.slug
+                            )
+                          }
                         >
                           <IconEye size={14} />
                         </ActionIcon>
@@ -524,11 +585,14 @@ export function ApprovalList({ approvals, onStatusChange }: ApprovalListProps) {
                           <Menu.Item
                             leftSection={<IconEye size={14} />}
                             onClick={() => {
-                              handleViewContent(row.content?.id);
+                              handleViewContent(
+                                row.content?.id,
+                                row.content?.slug
+                              );
                               setActionMenuOpened(null);
                             }}
                           >
-                            View Details
+                            View Article
                           </Menu.Item>
                         </Menu.Dropdown>
                       </Menu>
