@@ -1,37 +1,66 @@
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Box, Text } from '@mantine/core';
+import {
+  Button,
+  Container,
+  Stack,
+  Text,
+  Title,
+  Paper,
+  Group,
+} from '@mantine/core';
+import { useMantineTheme } from '@mantine/core';
+import { getCustomColors } from '@/lib/theme-utils';
 
-export default function Home() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
+export default function HomePage() {
+  const theme = useMantineTheme();
+  const customColors = getCustomColors(theme);
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        // If user is authenticated, redirect to dashboard
-        router.push('/dashboard');
-      } else {
-        // If user is not authenticated, redirect to signin page
-        router.push('/auth/signin');
-      }
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  // Show loading state while checking authentication
   return (
-    <Box
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Text>Redirecting...</Text>
-    </Box>
+    <Container size="lg" py="xl">
+      <Stack gap="xl">
+        <Title order={1} ta="center">
+          Content Management Tool
+        </Title>
+
+        <Paper p="xl" withBorder>
+          <Stack gap="md">
+            <Title order={2}>Theme Test</Title>
+            <Text>
+              This page demonstrates that the Mantine theme is working
+              correctly.
+            </Text>
+
+            <Group>
+              <Button color="terracotta">Primary Button</Button>
+              <Button variant="outline" color="terracotta">
+                Outline Button
+              </Button>
+              <Button variant="light" color="terracotta">
+                Light Button
+              </Button>
+            </Group>
+
+            <Paper p="md" style={{ backgroundColor: customColors.background }}>
+              <Text size="sm" c="dimmed">
+                Custom background color: {customColors.background}
+              </Text>
+            </Paper>
+
+            <Paper p="md" style={{ backgroundColor: customColors.sidebar }}>
+              <Text size="sm" c="dimmed">
+                Sidebar color: {customColors.sidebar}
+              </Text>
+            </Paper>
+
+            <Text>
+              Primary color: {theme.colors.terracotta?.[6] || 'Not set'}
+            </Text>
+
+            <Text>Theme primary color: {theme.primaryColor}</Text>
+          </Stack>
+        </Paper>
+      </Stack>
+    </Container>
   );
 }

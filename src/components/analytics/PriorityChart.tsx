@@ -27,16 +27,19 @@ export function PriorityChart({ data }: PriorityChartProps) {
       return (
         <Box
           style={{
-            backgroundColor: isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-white)',
+            backgroundColor: 'var(--card)',
             padding: '8px',
-            border: `1px solid ${isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}`,
-            borderRadius: '4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow-md)',
           }}
         >
-          <Text size="sm" style={{ 
-            color: isDark ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-dark-9)' 
-          }}>
+          <Text
+            size="sm"
+            style={{
+              color: 'var(--foreground)',
+            }}
+          >
             {label}: {payload[0].value}
           </Text>
         </Box>
@@ -46,19 +49,19 @@ export function PriorityChart({ data }: PriorityChartProps) {
     return null;
   };
 
-  // Define colors for different priorities
+  // Define colors for different priorities using our theme colors
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'LOW':
-        return isDark ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-green-6)';
+        return 'var(--secondary)';
       case 'MEDIUM':
-        return isDark ? 'var(--mantine-color-yellow-5)' : 'var(--mantine-color-yellow-6)';
+        return 'var(--primary)';
       case 'HIGH':
-        return isDark ? 'var(--mantine-color-orange-5)' : 'var(--mantine-color-orange-6)';
+        return 'var(--chart-1)';
       case 'URGENT':
-        return isDark ? 'var(--mantine-color-red-5)' : 'var(--mantine-color-red-6)';
+        return 'var(--destructive)';
       default:
-        return isDark ? 'var(--mantine-color-gray-5)' : 'var(--mantine-color-gray-6)';
+        return 'var(--muted-foreground)';
     }
   };
 
@@ -66,29 +69,25 @@ export function PriorityChart({ data }: PriorityChartProps) {
     <Box style={{ width: '100%', height: 300 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke={isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}
-          />
-          <XAxis 
-            dataKey="priority" 
-            tick={{ 
-              fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <XAxis
+            dataKey="priority"
+            tick={{
+              fill: 'var(--foreground)',
             }}
           />
-          <YAxis 
-            tick={{ 
-              fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+          <YAxis
+            tick={{
+              fill: 'var(--foreground)',
             }}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Bar 
-            dataKey="count" 
-            fill={isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)'}
-            radius={[4, 4, 0, 0]}
-          >
+          <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]}>
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={getPriorityColor(entry.priority)} />
+              <Cell
+                key={`cell-${index}`}
+                fill={getPriorityColor(entry.priority)}
+              />
             ))}
           </Bar>
         </BarChart>

@@ -76,8 +76,8 @@ export function EditorMenuBar({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: '1px solid var(--mantine-color-gray-3)',
-        backgroundColor: 'var(--mantine-color-gray-0)',
+        borderBottom: '1px solid var(--mantine-color-border)',
+        backgroundColor: 'var(--mantine-color-card)',
         borderRadius: 'var(--mantine-radius-md) var(--mantine-radius-md) 0 0',
       }}
     >
@@ -90,7 +90,7 @@ export function EditorMenuBar({
             <Group gap={6} align="center">
               <IconFileText
                 size={14}
-                style={{ color: 'var(--mantine-color-blue-6)' }}
+                style={{ color: 'var(--mantine-color-primary-6)' }}
               />
               <Text size="xs" c="dimmed" fw={500}>
                 {getWordCount()} words
@@ -99,7 +99,7 @@ export function EditorMenuBar({
             <Group gap={6} align="center">
               <IconHash
                 size={14}
-                style={{ color: 'var(--mantine-color-gray-6)' }}
+                style={{ color: 'var(--mantine-color-muted-6)' }}
               />
               <Text size="xs" c="dimmed" fw={500}>
                 {getCharacterCount()} chars

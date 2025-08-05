@@ -2,15 +2,15 @@
   display: block;
   width: 100%;
   padding: var(--mantine-spacing-md);
-  color: light-dark(var(--mantine-color-text), var(--mantine-color-white));
-  border-radius: var(--mantine-radius-sm);
+  color: light-dark(var(--foreground), var(--foreground));
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
 
   @media (hover: hover) {
     &:hover {
-      background-color: light-dark(
-        var(--mantine-color-gray-0),
-        var(--mantine-color-dark-6)
-      );
+      background-color: light-dark(var(--accent), var(--accent));
+      border-color: light-dark(var(--border), var(--border));
     }
   }
 }

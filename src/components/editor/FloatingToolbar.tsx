@@ -46,13 +46,15 @@ export function FloatingToolbar({ editor }: FloatingToolbarProps) {
         shadow="md"
         p="xs"
         style={{
+          position: 'absolute',
+          zIndex: 1000,
+          backgroundColor: 'var(--mantine-color-white)',
+          border: '1px solid var(--mantine-color-border)',
+          borderRadius: 'var(--mantine-radius-sm)',
+          boxShadow: 'var(--mantine-shadow-md)',
+          padding: '4px',
           display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          flexWrap: 'wrap',
-          maxWidth: 400,
-          borderRadius: 8,
-          border: '1px solid var(--mantine-color-gray-3)',
+          gap: '2px',
         }}
       >
         {/* Text Formatting */}

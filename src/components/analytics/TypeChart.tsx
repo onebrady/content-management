@@ -26,16 +26,19 @@ export function TypeChart({ data }: TypeChartProps) {
       return (
         <Box
           style={{
-            backgroundColor: isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-white)',
+            backgroundColor: 'var(--card)',
             padding: '8px',
-            border: `1px solid ${isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}`,
-            borderRadius: '4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow-md)',
           }}
         >
-          <Text size="sm" style={{ 
-            color: isDark ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-dark-9)' 
-          }}>
+          <Text
+            size="sm"
+            style={{
+              color: 'var(--foreground)',
+            }}
+          >
             {label}: {payload[0].value}
           </Text>
         </Box>
@@ -49,27 +52,20 @@ export function TypeChart({ data }: TypeChartProps) {
     <Box style={{ width: '100%', height: 300 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke={isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}
-          />
-          <XAxis 
-            dataKey="type" 
-            tick={{ 
-              fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <XAxis
+            dataKey="type"
+            tick={{
+              fill: 'var(--foreground)',
             }}
           />
-          <YAxis 
-            tick={{ 
-              fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+          <YAxis
+            tick={{
+              fill: 'var(--foreground)',
             }}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Bar 
-            dataKey="count" 
-            fill={isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)'}
-            radius={[4, 4, 0, 0]}
-          />
+          <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </Box>

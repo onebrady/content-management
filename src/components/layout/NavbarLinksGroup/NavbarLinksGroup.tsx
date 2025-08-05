@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UnstyledButton, Group, Text, rem, Collapse, Box } from '@mantine/core';
 import { IconChevronRight } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -25,21 +25,47 @@ export function LinksGroup({
   const pathname = usePathname();
   const hasLinks = Array.isArray(links);
   const [opened, setOpened] = useState(initiallyOpened || false);
-  const items = (hasLinks ? links : []).map((link) => (
-    <Text
-      component="a"
-      className={classes.link}
-      href={link.link}
-      key={link.label}
-      onClick={(event) => {
-        event.preventDefault();
-        router.push(link.link);
-      }}
-      data-active={pathname === link.link || undefined}
-    >
-      {link.label}
-    </Text>
-  ));
+
+  // Check if any child link is currently active (exact match)
+  const hasActiveChild =
+    hasLinks && links.some((link) => pathname === link.link);
+
+  // Check if this is a direct link and is active (exact match)
+  const isDirectLinkActive = link ? pathname === link : false;
+
+  // Check if this is a parent with active child or direct link active
+  const isActive = isDirectLinkActive || hasActiveChild;
+
+  // Auto-open/close based on active state
+  useEffect(() => {
+    if (hasLinks) {
+      if (hasActiveChild) {
+        setOpened(true);
+      } else {
+        setOpened(false);
+      }
+    }
+  }, [hasLinks, hasActiveChild, pathname]);
+
+  const items = (hasLinks ? links : []).map((link) => {
+    const isChildActive = pathname === link.link;
+
+    return (
+      <Text
+        component="a"
+        className={classes.link}
+        href={link.link}
+        key={link.label}
+        onClick={(event) => {
+          event.preventDefault();
+          router.push(link.link);
+        }}
+        data-active={isChildActive || undefined}
+      >
+        {link.label}
+      </Text>
+    );
+  });
 
   const handleClick = () => {
     if (hasLinks) {
@@ -48,10 +74,6 @@ export function LinksGroup({
       router.push(link);
     }
   };
-
-  const isActive = link
-    ? pathname === link
-    : pathname.startsWith('/' + label.toLowerCase().replace(' ', ''));
 
   return (
     <>

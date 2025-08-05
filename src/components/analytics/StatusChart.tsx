@@ -19,13 +19,13 @@ export function StatusChart({ data }: StatusChartProps) {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
 
-  // Define colors for different statuses using Mantine color system
+  // Define colors for different statuses using our theme colors
   const COLORS = {
-    DRAFT: isDark ? 'var(--mantine-color-gray-5)' : 'var(--mantine-color-gray-6)',
-    IN_REVIEW: isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)',
-    APPROVED: isDark ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-green-6)',
-    REJECTED: isDark ? 'var(--mantine-color-red-5)' : 'var(--mantine-color-red-6)',
-    PUBLISHED: isDark ? 'var(--mantine-color-indigo-5)' : 'var(--mantine-color-indigo-6)',
+    DRAFT: 'var(--muted-foreground)',
+    IN_REVIEW: 'var(--primary)',
+    APPROVED: 'var(--secondary)',
+    REJECTED: 'var(--destructive)',
+    PUBLISHED: 'var(--chart-1)',
   };
 
   // Custom tooltip
@@ -34,17 +34,21 @@ export function StatusChart({ data }: StatusChartProps) {
       return (
         <Box
           style={{
-            backgroundColor: isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-white)',
+            backgroundColor: 'var(--card)',
             padding: '8px',
-            border: `1px solid ${isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}`,
-            borderRadius: '4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow-md)',
           }}
         >
-          <Text size="sm" style={{ 
-            color: isDark ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-dark-9)' 
-          }}>
-            {payload[0].name}: {payload[0].value} ({payload[0].payload.percentage}%)
+          <Text
+            size="sm"
+            style={{
+              color: 'var(--foreground)',
+            }}
+          >
+            {payload[0].name}: {payload[0].value} (
+            {payload[0].payload.percentage}%)
           </Text>
         </Box>
       );
@@ -80,8 +84,7 @@ export function StatusChart({ data }: StatusChartProps) {
               <Cell
                 key={`cell-${index}`}
                 fill={
-                  COLORS[entry.name as keyof typeof COLORS] ||
-                  (isDark ? 'var(--mantine-color-gray-4)' : 'var(--mantine-color-gray-3)')
+                  COLORS[entry.name as keyof typeof COLORS] || 'var(--muted)'
                 }
               />
             ))}

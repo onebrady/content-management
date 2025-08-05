@@ -27,22 +27,29 @@ export function TimeSeriesChart({ data, title }: TimeSeriesChartProps) {
       return (
         <Box
           style={{
-            backgroundColor: isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-white)',
+            backgroundColor: 'var(--card)',
             padding: '8px',
-            border: `1px solid ${isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}`,
-            borderRadius: '4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow-md)',
           }}
         >
-          <Text size="sm" style={{ 
-            color: isDark ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-dark-9)' 
-          }}>
+          <Text
+            size="sm"
+            style={{
+              color: 'var(--foreground)',
+            }}
+          >
             Date: {label}
           </Text>
           {payload.map((entry: any, index: number) => (
-            <Text key={index} size="sm" style={{ 
-              color: entry.color 
-            }}>
+            <Text
+              key={index}
+              size="sm"
+              style={{
+                color: entry.color,
+              }}
+            >
               {entry.name}: {entry.value}
             </Text>
           ))}
@@ -63,37 +70,34 @@ export function TimeSeriesChart({ data, title }: TimeSeriesChartProps) {
       <Box style={{ width: '100%', height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              stroke={isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}
-            />
-            <XAxis 
-              dataKey="date" 
-              tick={{ 
-                fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis
+              dataKey="date"
+              tick={{
+                fill: 'var(--foreground)',
               }}
             />
-            <YAxis 
-              tick={{ 
-                fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+            <YAxis
+              tick={{
+                fill: 'var(--foreground)',
               }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Line 
-              type="monotone" 
-              dataKey="count" 
-              stroke={isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)'}
+            <Line
+              type="monotone"
+              dataKey="count"
+              stroke="var(--primary)"
               strokeWidth={2}
-              dot={{ 
-                fill: isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)',
+              dot={{
+                fill: 'var(--primary)',
                 strokeWidth: 2,
-                r: 4
+                r: 4,
               }}
-              activeDot={{ 
+              activeDot={{
                 r: 6,
-                stroke: isDark ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-blue-6)',
+                stroke: 'var(--primary)',
                 strokeWidth: 2,
-                fill: isDark ? 'var(--mantine-color-blue-3)' : 'var(--mantine-color-blue-1)'
+                fill: 'var(--accent)',
               }}
             />
           </LineChart>

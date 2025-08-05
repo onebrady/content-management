@@ -20,7 +20,6 @@ import {
   ActionIcon,
   Tooltip,
   Select,
-  DatePickerInput,
   NumberInput,
   Switch,
   Divider,
@@ -63,7 +62,6 @@ import { StatCard } from '@/components/analytics/StatCard';
 import { TimeRangeSelector } from '@/components/analytics/TimeRangeSelector';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { PERMISSIONS } from '@/lib/permissions';
-import { NextLink } from 'next/link';
 
 export default function AnalyticsDashboard() {
   const { colorScheme } = useMantineColorScheme();
@@ -115,17 +113,29 @@ export default function AnalyticsDashboard() {
               <Group>
                 <Button
                   variant="light"
+                  color="primary"
                   leftSection={<IconDownload size={16} />}
                   onClick={() => handleExport('csv')}
                   loading={exporting}
+                  style={{
+                    backgroundColor: 'var(--accent)',
+                    color: 'var(--primary)',
+                    borderColor: 'var(--border)',
+                  }}
                 >
                   Export CSV
                 </Button>
                 <Button
                   variant="light"
+                  color="secondary"
                   leftSection={<IconDownload size={16} />}
                   onClick={() => handleExport('json')}
                   loading={exporting}
+                  style={{
+                    backgroundColor: 'var(--secondary)',
+                    color: 'var(--secondary-foreground)',
+                    borderColor: 'var(--border)',
+                  }}
                 >
                   Export JSON
                 </Button>
@@ -147,9 +157,26 @@ export default function AnalyticsDashboard() {
                 {/* Summary Cards */}
                 <Grid mb="xl">
                   <Grid.Col span={{ base: 12, md: 3 }}>
-                    <Card p="lg">
+                    <Card
+                      p="lg"
+                      withBorder
+                      shadow="sm"
+                      style={{
+                        backgroundColor: 'var(--card)',
+                        borderColor: 'var(--border)',
+                        boxShadow: 'var(--shadow)',
+                      }}
+                    >
                       <Group>
-                        <ThemeIcon size="lg" color="blue">
+                        <ThemeIcon
+                          size="lg"
+                          color="primary"
+                          style={{
+                            backgroundColor: 'var(--accent)',
+                            color: 'var(--primary)',
+                            borderColor: 'var(--border)',
+                          }}
+                        >
                           <IconFileText size={20} />
                         </ThemeIcon>
                         <div>
@@ -164,9 +191,26 @@ export default function AnalyticsDashboard() {
                     </Card>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, md: 3 }}>
-                    <Card p="lg">
+                    <Card
+                      p="lg"
+                      withBorder
+                      shadow="sm"
+                      style={{
+                        backgroundColor: 'var(--card)',
+                        borderColor: 'var(--border)',
+                        boxShadow: 'var(--shadow)',
+                      }}
+                    >
                       <Group>
-                        <ThemeIcon size="lg" color="green">
+                        <ThemeIcon
+                          size="lg"
+                          color="secondary"
+                          style={{
+                            backgroundColor: 'var(--secondary)',
+                            color: 'var(--secondary-foreground)',
+                            borderColor: 'var(--border)',
+                          }}
+                        >
                           <IconChecklist size={20} />
                         </ThemeIcon>
                         <div>
@@ -174,16 +218,33 @@ export default function AnalyticsDashboard() {
                             Pending Approvals
                           </Text>
                           <Text size="xl" fw={700}>
-                            {analytics.pendingApprovals}
+                            {analytics.totalApprovals}
                           </Text>
                         </div>
                       </Group>
                     </Card>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, md: 3 }}>
-                    <Card p="lg">
+                    <Card
+                      p="lg"
+                      withBorder
+                      shadow="sm"
+                      style={{
+                        backgroundColor: 'var(--card)',
+                        borderColor: 'var(--border)',
+                        boxShadow: 'var(--shadow)',
+                      }}
+                    >
                       <Group>
-                        <ThemeIcon size="lg" color="orange">
+                        <ThemeIcon
+                          size="lg"
+                          color="primary"
+                          style={{
+                            backgroundColor: 'var(--accent)',
+                            color: 'var(--primary)',
+                            borderColor: 'var(--border)',
+                          }}
+                        >
                           <IconUsers size={20} />
                         </ThemeIcon>
                         <div>
@@ -198,9 +259,26 @@ export default function AnalyticsDashboard() {
                     </Card>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, md: 3 }}>
-                    <Card p="lg">
+                    <Card
+                      p="lg"
+                      withBorder
+                      shadow="sm"
+                      style={{
+                        backgroundColor: 'var(--card)',
+                        borderColor: 'var(--border)',
+                        boxShadow: 'var(--shadow)',
+                      }}
+                    >
                       <Group>
-                        <ThemeIcon size="lg" color="purple">
+                        <ThemeIcon
+                          size="lg"
+                          color="secondary"
+                          style={{
+                            backgroundColor: 'var(--secondary)',
+                            color: 'var(--secondary-foreground)',
+                            borderColor: 'var(--border)',
+                          }}
+                        >
                           <IconChartBar size={20} />
                         </ThemeIcon>
                         <div>
@@ -221,13 +299,12 @@ export default function AnalyticsDashboard() {
                   <Grid.Col span={{ base: 12, md: 4 }}>
                     <Paper
                       p="lg"
+                      withBorder
+                      shadow="sm"
                       style={{
-                        backgroundColor: isDark
-                          ? 'var(--mantine-color-dark-7)'
-                          : 'var(--mantine-color-white)',
-                        borderColor: isDark
-                          ? 'var(--mantine-color-dark-4)'
-                          : 'var(--mantine-color-gray-3)',
+                        backgroundColor: 'var(--card)',
+                        borderColor: 'var(--border)',
+                        boxShadow: 'var(--shadow)',
                       }}
                     >
                       <Title order={3} mb="md">
@@ -239,13 +316,12 @@ export default function AnalyticsDashboard() {
                   <Grid.Col span={{ base: 12, md: 4 }}>
                     <Paper
                       p="lg"
+                      withBorder
+                      shadow="sm"
                       style={{
-                        backgroundColor: isDark
-                          ? 'var(--mantine-color-dark-7)'
-                          : 'var(--mantine-color-white)',
-                        borderColor: isDark
-                          ? 'var(--mantine-color-dark-4)'
-                          : 'var(--mantine-color-gray-3)',
+                        backgroundColor: 'var(--card)',
+                        borderColor: 'var(--border)',
+                        boxShadow: 'var(--shadow)',
                       }}
                     >
                       <Title order={3} mb="md">
@@ -257,13 +333,12 @@ export default function AnalyticsDashboard() {
                   <Grid.Col span={{ base: 12, md: 4 }}>
                     <Paper
                       p="lg"
+                      withBorder
+                      shadow="sm"
                       style={{
-                        backgroundColor: isDark
-                          ? 'var(--mantine-color-dark-7)'
-                          : 'var(--mantine-color-white)',
-                        borderColor: isDark
-                          ? 'var(--mantine-color-dark-4)'
-                          : 'var(--mantine-color-gray-3)',
+                        backgroundColor: 'var(--card)',
+                        borderColor: 'var(--border)',
+                        boxShadow: 'var(--shadow)',
                       }}
                     >
                       <Title order={3} mb="md">
@@ -278,20 +353,19 @@ export default function AnalyticsDashboard() {
                 <Paper
                   p="lg"
                   mb="xl"
+                  withBorder
+                  shadow="sm"
                   style={{
-                    backgroundColor: isDark
-                      ? 'var(--mantine-color-dark-7)'
-                      : 'var(--mantine-color-white)',
-                    borderColor: isDark
-                      ? 'var(--mantine-color-dark-4)'
-                      : 'var(--mantine-color-gray-3)',
+                    backgroundColor: 'var(--card)',
+                    borderColor: 'var(--border)',
+                    boxShadow: 'var(--shadow)',
                   }}
                 >
                   <Title order={3} mb="md">
                     Average Approval Time
                   </Title>
                   <Group align="center" mb="md">
-                    <IconClock size={24} color="var(--mantine-color-blue-6)" />
+                    <IconClock size={24} style={{ color: 'var(--primary)' }} />
                     <Title order={2}>
                       {analytics.averageApprovalTime !== null
                         ? `${analytics.averageApprovalTime.toFixed(2)} hours`
@@ -304,13 +378,12 @@ export default function AnalyticsDashboard() {
                 <Paper
                   p="lg"
                   mb="xl"
+                  withBorder
+                  shadow="sm"
                   style={{
-                    backgroundColor: isDark
-                      ? 'var(--mantine-color-dark-7)'
-                      : 'var(--mantine-color-white)',
-                    borderColor: isDark
-                      ? 'var(--mantine-color-dark-4)'
-                      : 'var(--mantine-color-gray-3)',
+                    backgroundColor: 'var(--card)',
+                    borderColor: 'var(--border)',
+                    boxShadow: 'var(--shadow)',
                   }}
                 >
                   <Title order={3} mb="md">

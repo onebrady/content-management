@@ -2,14 +2,7 @@
 
 import { ReactRenderer } from '@tiptap/react';
 import tippy from 'tippy.js';
-import {
-  Box,
-  Paper,
-  List,
-  Text,
-  Group,
-  Stack,
-} from '@mantine/core';
+import { Box, Paper, List, Text, Group, Stack } from '@mantine/core';
 import {
   IconHeading,
   IconText,
@@ -39,7 +32,8 @@ const SlashCommandsComponent = ({ items, command }: SlashCommandsProps) => {
               onClick={() => command(item)}
               style={{ cursor: 'pointer', padding: '8px 12px' }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-1)';
+                e.currentTarget.style.backgroundColor =
+                  'var(--mantine-color-muted-1)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent';
@@ -48,8 +42,12 @@ const SlashCommandsComponent = ({ items, command }: SlashCommandsProps) => {
               <Group gap="sm">
                 <Box style={{ minWidth: 24 }}>{item.icon}</Box>
                 <Stack gap={2}>
-                  <Text size="sm" fw={500}>{item.title}</Text>
-                  <Text size="xs" c="dimmed">{item.description}</Text>
+                  <Text size="sm" fw={500}>
+                    {item.title}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {item.description}
+                  </Text>
                 </Stack>
               </Group>
             </Box>

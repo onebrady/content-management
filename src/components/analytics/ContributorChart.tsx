@@ -26,16 +26,19 @@ export function ContributorChart({ data }: ContributorChartProps) {
       return (
         <Box
           style={{
-            backgroundColor: isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-white)',
+            backgroundColor: 'var(--card)',
             padding: '8px',
-            border: `1px solid ${isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}`,
-            borderRadius: '4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow-md)',
           }}
         >
-          <Text size="sm" style={{ 
-            color: isDark ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-dark-9)' 
-          }}>
+          <Text
+            size="sm"
+            style={{
+              color: 'var(--foreground)',
+            }}
+          >
             {label}: {payload[0].value} contributions
           </Text>
         </Box>
@@ -49,28 +52,25 @@ export function ContributorChart({ data }: ContributorChartProps) {
     <Box style={{ width: '100%', height: 300 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="horizontal">
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke={isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}
-          />
-          <XAxis 
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <XAxis
             type="number"
-            tick={{ 
-              fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+            tick={{
+              fill: 'var(--foreground)',
             }}
           />
-          <YAxis 
+          <YAxis
             type="category"
             dataKey="name"
-            tick={{ 
-              fill: isDark ? 'var(--mantine-color-gray-2)' : 'var(--mantine-color-dark-6)' 
+            tick={{
+              fill: 'var(--foreground)',
             }}
             width={100}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Bar 
-            dataKey="contributions" 
-            fill={isDark ? 'var(--mantine-color-teal-5)' : 'var(--mantine-color-teal-6)'}
+          <Bar
+            dataKey="contributions"
+            fill="var(--chart-2)"
             radius={[0, 4, 4, 0]}
           />
         </BarChart>

@@ -155,10 +155,11 @@ export default function NotificationBell() {
                   key={notification.id}
                   p="md"
                   style={{
-                    backgroundColor: notification.isRead
-                      ? 'transparent'
-                      : 'var(--mantine-color-gray-0)',
-                    borderBottom: '1px solid var(--mantine-color-gray-3)',
+                    backgroundColor:
+                      colorScheme === 'dark'
+                        ? 'var(--mantine-color-dark-6)'
+                        : 'var(--mantine-color-card)',
+                    borderBottom: '1px solid var(--mantine-color-border)',
                     cursor: 'pointer',
                   }}
                   onClick={() => handleNotificationClick(notification)}

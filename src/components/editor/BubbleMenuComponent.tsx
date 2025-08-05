@@ -44,18 +44,13 @@ export function BubbleMenuComponent({ editor }: BubbleMenuComponentProps) {
       shadow="md"
       p="xs"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        flexWrap: 'nowrap',
-        minWidth: 'fit-content',
-        maxWidth: 'none',
-        width: 'max-content',
-        borderRadius: 8,
-        border: '1px solid var(--mantine-color-gray-3)',
         backgroundColor: 'var(--mantine-color-white)',
-        overflow: 'visible',
-        whiteSpace: 'nowrap',
+        border: '1px solid var(--mantine-color-border)',
+        borderRadius: 'var(--mantine-radius-sm)',
+        boxShadow: 'var(--mantine-shadow-md)',
+        padding: '4px',
+        display: 'flex',
+        gap: '2px',
       }}
     >
       {/* Text Formatting */}

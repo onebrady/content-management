@@ -6,7 +6,14 @@ interface LogoProps {
 
 export function Logo({ style }: LogoProps) {
   return (
-    <Text size="lg" fw={700} style={style} c="blue">
+    <Text
+      size="lg"
+      fw={700}
+      style={{
+        ...style,
+        color: 'var(--mantine-color-primary-6)',
+      }}
+    >
       ContentFlow
     </Text>
   );

@@ -128,7 +128,7 @@ export function DocumentOutline({ editor }: DocumentOutlineProps) {
         >
           <Box
             p="xs"
-            style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+            style={{ borderBottom: '1px solid var(--mantine-color-border)' }}
           >
             <Text size="sm" fw={600}>
               Document Outline
@@ -157,7 +157,7 @@ export function DocumentOutline({ editor }: DocumentOutlineProps) {
                       alignItems: 'center',
                       gap: 8,
                       '&:hover': {
-                        backgroundColor: 'var(--mantine-color-gray-1)',
+                        backgroundColor: 'var(--mantine-color-muted-1)',
                       },
                     }}
                   >

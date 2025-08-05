@@ -55,11 +55,6 @@ export const navigationConfig: NavigationItem[] = [
         roles: ['CONTRIBUTOR', 'MODERATOR', 'ADMIN'],
       },
       {
-        label: 'Content Analytics',
-        link: '/analytics',
-        roles: ['MODERATOR', 'ADMIN'],
-      },
-      {
         label: 'Approvals',
         link: '/approvals',
         roles: ['MODERATOR', 'ADMIN'],

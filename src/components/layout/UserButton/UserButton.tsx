@@ -25,7 +25,16 @@ export function UserButton() {
       <Menu.Target>
         <UnstyledButton className={classes.user}>
           <Group>
-            <Avatar src={null} radius="xl" size="md" color="blue">
+            <Avatar
+              src={null}
+              radius="xl"
+              size="md"
+              color="white"
+              style={{
+                backgroundColor: 'var(--primary)',
+                color: 'var(--primary-foreground)',
+              }}
+            >
               {user?.name?.charAt(0) || 'U'}
             </Avatar>
 

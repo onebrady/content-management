@@ -1,4 +1,4 @@
-import { Code, Group, ScrollArea } from '@mantine/core';
+import { Code, Group, ScrollArea, useMantineTheme } from '@mantine/core';
 import { LinksGroup } from './NavbarLinksGroup/NavbarLinksGroup';
 import { UserButton } from './UserButton/UserButton';
 import { Logo } from './Logo';
@@ -9,6 +9,7 @@ import classes from './NavbarNested.module.css';
 
 export function NavbarNested() {
   const { navigation } = useNavigation();
+  const theme = useMantineTheme();
 
   const links = navigation.map((item) => (
     <LinksGroup {...item} key={item.label} />
@@ -20,7 +21,19 @@ export function NavbarNested() {
         <Group justify="space-between">
           <Logo style={{ width: 120 }} />
           <Group gap="xs">
-            <Code fw={700}>{formatVersion(getAppVersion())}</Code>
+            <Code
+              fw={700}
+              style={{
+                color: 'var(--primary)',
+                backgroundColor: 'var(--accent)',
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.75rem',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {formatVersion(getAppVersion())}
+            </Code>
           </Group>
         </Group>
       </div>

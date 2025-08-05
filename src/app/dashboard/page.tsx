@@ -77,8 +77,6 @@ export default function DashboardPage() {
     }))
   );
 
-  const isDark = colorScheme === 'dark';
-
   useEffect(() => {
     if (analytics) {
       // Update stats with real data
@@ -98,85 +96,68 @@ export default function DashboardPage() {
         },
         {
           ...dashboardStats[2], // Active Users
-          value: analytics.totalUsers?.toString() || '0',
+          value: analytics.topContributors?.length?.toString() || '0',
           trend: 8,
         },
         {
           ...dashboardStats[3], // Recent Activity
-          value: (
-            (analytics.recentActivity?.newContent || 0) +
-            (analytics.recentActivity?.updatedContent || 0)
-          ).toString(),
+          value: analytics.recentActivity?.newContent?.toString() || '0',
           trend: 12,
         },
       ]);
     }
   }, [analytics, dashboardStats]);
 
-  // Fetch recent content
   useEffect(() => {
-    const fetchRecentContent = async () => {
-      setContentLoading(true);
-      try {
-        const response = await fetch(
-          '/api/content?limit=5&sort=updatedAt&order=desc'
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setRecentContent(data.content || []);
-        }
-      } catch (error) {
-        console.error('Error fetching recent content:', error);
-      } finally {
-        setContentLoading(false);
-      }
-    };
+    fetchRecentContent();
+  }, []);
 
-    if (isAuthenticated) {
-      fetchRecentContent();
+  const fetchRecentContent = async () => {
+    try {
+      const response = await fetch(
+        '/api/content?limit=5&sort=updatedAt&order=desc'
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setRecentContent(data.content || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch recent content:', error);
+    } finally {
+      setContentLoading(false);
     }
-  }, [isAuthenticated]);
+  };
 
   const getWelcomeMessage = () => {
     const hour = new Date().getHours();
-    let greeting = 'Good morning';
-    if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
-    else if (hour >= 17) greeting = 'Good evening';
-
-    // Debug: Log user data to console
-    console.log('Current user data:', user);
-
-    return `${greeting}, ${user?.name || 'User'}!`;
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
   const getDashboardSubtitle = () => {
-    const version = getAppVersion();
-    return `Welcome to WesternTruck dashboard ${formatVersion(version)}`;
+    return `Welcome back, ${user?.name || 'User'}. Here's what's happening with your content.`;
   };
 
   const getTrendIcon = (trend: number) => {
-    if (trend > 0)
-      return <IconTrendingUp size={16} color="var(--mantine-color-green-6)" />;
-    if (trend < 0)
-      return <IconTrendingDown size={16} color="var(--mantine-color-red-6)" />;
-    return null;
+    return trend > 0 ? IconTrendingUp : IconTrendingDown;
   };
 
   const getTrendColor = (trend: number) => {
-    if (trend > 0) return 'green';
-    if (trend < 0) return 'red';
-    return 'gray';
+    return trend > 0 ? 'green' : 'red';
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PUBLISHED':
-        return 'green';
+    switch (status.toUpperCase()) {
       case 'DRAFT':
         return 'gray';
       case 'IN_REVIEW':
-        return 'orange';
-      case 'ARCHIVED':
+        return 'yellow';
+      case 'APPROVED':
+        return 'green';
+      case 'PUBLISHED':
+        return 'blue';
+      case 'REJECTED':
         return 'red';
       default:
         return 'gray';
@@ -186,13 +167,12 @@ export default function DashboardPage() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-    );
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInHours < 48) return 'Yesterday';
+    if (diffDays === 1) return 'Today';
+    if (diffDays === 2) return 'Yesterday';
+    if (diffDays <= 7) return `${diffDays - 1} days ago`;
     return date.toLocaleDateString();
   };
 
@@ -250,9 +230,9 @@ export default function DashboardPage() {
                 p="md"
                 style={{
                   minWidth: 300,
-                  backgroundColor: isDark
-                    ? 'var(--mantine-color-dark-6)'
-                    : 'var(--mantine-color-gray-0)',
+                  backgroundColor: 'var(--card)',
+                  borderColor: 'var(--border)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
                 <Group gap="sm">
@@ -271,7 +251,16 @@ export default function DashboardPage() {
                   />
                   <Menu shadow="md" width={300}>
                     <Menu.Target>
-                      <ActionIcon variant="light" size="md">
+                      <ActionIcon
+                        variant="light"
+                        size="md"
+                        color="primary"
+                        style={{
+                          backgroundColor: 'var(--accent)',
+                          color: 'var(--primary)',
+                          borderColor: 'var(--border)',
+                        }}
+                      >
                         <IconSearch size={16} />
                       </ActionIcon>
                     </Menu.Target>
@@ -308,6 +297,12 @@ export default function DashboardPage() {
                 <ActionIcon
                   variant="light"
                   size="md"
+                  color="primary"
+                  style={{
+                    backgroundColor: 'var(--accent)',
+                    color: 'var(--primary)',
+                    borderColor: 'var(--border)',
+                  }}
                   onClick={() => window.location.reload()}
                 >
                   <IconRefresh size={16} />
@@ -323,24 +318,17 @@ export default function DashboardPage() {
                     style={{
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      backgroundColor: isDark
-                        ? 'var(--mantine-color-dark-6)'
-                        : 'var(--mantine-color-white)',
-                      borderColor: isDark
-                        ? 'var(--mantine-color-dark-4)'
-                        : 'var(--mantine-color-gray-3)',
+                      backgroundColor: 'var(--card)',
+                      borderColor: 'var(--border)',
+                      boxShadow: 'var(--shadow-sm)',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = isDark
-                        ? '0 4px 12px rgba(0,0,0,0.3)'
-                        : '0 4px 12px rgba(0,0,0,0.1)';
+                      e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = isDark
-                        ? '0 1px 3px rgba(0,0,0,0.2)'
-                        : '0 1px 3px rgba(0,0,0,0.1)';
+                      e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
                     }}
                     onClick={() => {
                       // Navigate based on stat type
@@ -355,9 +343,13 @@ export default function DashboardPage() {
                       <Group gap="md">
                         <ThemeIcon
                           size="xl"
-                          color={stat.color}
+                          color="primary"
                           variant="light"
                           radius="md"
+                          style={{
+                            backgroundColor: 'var(--accent)',
+                            color: 'var(--primary)',
+                          }}
                         >
                           <stat.icon size={24} />
                         </ThemeIcon>
@@ -374,18 +366,19 @@ export default function DashboardPage() {
                           </Text>
                         </div>
                       </Group>
-                      {stat.trend !== 0 && (
-                        <Group gap={4}>
-                          {getTrendIcon(stat.trend)}
-                          <Badge
-                            size="xs"
-                            color={getTrendColor(stat.trend)}
-                            variant="light"
-                          >
-                            {Math.abs(stat.trend)}%
-                          </Badge>
-                        </Group>
-                      )}
+                      <Group gap="xs" align="center">
+                        <Badge
+                          size="sm"
+                          color={getTrendColor(stat.trend)}
+                          variant="light"
+                          leftSection={(() => {
+                            const IconComponent = getTrendIcon(stat.trend);
+                            return <IconComponent size={12} />;
+                          })()}
+                        >
+                          {Math.abs(stat.trend)}%
+                        </Badge>
+                      </Group>
                     </Group>
                   </Paper>
                 </Grid.Col>
@@ -393,6 +386,7 @@ export default function DashboardPage() {
             </Grid>
           </Box>
 
+          {/* Quick Actions and Recent Activity */}
           <Grid>
             {/* Quick Actions */}
             <Grid.Col span={{ base: 12, md: 6 }}>
@@ -401,18 +395,15 @@ export default function DashboardPage() {
                 shadow="sm"
                 h={{ base: 'auto', md: 400 }}
                 style={{
-                  backgroundColor: isDark
-                    ? 'var(--mantine-color-dark-6)'
-                    : 'var(--mantine-color-white)',
-                  borderColor: isDark
-                    ? 'var(--mantine-color-dark-4)'
-                    : 'var(--mantine-color-gray-3)',
+                  backgroundColor: 'var(--card)',
+                  borderColor: 'var(--border)',
+                  boxShadow: 'var(--shadow)',
                 }}
               >
                 <Card.Section p="lg">
                   <Group justify="space-between">
                     <Title order={3}>Quick Actions</Title>
-                    <Badge variant="light" color="blue">
+                    <Badge variant="light" color="primary">
                       {quickActions.length} available
                     </Badge>
                   </Group>
@@ -431,28 +422,24 @@ export default function DashboardPage() {
                         size="md"
                         py="xs"
                         px="md"
+                        color="primary"
                         style={{
                           transition: 'all 0.2s ease',
                           height: 'auto',
                           minHeight: '50px',
-                          backgroundColor: isDark
-                            ? 'var(--mantine-color-dark-5)'
-                            : 'var(--mantine-color-gray-0)',
-                          borderColor: isDark
-                            ? 'var(--mantine-color-dark-4)'
-                            : 'var(--mantine-color-gray-2)',
+                          backgroundColor: 'var(--accent)',
+                          borderColor: 'var(--border)',
+                          color: 'var(--primary)',
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateX(4px)';
-                          e.currentTarget.style.backgroundColor = isDark
-                            ? 'var(--mantine-color-dark-4)'
-                            : 'var(--mantine-color-gray-1)';
+                          e.currentTarget.style.backgroundColor =
+                            'var(--secondary)';
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'translateX(0)';
-                          e.currentTarget.style.backgroundColor = isDark
-                            ? 'var(--mantine-color-dark-5)'
-                            : 'var(--mantine-color-gray-0)';
+                          e.currentTarget.style.backgroundColor =
+                            'var(--accent)';
                         }}
                       >
                         <div>
@@ -477,12 +464,9 @@ export default function DashboardPage() {
                 shadow="sm"
                 h={{ base: 'auto', md: 400 }}
                 style={{
-                  backgroundColor: isDark
-                    ? 'var(--mantine-color-dark-6)'
-                    : 'var(--mantine-color-white)',
-                  borderColor: isDark
-                    ? 'var(--mantine-color-dark-4)'
-                    : 'var(--mantine-color-gray-3)',
+                  backgroundColor: 'var(--card)',
+                  borderColor: 'var(--border)',
+                  boxShadow: 'var(--shadow)',
                 }}
               >
                 <Card.Section p="lg">
@@ -513,7 +497,7 @@ export default function DashboardPage() {
                     <Stack gap="md">
                       {(analytics.recentActivity?.newContent || 0) > 0 && (
                         <Group>
-                          <ThemeIcon color="blue" variant="light" size="lg">
+                          <ThemeIcon color="primary" variant="light" size="lg">
                             <IconBell size={18} />
                           </ThemeIcon>
                           <div style={{ flex: 1 }}>
@@ -525,7 +509,7 @@ export default function DashboardPage() {
                               Content creation activity
                             </Text>
                           </div>
-                          <Badge size="xs" color="blue" variant="light">
+                          <Badge size="xs" color="primary" variant="light">
                             New
                           </Badge>
                         </Group>
@@ -616,7 +600,7 @@ export default function DashboardPage() {
                           <Box ta="center" py="md">
                             <IconBell
                               size={32}
-                              color="var(--mantine-color-gray-4)"
+                              style={{ color: 'var(--muted-foreground4)' }}
                             />
                             <Text size="sm" c="dimmed" mt="xs">
                               No recent activity
@@ -629,7 +613,10 @@ export default function DashboardPage() {
                     </Stack>
                   ) : (
                     <Box ta="center" py="md">
-                      <IconBell size={32} color="var(--mantine-color-red-4)" />
+                      <IconBell
+                        size={32}
+                        style={{ color: 'var(--mantine-color-red-4)' }}
+                      />
                       <Text size="sm" c="dimmed" mt="xs">
                         Unable to load recent activity
                       </Text>
@@ -647,8 +634,13 @@ export default function DashboardPage() {
               <Button
                 variant="light"
                 size="sm"
-                rightSection={<IconArrowUpRight size={14} />}
+                color="primary"
                 onClick={() => router.push('/content')}
+                style={{
+                  backgroundColor: 'var(--accent)',
+                  color: 'var(--primary)',
+                  borderColor: 'var(--border)',
+                }}
               >
                 View All
               </Button>
@@ -657,12 +649,9 @@ export default function DashboardPage() {
               withBorder
               shadow="sm"
               style={{
-                backgroundColor: isDark
-                  ? 'var(--mantine-color-dark-6)'
-                  : 'var(--mantine-color-white)',
-                borderColor: isDark
-                  ? 'var(--mantine-color-dark-4)'
-                  : 'var(--mantine-color-gray-3)',
+                backgroundColor: 'var(--card)',
+                borderColor: 'var(--border)',
+                boxShadow: 'var(--shadow)',
               }}
             >
               <Card.Section p="lg">
@@ -695,12 +684,9 @@ export default function DashboardPage() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: isDark
-                              ? 'var(--mantine-color-dark-5)'
-                              : 'var(--mantine-color-gray-1)',
-                            borderColor: isDark
-                              ? 'var(--mantine-color-dark-4)'
-                              : 'var(--mantine-color-gray-2)',
+                            backgroundColor: 'var(--muted)',
+                            borderColor: 'var(--border)',
+                            boxShadow: 'var(--shadow-xs)',
                           }}
                         >
                           {content.heroImage ? (
@@ -714,7 +700,7 @@ export default function DashboardPage() {
                           ) : (
                             <IconFileText
                               size={24}
-                              color="var(--mantine-color-gray-5)"
+                              style={{ color: 'var(--muted-foreground5)' }}
                             />
                           )}
                         </Paper>
@@ -746,7 +732,7 @@ export default function DashboardPage() {
                             >
                               {content.status}
                             </Badge>
-                            <Badge size="xs" color="blue" variant="light">
+                            <Badge size="xs" color="primary" variant="light">
                               {content.type}
                             </Badge>
                           </Group>
@@ -756,6 +742,12 @@ export default function DashboardPage() {
                             <ActionIcon
                               variant="light"
                               size="sm"
+                              color="primary"
+                              style={{
+                                backgroundColor: 'var(--accent)',
+                                color: 'var(--primary)',
+                                borderColor: 'var(--border)',
+                              }}
                               onClick={() =>
                                 router.push(`/content/${content.slug}`)
                               }
@@ -767,6 +759,12 @@ export default function DashboardPage() {
                             <ActionIcon
                               variant="light"
                               size="sm"
+                              color="secondary"
+                              style={{
+                                backgroundColor: 'var(--secondary)',
+                                color: 'var(--secondary-foreground)',
+                                borderColor: 'var(--border)',
+                              }}
                               onClick={() =>
                                 router.push(`/content/${content.slug}/edit`)
                               }
@@ -782,7 +780,7 @@ export default function DashboardPage() {
                   <Box ta="center" py="md">
                     <IconFileText
                       size={32}
-                      color="var(--mantine-color-gray-4)"
+                      style={{ color: 'var(--muted-foreground4)' }}
                     />
                     <Text size="sm" c="dimmed" mt="xs">
                       No recent content
