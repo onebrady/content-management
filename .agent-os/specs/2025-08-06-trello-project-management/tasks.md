@@ -19,14 +19,14 @@
   - [x] 2.6 Add proper error handling and validation for all board endpoints
   - [x] 2.7 Verify all board API tests pass and handle edge cases
 
-- [ ] 3. **Card Management API**
-  - [ ] 3.1 Write tests for card CRUD operations and card movement endpoints
-  - [ ] 3.2 Implement POST /api/lists/[listId]/cards for creating cards
-  - [ ] 3.3 Implement GET /api/cards/[cardId] for detailed card information
-  - [ ] 3.4 Implement PATCH /api/cards/[cardId] for updating card properties
-  - [ ] 3.5 Implement POST /api/cards/[cardId]/move for drag-and-drop functionality
-  - [ ] 3.6 Add position management logic for consistent card ordering
-  - [ ] 3.7 Verify all card management tests pass with proper validation
+- [x] 3. **Card Management API**
+  - [x] 3.1 Write tests for card CRUD operations and card movement endpoints
+  - [x] 3.2 Implement POST /api/lists/[listId]/cards for creating cards
+  - [x] 3.3 Implement GET /api/cards/[cardId] for detailed card information
+  - [x] 3.4 Implement PATCH /api/cards/[cardId] for updating card properties
+  - [x] 3.5 Implement POST /api/cards/[cardId]/move for drag-and-drop functionality
+  - [x] 3.6 Add position management logic for consistent card ordering
+  - [x] 3.7 Verify all card management tests pass with proper validation
 
 - [ ] 4. **Frontend Board Interface**
   - [ ] 4.1 Write tests for board component rendering and interaction
