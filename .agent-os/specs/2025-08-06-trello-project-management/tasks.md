@@ -10,14 +10,14 @@
   - [x] 1.5 Implement database utility functions for board operations
   - [x] 1.6 Verify all database tests pass and foreign key constraints work correctly
 
-- [ ] 2. **Core Board API Endpoints**
-  - [ ] 2.1 Write tests for board management API routes (/api/projects/[id]/board, /api/projects/[id]/lists)
-  - [ ] 2.2 Implement GET /api/projects/[projectId]/board with nested lists and cards
-  - [ ] 2.3 Implement POST /api/projects/[projectId]/lists for creating new lists
-  - [ ] 2.4 Implement PATCH /api/lists/[listId] for updating list properties
-  - [ ] 2.5 Implement PATCH /api/projects/[projectId]/lists/reorder for list reordering
-  - [ ] 2.6 Add proper error handling and validation for all board endpoints
-  - [ ] 2.7 Verify all board API tests pass and handle edge cases
+- [x] 2. **Core Board API Endpoints**
+  - [x] 2.1 Write tests for board management API routes (/api/projects/[id]/board, /api/projects/[id]/lists)
+  - [x] 2.2 Implement GET /api/projects/[projectId]/board with nested lists and cards
+  - [x] 2.3 Implement POST /api/projects/[projectId]/lists for creating new lists
+  - [x] 2.4 Implement PATCH /api/lists/[listId] for updating list properties
+  - [x] 2.5 Implement PATCH /api/projects/[projectId]/lists/reorder for list reordering
+  - [x] 2.6 Add proper error handling and validation for all board endpoints
+  - [x] 2.7 Verify all board API tests pass and handle edge cases
 
 - [ ] 3. **Card Management API**
   - [ ] 3.1 Write tests for card CRUD operations and card movement endpoints
