@@ -1,0 +1,112 @@
+.card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  background: white;
+  margin-bottom: 8px;
+  min-height: 80px;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.card:active {
+  transform: translateY(0);
+}
+
+/* Dragging state */
+.dragging {
+  transform: rotate(5deg) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  z-index: 1000;
+}
+
+/* Completed card styles */
+.completed {
+  opacity: 0.75;
+  border-left: 4px solid var(--mantine-color-green-6);
+}
+
+.completed:hover {
+  opacity: 1;
+}
+
+/* Overdue card styles */
+.overdue {
+  border-left: 4px solid var(--mantine-color-red-6);
+}
+
+/* Cover image */
+.cover {
+  height: 120px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: var(--mantine-radius-md) var(--mantine-radius-md) 0 0;
+}
+
+/* Assignee avatars */
+.assigneeAvatar {
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Completion badge */
+.completionBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .card {
+    margin-bottom: 6px;
+    min-height: 70px;
+  }
+  
+  .cover {
+    height: 100px;
+  }
+  
+  .assigneeAvatar {
+    border-width: 1px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .card {
+    background: var(--mantine-color-dark-6);
+    border-color: var(--mantine-color-dark-4);
+  }
+  
+  .assigneeAvatar {
+    border-color: var(--mantine-color-dark-6);
+  }
+}
+
+/* Focus styles for accessibility */
+.card:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+}
+
+/* Animation for card entrance */
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: cardEntrance 0.3s ease-out;
+}

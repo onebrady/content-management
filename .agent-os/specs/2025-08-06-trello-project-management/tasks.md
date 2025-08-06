@@ -28,15 +28,15 @@
   - [x] 3.6 Add position management logic for consistent card ordering
   - [x] 3.7 Verify all card management tests pass with proper validation
 
-- [ ] 4. **Frontend Board Interface**
-  - [ ] 4.1 Write tests for board component rendering and interaction
-  - [ ] 4.2 Create BoardView component with horizontal scrolling lists layout
-  - [ ] 4.3 Implement BoardList component with card container and add card functionality
-  - [ ] 4.4 Create BoardCard component with preview information (title, assignees, due date)
-  - [ ] 4.5 Integrate @hello-pangea/dnd for drag-and-drop card movement
-  - [ ] 4.6 Add optimistic updates for immediate UI feedback during drag operations
-  - [ ] 4.7 Implement responsive design for mobile and tablet devices
-  - [ ] 4.8 Verify all board interface tests pass and drag-drop works smoothly
+- [x] 4. **Frontend Board Interface**
+  - [x] 4.1 Write tests for board component rendering and interaction
+  - [x] 4.2 Create BoardView component with horizontal scrolling lists layout
+  - [x] 4.3 Implement BoardList component with card container and add card functionality
+  - [x] 4.4 Create BoardCard component with preview information (title, assignees, due date)
+  - [x] 4.5 Integrate @hello-pangea/dnd for drag-and-drop card movement
+  - [x] 4.6 Add optimistic updates for immediate UI feedback during drag operations
+  - [x] 4.7 Implement responsive design for mobile and tablet devices
+  - [x] 4.8 Verify all board interface tests pass and drag-drop works smoothly
 
 - [ ] 5. **Card Detail Modal**
   - [ ] 5.1 Write tests for card modal component and all interactive elements

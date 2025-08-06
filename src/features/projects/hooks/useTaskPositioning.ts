@@ -1,177 +1,140 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectKeys } from './queryKeys';
-import type { Task, Column } from '@/types/database';
 
-interface PositionUpdate {
-  taskId: string;
-  columnId: string;
+interface CardMoveUpdate {
+  cardId: string;
+  destinationListId: string;
+  position: number;
+}
+
+interface ListMoveUpdate {
+  listId: string;
   position: number;
 }
 
 interface TaskPositioningHook {
-  calculateNewPosition: (
-    tasks: Task[],
-    activeIndex: number,
-    overIndex: number
-  ) => number;
-  reorderTasksInColumn: (
-    columnId: string,
-    taskIds: string[],
-    startIndex?: number
+  moveCard: (
+    cardId: string,
+    sourceListId: string,
+    destinationListId: string,
+    position: number
   ) => Promise<void>;
-  moveTaskBetweenColumns: (
-    taskId: string,
-    sourceColumnId: string,
-    targetColumnId: string,
-    targetPosition?: number
-  ) => Promise<void>;
-  bulkUpdatePositions: (updates: PositionUpdate[]) => Promise<void>;
+  moveList: (listId: string, position: number) => Promise<void>;
+  createCard: (listId: string, title: string) => Promise<void>;
+  createList: (title: string) => Promise<void>;
+  updateList: (listId: string, updates: { title?: string; archived?: boolean }) => Promise<void>;
+  archiveList: (listId: string) => Promise<void>;
+  isMoving: boolean;
 }
 
 /**
- * Hook for managing task positions with smart calculation and batch updates
+ * Hook for managing card and list positions with board operations
  */
 export function useTaskPositioning(projectId: string): TaskPositioningHook {
   const queryClient = useQueryClient();
+  const [isMoving, setIsMoving] = useState(false);
 
   /**
-   * Calculate optimal position for a task being moved
-   * Uses fractional positioning to avoid database updates for every task
+   * Move a card between lists or within the same list
    */
-  const calculateNewPosition = useCallback(
-    (tasks: Task[], activeIndex: number, overIndex: number): number => {
-      if (tasks.length === 0) return 1000;
-
-      const sortedTasks = [...tasks].sort((a, b) => a.position - b.position);
-
-      // If moving to the beginning
-      if (overIndex === 0) {
-        const firstPosition = sortedTasks[0]?.position || 1000;
-        return firstPosition / 2;
-      }
-
-      // If moving to the end
-      if (overIndex >= sortedTasks.length) {
-        const lastPosition = sortedTasks[sortedTasks.length - 1]?.position || 0;
-        return lastPosition + 1000;
-      }
-
-      // Moving between tasks - use fractional positioning
-      const prevTask = sortedTasks[overIndex - 1];
-      const nextTask = sortedTasks[overIndex];
-
-      if (!prevTask) {
-        return nextTask.position / 2;
-      }
-
-      if (!nextTask) {
-        return prevTask.position + 1000;
-      }
-
-      // Calculate midpoint position
-      const midpoint = (prevTask.position + nextTask.position) / 2;
-
-      // If positions are too close, we need to rebalance
-      if (nextTask.position - prevTask.position < 2) {
-        // This will trigger a rebalancing operation
-        return midpoint;
-      }
-
-      return midpoint;
-    },
-    []
-  );
-
-  /**
-   * Reorder tasks within a single column with optimized batch updates
-   */
-  const reorderTasksInColumn = useCallback(
-    async (columnId: string, taskIds: string[], startIndex: number = 0) => {
-      const updates = taskIds.map((taskId, index) => ({
-        taskId,
-        columnId,
-        position: (startIndex + index + 1) * 1000, // Use clean positions for reordering
-      }));
-
-      await bulkUpdatePositions(updates);
-    },
-    []
-  );
-
-  /**
-   * Move a task between columns with smart position calculation
-   */
-  const moveTaskBetweenColumns = useCallback(
+  const moveCard = useCallback(
     async (
-      taskId: string,
-      sourceColumnId: string,
-      targetColumnId: string,
-      targetPosition?: number
+      cardId: string,
+      sourceListId: string,
+      destinationListId: string,
+      position: number
     ) => {
-      // Get current project data from cache
-      const projectData = queryClient.getQueryData(
-        projectKeys.detail(projectId)
-      ) as any;
-      if (!projectData) return;
+      setIsMoving(true);
+      try {
+        const response = await fetch(`/api/cards/${cardId}/move`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            destinationListId,
+            position,
+          }),
+        });
 
-      const targetColumn = projectData.columns.find(
-        (col: Column) => col.id === targetColumnId
-      );
-      if (!targetColumn) return;
+        if (!response.ok) {
+          throw new Error('Failed to move card');
+        }
 
-      // Calculate position if not provided
-      let position = targetPosition;
-      if (position === undefined) {
-        // Add to end of target column
-        const maxPosition = Math.max(
-          ...targetColumn.tasks.map((task: Task) => task.position),
-          0
-        );
-        position = maxPosition + 1000;
+        // Invalidate project data to refetch
+        await queryClient.invalidateQueries({
+          queryKey: projectKeys.detail(projectId),
+        });
+      } catch (error) {
+        console.error('Error moving card:', error);
+        throw error;
+      } finally {
+        setIsMoving(false);
       }
-
-      await updateSingleTask(taskId, {
-        columnId: targetColumnId,
-        position,
-      });
     },
     [projectId, queryClient]
   );
 
   /**
-   * Batch update multiple task positions for optimal performance
+   * Move a list to a new position
    */
-  const bulkUpdatePositions = useCallback(
-    async (updates: PositionUpdate[]) => {
-      if (updates.length === 0) return;
-
+  const moveList = useCallback(
+    async (listId: string, position: number) => {
+      setIsMoving(true);
       try {
-        // Update positions via API
-        const response = await fetch('/api/tasks/bulk-update', {
+        const response = await fetch(`/api/projects/${projectId}/lists/reorder`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            updates: updates.map((update) => ({
-              taskId: update.taskId,
-              columnId: update.columnId,
-              position: update.position,
-            })),
+            listOrders: [{ id: listId, position }],
           }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update task positions');
+          throw new Error('Failed to move list');
         }
 
-        // Invalidate and refetch project data
+        // Invalidate project data to refetch
         await queryClient.invalidateQueries({
           queryKey: projectKeys.detail(projectId),
         });
       } catch (error) {
-        console.error('Error updating task positions:', error);
+        console.error('Error moving list:', error);
+        throw error;
+      } finally {
+        setIsMoving(false);
+      }
+    },
+    [projectId, queryClient]
+  );
+
+  /**
+   * Create a new card in a list
+   */
+  const createCard = useCallback(
+    async (listId: string, title: string) => {
+      try {
+        const response = await fetch(`/api/lists/${listId}/cards`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create card');
+        }
+
+        // Invalidate project data to refetch
+        await queryClient.invalidateQueries({
+          queryKey: projectKeys.detail(projectId),
+        });
+      } catch (error) {
+        console.error('Error creating card:', error);
         throw error;
       }
     },
@@ -179,15 +142,42 @@ export function useTaskPositioning(projectId: string): TaskPositioningHook {
   );
 
   /**
-   * Update a single task with optimistic updates
+   * Create a new list in the project
    */
-  const updateSingleTask = useCallback(
-    async (
-      taskId: string,
-      updates: Partial<Pick<Task, 'columnId' | 'position'>>
-    ) => {
+  const createList = useCallback(
+    async (title: string) => {
       try {
-        const response = await fetch(`/api/tasks/${taskId}`, {
+        const response = await fetch(`/api/projects/${projectId}/lists`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create list');
+        }
+
+        // Invalidate project data to refetch
+        await queryClient.invalidateQueries({
+          queryKey: projectKeys.detail(projectId),
+        });
+      } catch (error) {
+        console.error('Error creating list:', error);
+        throw error;
+      }
+    },
+    [projectId, queryClient]
+  );
+
+  /**
+   * Update list properties (title, archived status)
+   */
+  const updateList = useCallback(
+    async (listId: string, updates: { title?: string; archived?: boolean }) => {
+      try {
+        const response = await fetch(`/api/lists/${listId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -196,151 +186,121 @@ export function useTaskPositioning(projectId: string): TaskPositioningHook {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update task');
+          throw new Error('Failed to update list');
         }
 
-        // Invalidate and refetch project data
+        // Invalidate project data to refetch
         await queryClient.invalidateQueries({
           queryKey: projectKeys.detail(projectId),
         });
       } catch (error) {
-        console.error('Error updating task:', error);
+        console.error('Error updating list:', error);
         throw error;
       }
     },
     [projectId, queryClient]
   );
 
+  /**
+   * Archive a list (soft delete)
+   */
+  const archiveList = useCallback(
+    async (listId: string) => {
+      await updateList(listId, { archived: true });
+    },
+    [updateList]
+  );
+
   return {
-    calculateNewPosition,
-    reorderTasksInColumn,
-    moveTaskBetweenColumns,
-    bulkUpdatePositions,
+    moveCard,
+    moveList,
+    createCard,
+    createList,
+    updateList,
+    archiveList,
+    isMoving,
   };
 }
 
 /**
- * Hook for optimistic task updates with automatic rollback on failure
+ * Utility functions for card and list position management
  */
-export function useOptimisticTaskUpdate(projectId: string) {
-  const queryClient = useQueryClient();
-
-  const optimisticUpdate = useMutation({
-    mutationFn: async ({
-      taskId,
-      updates,
-    }: {
-      taskId: string;
-      updates: Partial<Task>;
-    }) => {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update task');
-      }
-
-      return response.json();
-    },
-    onMutate: async ({ taskId, updates }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: projectKeys.detail(projectId),
-      });
-
-      // Snapshot the previous value
-      const previousProject = queryClient.getQueryData(
-        projectKeys.detail(projectId)
-      );
-
-      // Optimistically update the cache
-      queryClient.setQueryData(projectKeys.detail(projectId), (old: any) => {
-        if (!old) return old;
-
-        return {
-          ...old,
-          columns: old.columns.map((column: any) => ({
-            ...column,
-            tasks: column.tasks.map((task: any) =>
-              task.id === taskId ? { ...task, ...updates } : task
-            ),
-          })),
-        };
-      });
-
-      return { previousProject, taskId };
-    },
-    onError: (err, variables, context) => {
-      // Rollback on error
-      if (context?.previousProject) {
-        queryClient.setQueryData(
-          projectKeys.detail(projectId),
-          context.previousProject
-        );
-      }
-    },
-    onSettled: () => {
-      // Always refetch after error or success
-      queryClient.invalidateQueries({
-        queryKey: projectKeys.detail(projectId),
-      });
-    },
-  });
-
-  return optimisticUpdate;
-}
-
-/**
- * Utility functions for position management
- */
-export const positionUtils = {
+export const boardPositionUtils = {
   /**
-   * Check if tasks need position rebalancing
+   * Calculate position for inserting a card at a specific index
    */
-  needsRebalancing: (tasks: Task[]): boolean => {
-    const sortedTasks = [...tasks].sort((a, b) => a.position - b.position);
-
-    for (let i = 1; i < sortedTasks.length; i++) {
-      if (sortedTasks[i].position - sortedTasks[i - 1].position < 1) {
-        return true;
-      }
+  calculateCardPosition: (cards: any[], targetIndex: number): number => {
+    if (cards.length === 0) return 1000;
+    
+    const sortedCards = [...cards].sort((a, b) => a.position - b.position);
+    
+    // Insert at beginning
+    if (targetIndex === 0) {
+      const firstPosition = sortedCards[0]?.position || 1000;
+      return firstPosition / 2;
     }
-
-    return false;
+    
+    // Insert at end
+    if (targetIndex >= sortedCards.length) {
+      const lastPosition = sortedCards[sortedCards.length - 1]?.position || 0;
+      return lastPosition + 1000;
+    }
+    
+    // Insert between cards
+    const prevCard = sortedCards[targetIndex - 1];
+    const nextCard = sortedCards[targetIndex];
+    
+    if (!prevCard) return nextCard.position / 2;
+    if (!nextCard) return prevCard.position + 1000;
+    
+    return (prevCard.position + nextCard.position) / 2;
   },
 
   /**
-   * Generate clean positions for a list of tasks
+   * Calculate position for inserting a list at a specific index
    */
-  generateCleanPositions: (
-    taskCount: number,
-    startPosition: number = 1000
-  ): number[] => {
-    return Array.from(
-      { length: taskCount },
-      (_, index) => startPosition + index * 1000
-    );
+  calculateListPosition: (lists: any[], targetIndex: number): number => {
+    if (lists.length === 0) return 1000;
+    
+    const sortedLists = [...lists].sort((a, b) => a.position - b.position);
+    
+    // Insert at beginning
+    if (targetIndex === 0) {
+      const firstPosition = sortedLists[0]?.position || 1000;
+      return firstPosition / 2;
+    }
+    
+    // Insert at end
+    if (targetIndex >= sortedLists.length) {
+      const lastPosition = sortedLists[sortedLists.length - 1]?.position || 0;
+      return lastPosition + 1000;
+    }
+    
+    // Insert between lists
+    const prevList = sortedLists[targetIndex - 1];
+    const nextList = sortedLists[targetIndex];
+    
+    if (!prevList) return nextList.position / 2;
+    if (!nextList) return prevList.position + 1000;
+    
+    return (prevList.position + nextList.position) / 2;
   },
 
   /**
-   * Find the task at a specific position in a column
+   * Get the next available position for a new card
    */
-  findTaskAtPosition: (tasks: Task[], position: number): Task | null => {
-    const sortedTasks = [...tasks].sort((a, b) => a.position - b.position);
-    return sortedTasks.find((task) => task.position === position) || null;
+  getNextCardPosition: (cards: any[]): number => {
+    if (cards.length === 0) return 1000;
+    const maxPosition = Math.max(...cards.map((card) => card.position));
+    return maxPosition + 1000;
   },
 
   /**
-   * Get the next available position in a column
+   * Get the next available position for a new list
    */
-  getNextPosition: (tasks: Task[]): number => {
-    if (tasks.length === 0) return 1000;
-    const maxPosition = Math.max(...tasks.map((task) => task.position));
+  getNextListPosition: (lists: any[]): number => {
+    if (lists.length === 0) return 1000;
+    const maxPosition = Math.max(...lists.map((list) => list.position));
     return maxPosition + 1000;
   },
 };

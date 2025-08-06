@@ -1,0 +1,280 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 16px;
+}
+
+.header {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.boardContainer {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 16px 0;
+  min-height: calc(100vh - 120px);
+  border-radius: 12px;
+}
+
+.boardContainer::-webkit-scrollbar {
+  height: 12px;
+}
+
+.boardContainer::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.boardContainer::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+}
+
+.boardContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.listsContainer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  min-width: fit-content;
+  padding: 8px;
+}
+
+/* Add List Section */
+.addListSection {
+  display: flex;
+  align-items: flex-start;
+  min-width: 272px;
+}
+
+.addListButton {
+  width: 272px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.addListButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.addListForm {
+  width: 272px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.addListInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid var(--mantine-color-blue-6);
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.addListInput:focus {
+  border-color: var(--mantine-color-blue-7);
+}
+
+/* Loading States */
+.listSkeleton {
+  width: 272px;
+  min-width: 272px;
+  margin-right: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* Error State */
+.errorState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  text-align: center;
+}
+
+/* Modal Styles (Temporary) */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .header {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .boardContainer {
+    min-height: calc(100vh - 140px);
+  }
+  
+  .listsContainer {
+    padding: 4px;
+  }
+  
+  .addListSection {
+    min-width: 260px;
+  }
+  
+  .addListButton {
+    width: 260px;
+  }
+  
+  .addListForm {
+    width: 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 8px;
+  }
+  
+  .modalContent {
+    width: 95%;
+    margin: 20px;
+    padding: 16px;
+  }
+  
+  .addListSection {
+    min-width: 280px;
+  }
+  
+  .addListButton {
+    width: 280px;
+    font-size: 14px;
+  }
+  
+  .addListForm {
+    width: 280px;
+  }
+}
+
+/* Touch optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .addListButton {
+    height: 44px;
+    font-size: 16px;
+  }
+  
+  .addListInput {
+    padding: 12px;
+    font-size: 16px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  }
+  
+  .header {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .addListButton {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .addListButton:hover {
+    background: rgba(0, 0, 0, 0.4);
+  }
+  
+  .addListForm {
+    background: var(--mantine-color-dark-6);
+    border-color: var(--mantine-color-dark-4);
+  }
+  
+  .addListInput {
+    background: var(--mantine-color-dark-7);
+    color: var(--mantine-color-gray-3);
+    border-color: var(--mantine-color-dark-4);
+  }
+  
+  .modalContent {
+    background: var(--mantine-color-dark-7);
+    color: var(--mantine-color-gray-3);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .header {
+    border: 2px solid white;
+  }
+  
+  .addListButton {
+    border: 2px solid white;
+  }
+  
+  .addListInput {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .addListButton {
+    transition: none;
+  }
+  
+  .addListButton:hover {
+    transform: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.addListButton:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+.addListInput:focus-visible {
+  outline: 3px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+}
