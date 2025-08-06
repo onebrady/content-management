@@ -1,0 +1,291 @@
+.modalContent {
+  max-width: 95vw;
+  max-height: 95vh;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.modalHeader {
+  padding: 0;
+  border-bottom: none;
+}
+
+.modalBody {
+  padding: 0;
+  max-height: calc(95vh - 60px);
+  overflow: hidden;
+}
+
+.modalContainer {
+  padding: 24px;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Card Cover */
+.cardCover {
+  height: 160px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+/* Card Title */
+.cardTitle {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  flex: 1;
+  line-height: 1.2;
+}
+
+.cardTitle:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.titleInput {
+  font-size: 20px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.titleInput input {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  padding: 4px 8px !important;
+  border: 2px solid var(--mantine-color-blue-6) !important;
+  border-radius: 4px !important;
+}
+
+/* Description */
+.descriptionBox {
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  min-height: 80px;
+}
+
+.descriptionBox:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--mantine-color-gray-3);
+}
+
+.descriptionBox:focus-within {
+  border-color: var(--mantine-color-blue-6);
+  background: white;
+}
+
+/* Close Button */
+.closeButton {
+  position: sticky;
+  top: 0;
+  right: 0;
+  z-index: 10;
+}
+
+/* Progress Bar */
+.progressBar {
+  height: 8px;
+  background: var(--mantine-color-gray-2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--mantine-color-green-6);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modalContent {
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .modalContainer {
+    padding: 16px;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .cardCover {
+    height: 120px;
+  }
+  
+  .titleInput input {
+    font-size: 18px !important;
+  }
+  
+  .cardTitle {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modalContainer {
+    padding: 12px;
+  }
+  
+  .cardCover {
+    height: 100px;
+    margin-bottom: 12px;
+  }
+  
+  .titleInput input {
+    font-size: 16px !important;
+  }
+  
+  .cardTitle {
+    font-size: 16px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .modalContent {
+    background: var(--mantine-color-dark-7);
+    color: var(--mantine-color-gray-3);
+  }
+  
+  .cardTitle:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .descriptionBox {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  
+  .descriptionBox:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--mantine-color-dark-4);
+  }
+  
+  .descriptionBox:focus-within {
+    background: var(--mantine-color-dark-6);
+    border-color: var(--mantine-color-blue-6);
+  }
+  
+  .progressBar {
+    background: var(--mantine-color-dark-4);
+  }
+}
+
+/* Focus styles for accessibility */
+.cardTitle:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+}
+
+.descriptionBox:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+}
+
+/* Animation for modal entrance */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modalContent {
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+/* Scroll area customization */
+.modalBody :global(.mantine-ScrollArea-root) {
+  height: 100%;
+}
+
+.modalBody :global(.mantine-ScrollArea-viewport) {
+  padding-right: 8px;
+}
+
+/* Custom scrollbar */
+.modalContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modalContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modalContainer::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-4);
+  border-radius: 4px;
+}
+
+.modalContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--mantine-color-gray-5);
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .cardTitle {
+    border: 1px solid transparent;
+  }
+  
+  .cardTitle:hover {
+    border-color: var(--mantine-color-blue-6);
+  }
+  
+  .descriptionBox {
+    border-width: 2px;
+    border-style: solid;
+  }
+  
+  .progressBar {
+    border: 1px solid var(--mantine-color-gray-6);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .modalContent {
+    animation: none;
+  }
+  
+  .progressFill {
+    transition: none;
+  }
+  
+  .cardTitle,
+  .descriptionBox {
+    transition: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .modalContent {
+    box-shadow: none;
+    border: 1px solid black;
+  }
+  
+  .closeButton {
+    display: none;
+  }
+  
+  .cardCover {
+    height: 100px;
+  }
+}
