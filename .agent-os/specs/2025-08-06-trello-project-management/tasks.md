@@ -56,11 +56,11 @@
   - [x] 6.6 Add assignee support for individual checklist items
   - [x] 6.7 Verify all checklist tests pass and progress tracking works accurately
 
-- [ ] 7. **Real-time Collaboration**
-  - [ ] 7.1 Write tests for WebSocket connection and event handling
-  - [ ] 7.2 Set up Socket.IO server integration with Next.js API routes
-  - [ ] 7.3 Implement board-level WebSocket rooms for user connections
-  - [ ] 7.4 Add real-time card movement broadcasting to connected users
-  - [ ] 7.5 Implement user presence indicators (who's currently viewing the board)
-  - [ ] 7.6 Add conflict resolution for simultaneous card edits
-  - [ ] 7.7 Verify real-time collaboration tests pass and handle connection failures gracefully
+- [x] 7. **Real-time Collaboration**
+  - [x] 7.1 Write tests for WebSocket connection and event handling
+  - [x] 7.2 Set up Socket.IO server integration with Next.js API routes
+  - [x] 7.3 Implement board-level WebSocket rooms for user connections
+  - [x] 7.4 Add real-time card movement broadcasting to connected users
+  - [x] 7.5 Implement user presence indicators (who's currently viewing the board)
+  - [x] 7.6 Add conflict resolution for simultaneous card edits
+  - [x] 7.7 Verify real-time collaboration tests pass and handle connection failures gracefully
