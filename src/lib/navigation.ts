@@ -84,6 +84,12 @@ export const navigationConfig: NavigationItem[] = [
     ],
   },
   {
+    label: 'Projects',
+    icon: IconPresentationAnalytics,
+    link: '/projects',
+    roles: ['CONTRIBUTOR', 'MODERATOR', 'ADMIN', 'VIEWER'],
+  },
+  {
     label: 'Analytics',
     icon: IconPresentationAnalytics,
     link: '/analytics',

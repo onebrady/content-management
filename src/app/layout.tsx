@@ -6,6 +6,7 @@ import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core';
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 import { MantineProviderWrapper } from '@/components/providers/MantineProviderWrapper';
+import { QueryClientProviderWrapper } from '@/components/providers/QueryClientProvider';
 
 // Import migration handler for production
 if (process.env.NODE_ENV === 'production') {
@@ -39,7 +40,9 @@ export default function RootLayout({
         }}
       >
         <MantineProviderWrapper>
-          <SessionProvider>{children}</SessionProvider>
+          <QueryClientProviderWrapper>
+            <SessionProvider>{children}</SessionProvider>
+          </QueryClientProviderWrapper>
         </MantineProviderWrapper>
       </body>
     </html>

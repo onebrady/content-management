@@ -1,0 +1,116 @@
+---
+description: "Comprehensive AgentOS workflow for Mantine + Neon + pnpm content management"
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# AgentOS Integration and Workflow Optimization
+
+## Spec Creation Workflow (@create-spec)
+When creating specifications, always include:
+
+### Technical Implementation Details
+- Specify Mantine components to be used for UI consistency
+- Define database schema changes with Prisma migration strategy
+- Include file upload requirements and UploadThing integration needs
+- Plan rich text editor extensions or Tiptap customizations required
+- Document any MUI-to-Mantine migration work needed in affected areas
+- Specify testing requirements (Jest unit tests, Playwright E2E scenarios)
+
+### Database and Performance Considerations
+- Plan Neon database schema changes and indexing requirements
+- Consider connection pooling and serverless optimization needs
+- Document any data migration or seeding requirements
+- Plan for local development and production deployment differences
+
+### Package Management and Dependencies
+- Use pnpm commands in all script references and documentation
+- Identify any new dependencies needed and justify their inclusion
+- Plan for removal of unused dependencies (especially MUI packages)
+- Document any pnpm workspace or configuration changes needed
+
+## Task Execution Strategy (@execute-tasks)
+When executing development tasks:
+
+### Development Workflow
+- Always use Context7 for current API documentation and best practices
+- Test all functionality locally using Docker PostgreSQL before deployment
+- Run comprehensive test suites (pnpm test, pnpm test:e2e) before completion
+- Ensure proper TypeScript typing throughout all implementations
+- Verify Neon database connections and query performance
+- Test Mantine component integration and responsive behavior
+
+### Quality Assurance Checklist
+- All rich text editor functionality tested with various content types
+- File upload workflows tested end-to-end with proper validation
+- Database migrations tested locally and applied cleanly
+- UI components tested across different screen sizes and themes
+- Form validation tested with various input scenarios
+- Error handling tested for all user-facing features
+
+### Migration and Modernization Tasks
+- Replace any encountered MUI components with Mantine equivalents
+- Update component tests when migrating UI libraries
+- Maintain design consistency during migration processes
+- Document component mapping decisions for future reference
+
+## Database Development Workflow
+### Local Development Best Practices
+- Always develop against local Docker PostgreSQL that matches Neon version
+- Run all Prisma migrations locally before applying to production
+- Use pnpm db:migrate for development, pnpm db:generate for client updates
+- Test database seeding and data integrity before deployment
+- Verify connection pooling behavior in development environment
+
+### Production Deployment Strategy
+- Never apply untested migrations directly to Neon production
+- Use Neon branching for preview deployments when possible
+- Monitor connection usage and performance after deployment
+- Have rollback procedures documented and tested
+- Alert on any unusual database performance or connection patterns
+
+## UI Migration and Modernization
+### Component Migration Strategy
+- Prioritize frequently used components for Mantine migration
+- Update component documentation during migration process
+- Test accessibility compliance with new Mantine components
+- Ensure theme consistency across migrated and new components
+- Remove unused MUI dependencies systematically
+
+### Testing Strategy for Migrations
+- Update component tests to work with Mantine APIs
+- Test responsive behavior with Mantine's breakpoint system
+- Verify dark/light theme switching functionality
+- Test form integration with existing validation logic
+- Ensure accessibility features work correctly with new components
+
+## Documentation and Knowledge Management
+### Ongoing Documentation Requirements
+After completing any major feature or migration:
+- Update component documentation with Mantine patterns and examples
+- Document new Tiptap extensions or rich text editor customizations
+- Update API documentation for any new endpoints or modifications
+- Document database schema changes and relationship updates
+- Update testing strategies and examples for new features
+- Document UI migration progress and mapping decisions
+
+### AgentOS Spec Maintenance
+- Update feature specifications with implementation details and decisions
+- Document any deviations from original specifications and rationale
+- Maintain migration progress tracking in ongoing specifications
+- Update architectural decision records for significant changes
+
+## Performance Monitoring and Optimization
+### Continuous Improvement Process
+- Monitor Neon database performance and connection usage
+- Track bundle size changes during UI library migration
+- Monitor Core Web Vitals and user experience metrics
+- Analyze build performance and optimization opportunities
+- Review and optimize critical user workflows regularly
+
+### Error Handling and Monitoring
+- Implement comprehensive error boundaries for rich text editors
+- Set up proper error tracking for file upload failures
+- Monitor database connection issues and scaling behavior
+- Track and resolve UI component rendering issues
+- Implement proper logging for debugging complex workflows

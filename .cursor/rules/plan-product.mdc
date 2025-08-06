@@ -1,4 +1,6 @@
 ---
+description: 'USE WHEN planning new products from scratch, creating roadmaps, or defining project vision and initial architecture'
+globs:
 alwaysApply: false
 ---
 
@@ -6,4 +8,4 @@ alwaysApply: false
 
 Plan a new product and install Agent OS in its codebase.
 
-Refer to the instructions located in @~/.agent-os/instructions/plan-product.md
+Refer to the instructions located in @.agent-os/instructions/plan-product.md

@@ -1,0 +1,63 @@
+---
+description: "Neon PostgreSQL optimization with local development workflow"
+globs: ["**/*.{ts,tsx}", "prisma/**/*", "**/*{db,database}*", "**/*.prisma"]
+alwaysApply: true
+---
+
+# Neon Database & Local Development Integration
+
+## Connection Management
+- Always use DATABASE_URL environment variable for pooled connections
+- Use DATABASE_URL_UNPOOLED for direct connections when specifically needed
+- Leverage Neon's automatic connection pooling (PgBouncer integration)
+- Use Neon serverless driver for edge functions when required
+- Monitor connection usage in Vercel and Neon dashboards
+- Implement proper connection cleanup in serverless functions
+
+## Neon-Specific Features and Optimization
+- Use Context7 for current Neon integration patterns and best practices
+- Leverage database branching for preview deployments and feature testing
+- Utilize Neon's auto-scaling capabilities for variable workloads
+- Implement proper error handling for cold starts and scale-to-zero behavior
+- Use Neon's point-in-time recovery features for data protection
+- Monitor query performance using Neon's built-in analytics
+
+## Prisma Integration with Neon
+- Configure Prisma for optimal serverless environment performance
+- Use proper connection string format for Neon with pooling
+- Implement connection pooling in Prisma client configuration
+- Handle Neon's scale-to-zero behavior gracefully in application code
+- Use Prisma migrations with Neon database branches for safe deployment
+- Configure proper timeout settings for serverless functions
+
+## Local Development Workflow
+- Use Docker PostgreSQL locally that matches Neon's PostgreSQL version
+- Always test database migrations locally before applying to Neon
+- Use pnpm db:migrate for local development, pnpm db:push for quick iterations
+- Implement comprehensive database seeding for development and testing
+- Maintain schema parity between local Docker and Neon production
+- Test connection pooling behavior locally when possible
+
+## Performance Optimization Strategies
+- Use prepared statements for frequently executed queries
+- Implement proper indexing strategies based on query patterns
+- Use Neon's read replicas when available for read-heavy workloads
+- Monitor query performance with both Neon dashboard and application metrics
+- Optimize queries for Neon's serverless architecture characteristics
+- Implement proper caching layers for frequently accessed data
+
+## Migration and Deployment Strategy
+- Use Neon's branching for safe feature development and testing
+- Implement proper seeding strategies for different environments
+- Use Neon Console for database management and monitoring
+- Monitor connection limits and usage patterns
+- Implement automated cleanup for preview deployment branches
+- Test migration rollback procedures in development environment
+
+## Error Handling and Monitoring
+- Implement comprehensive error handling for database connection issues
+- Monitor Neon-specific errors (connection timeouts, scale-to-zero delays)
+- Set up proper logging for database operations and performance
+- Use Neon's monitoring tools for query performance analysis
+- Implement retry logic for transient connection issues
+- Alert on unusual connection patterns or performance degradation

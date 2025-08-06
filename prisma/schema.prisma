@@ -25,6 +25,20 @@ model User {
   contentVersions ContentVersion[]
   notifications   Notification[]
   sessions        Session[]
+  
+  // New relations for project management
+  ownedProjects   Project[]         @relation("ProjectOwner")
+  assignedTasks   Task[]            @relation("TaskAssignee")
+  projectMembers  ProjectMember[]
+  
+  // New board system relations
+  createdCards     ProjectCard[]         @relation("CardCreator")
+  assignedCards    ProjectCardAssignee[] @relation("CardAssignee")
+  checklistItems   ProjectChecklistItem[] @relation("ChecklistItemAssignee")
+  uploadedAttachments ProjectAttachment[] @relation("AttachmentUploader")
+  projectComments  ProjectComment[]      @relation("CommentAuthor")
+  projectActivities ProjectActivity[]    @relation("ActivityUser")
+  projectInvitations ProjectInvitation[] @relation("InvitationCreator")
 }
 
 model Content {
@@ -52,6 +66,7 @@ model Content {
   versions      ContentVersion[]
   notifications Notification[]
   tags          Tag[]             @relation("ContentToTag")
+  projectCards  ProjectCard[]
 }
 
 model Approval {
@@ -213,6 +228,107 @@ enum ContentType {
   SOCIAL_MEDIA
 }
 
+model Project {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  color       String    @default("blue")
+  archived    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // New Trello-like fields
+  background  String?  // Board background (color/image)
+  visibility  ProjectVisibility @default(PRIVATE)
+  starred     Boolean  @default(false) // For favoriting boards
+  template    Boolean  @default(false) // Mark as template
+
+  // Legacy task system (keeping for backward compatibility)
+  columns     Column[]
+  
+  // New board system
+  lists       ProjectList[]
+  labels      ProjectLabel[]
+  activities  ProjectActivity[]
+  invitations ProjectInvitation[]
+  
+  members     ProjectMember[]
+  ownerId     String
+  owner       User      @relation("ProjectOwner", fields: [ownerId], references: [id])
+
+  @@index([ownerId, archived])
+  @@index([updatedAt])
+}
+
+model Column {
+  id        String   @id @default(cuid())
+  title     String
+  position  Int
+  color     String   @default("gray")
+  
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@index([projectId, position])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  position    Int
+  priority    Priority  @default(MEDIUM)
+  dueDate     DateTime?
+  completed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Project management enhancements
+  estimatedHours Int?
+  actualHours    Int?
+  tags           String[]
+  
+  columnId    String
+  column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  assigneeId  String?
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  
+  // Add attachment support
+  attachments TaskAttachment[]
+
+  // Enhanced indexing for performance
+  @@index([columnId, position, priority])
+  @@index([assigneeId, completed])
+  @@index([dueDate])
+  @@index([createdAt])
+}
+
+model TaskAttachment {
+  id       String @id @default(cuid())
+  taskId   String
+  task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  filename String
+  url      String
+  size     Int
+  type     String
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  role      String   @default("MEMBER")
+  
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+}
+
 enum Priority {
   LOW
   MEDIUM
@@ -224,4 +340,228 @@ enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ProjectVisibility {
+  PRIVATE
+  TEAM
+  PUBLIC
+}
+
+enum ProjectActivityAction {
+  BOARD_CREATED
+  BOARD_UPDATED
+  LIST_CREATED
+  LIST_UPDATED
+  LIST_ARCHIVED
+  CARD_CREATED
+  CARD_UPDATED
+  CARD_MOVED
+  CARD_ARCHIVED
+  MEMBER_ADDED
+  MEMBER_REMOVED
+  COMMENT_ADDED
+  ATTACHMENT_ADDED
+  CHECKLIST_CREATED
+  CHECKLIST_ITEM_COMPLETED
+}
+
+model ProjectList {
+  id        String   @id @default(cuid())
+  title     String
+  position  Int
+  archived  Boolean  @default(false)
+  
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  cards     ProjectCard[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([projectId, position])
+  @@map("project_lists")
+}
+
+model ProjectCard {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  position    Int
+  archived    Boolean  @default(false)
+  
+  // Visual and metadata
+  cover       String?  // Cover image/color
+  dueDate     DateTime?
+  completed   Boolean  @default(false)
+  
+  // Relationships
+  listId      String
+  list        ProjectList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  
+  assignees   ProjectCardAssignee[]
+  labels      ProjectCardLabel[]
+  checklists  ProjectChecklist[]
+  attachments ProjectAttachment[]
+  comments    ProjectComment[]
+  activities  ProjectActivity[]
+  
+  // Content management integration
+  contentId   String?
+  content     Content? @relation(fields: [contentId], references: [id])
+  
+  createdById String
+  createdBy   User     @relation("CardCreator", fields: [createdById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([listId, position])
+  @@index([dueDate])
+  @@index([createdById])
+  @@map("project_cards")
+}
+
+model ProjectCardAssignee {
+  cardId String
+  card   ProjectCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  userId String
+  user   User @relation("CardAssignee", fields: [userId], references: [id])
+  
+  @@id([cardId, userId])
+  @@map("project_card_assignees")
+}
+
+model ProjectChecklist {
+  id      String @id @default(cuid())
+  title   String
+  position Int
+  
+  cardId  String
+  card    ProjectCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  items   ProjectChecklistItem[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([cardId])
+  @@map("project_checklists")
+}
+
+model ProjectChecklistItem {
+  id        String  @id @default(cuid())
+  text      String
+  completed Boolean @default(false)
+  position  Int
+  
+  checklistId String
+  checklist   ProjectChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  
+  assigneeId String?
+  assignee   User?   @relation("ChecklistItemAssignee", fields: [assigneeId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([checklistId, position])
+  @@map("project_checklist_items")
+}
+
+model ProjectLabel {
+  id      String @id @default(cuid())
+  name    String
+  color   String
+  
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  cardLabels ProjectCardLabel[]
+  
+  @@map("project_labels")
+}
+
+model ProjectCardLabel {
+  cardId  String
+  card    ProjectCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  labelId String
+  label   ProjectLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  
+  @@id([cardId, labelId])
+  @@map("project_card_labels")
+}
+
+model ProjectAttachment {
+  id       String @id @default(cuid())
+  name     String
+  url      String
+  size     Int
+  mimeType String
+  
+  cardId   String
+  card     ProjectCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  uploadedById String
+  uploadedBy   User   @relation("AttachmentUploader", fields: [uploadedById], references: [id])
+  
+  createdAt DateTime @default(now())
+  
+  @@map("project_attachments")
+}
+
+model ProjectComment {
+  id      String @id @default(cuid())
+  text    String
+  
+  cardId  String
+  card    ProjectCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  authorId String
+  author   User @relation("CommentAuthor", fields: [authorId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([cardId])
+  @@map("project_comments")
+}
+
+model ProjectActivity {
+  id      String @id @default(cuid())
+  action  ProjectActivityAction
+  data    Json   // Flexible data storage for activity details
+  
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  cardId  String?
+  card    ProjectCard? @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  userId  String
+  user    User   @relation("ActivityUser", fields: [userId], references: [id])
+  
+  createdAt DateTime @default(now())
+  
+  @@map("project_activities")
+}
+
+model ProjectInvitation {
+  id        String @id @default(cuid())
+  email     String
+  role      String @default("MEMBER")
+  token     String @unique
+  expiresAt DateTime
+  
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  invitedById String
+  invitedBy   User @relation("InvitationCreator", fields: [invitedById], references: [id])
+  
+  createdAt DateTime @default(now())
+  
+  @@map("project_invitations")
 }

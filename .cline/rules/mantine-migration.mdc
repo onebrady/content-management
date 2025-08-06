@@ -1,0 +1,111 @@
+---
+description: "Comprehensive MUI to Mantine migration strategy with pnpm workflow"
+globs: ["**/*.{ts,tsx}", "**/components/**/*"]
+alwaysApply: true
+---
+
+# MUI to Mantine Migration Standards
+
+## Migration Strategy and Planning
+- Use Context7 for current Mantine API documentation and best practices
+- Replace MUI components with Mantine equivalents during any feature updates or bug fixes
+- Maintain existing functionality while improving developer experience and consistency
+- Update component tests thoroughly when migrating components
+- Document migration decisions and component mappings in AgentOS specs
+- Plan migration in phases: critical components first, then less frequently used ones
+
+## Component Mapping and Replacements
+### Data Display Components
+- MUI DataGrid → Mantine Table + Pagination + custom sorting/filtering
+- MUI List → Mantine List or custom components with Mantine styling
+- MUI Chip → Mantine Badge or Pill component
+- MUI Avatar → Mantine Avatar
+- MUI Tooltip → Mantine Tooltip (or native tippy.js integration)
+
+### Input Components
+- MUI TextField → Mantine TextInput, Textarea, PasswordInput
+- MUI Select → Mantine Select or NativeSelect
+- MUI Autocomplete → Mantine Autocomplete
+- MUI Checkbox → Mantine Checkbox
+- MUI Radio → Mantine Radio
+- MUI Switch → Mantine Switch
+- MUI Slider → Mantine Slider
+
+### Layout and Navigation
+- MUI Container → Mantine Container
+- MUI Grid → Mantine Grid or SimpleGrid
+- MUI Stack → Mantine Stack
+- MUI Box → Mantine Box
+- MUI Paper → Mantine Paper
+- MUI Card → Mantine Card
+
+### Feedback Components
+- MUI Dialog → Mantine Modal
+- MUI Drawer → Mantine Drawer
+- MUI Snackbar → React Hot Toast (already implemented)
+- MUI Alert → Mantine Alert
+- MUI Skeleton → Mantine Skeleton
+- MUI LinearProgress → Mantine Progress
+- MUI CircularProgress → Mantine Loader
+
+### Navigation Components
+- MUI Tabs → Mantine Tabs
+- MUI Breadcrumbs → Mantine Breadcrumbs
+- MUI Pagination → Mantine Pagination
+- MUI Stepper → Mantine Stepper
+
+## Styling Migration Strategy
+- Replace MUI sx prop usage with Mantine style prop or CSS modules
+- Migrate MUI theme configuration to Mantine theme system
+- Use Mantine's built-in responsive system instead of MUI breakpoints
+- Leverage Mantine's dark/light theme capabilities
+- Update custom MUI component styling to use Mantine patterns
+- Remove @emotion dependencies once MUI is fully removed
+
+## Form Integration Patterns
+- Replace MUI form components with Mantine equivalents
+- Integrate seamlessly with existing React Hook Form + Zod setup
+- Use @mantine/form for simple forms where React Hook Form is overkill
+- Maintain existing form validation logic and error handling
+- Update form styling to use Mantine's consistent design system
+
+## Testing and Quality Assurance
+- Update component tests to work with Mantine components and props
+- Test Mantine-specific behaviors (theme switching, responsive behavior)
+- Ensure accessibility features work correctly with new components
+- Test form integration and validation with migrated components
+- Verify responsive behavior across different screen sizes
+- Test dark/light theme switching functionality
+
+
+## Migration Checklist and Process
+### For Each Component Migration:
+- [ ] Identify MUI component usage in codebase
+- [ ] Map to appropriate Mantine equivalent
+- [ ] Update component imports and props
+- [ ] Migrate styling from sx prop to Mantine patterns
+- [ ] Update component tests
+- [ ] Test functionality thoroughly
+- [ ] Verify accessibility compliance
+- [ ] Update documentation and comments
+- [ ] Remove unused MUI imports
+
+### Package Management with pnpm:
+- Use `pnpm remove` to remove MUI packages once migration is complete
+- Use `pnpm add` to add any additional Mantine packages needed
+- Update pnpm scripts to reflect new component testing patterns
+
+## Performance Considerations
+- Bundle size reduction by removing MUI dependencies
+- Improved tree-shaking with Mantine's modular architecture
+- Better TypeScript support and development experience
+- Consistent design system reducing CSS conflicts
+- Faster build times with fewer dependencies
+
+## Documentation and Knowledge Transfer
+- Document common migration patterns for team reference
+- Create component mapping guide for future migrations
+- Update style guide to reflect Mantine patterns
+- Train team members on Mantine best practices
+- Maintain migration progress tracking in AgentOS specs
+

@@ -4,13 +4,13 @@ import { generateColorShades, isValidHexColor } from '../theme-utils';
 describe('Theme Configuration', () => {
   describe('customTheme', () => {
     it('should have the correct primary color', () => {
-      expect(customTheme.colors?.primary).toBeDefined();
-      expect(customTheme.colors?.primary[6]).toBe('#c96442');
+      expect(customTheme.colors?.terracotta).toBeDefined();
+      expect(customTheme.colors?.terracotta[6]).toBe('#c96442');
     });
 
     it('should have the correct secondary color', () => {
-      expect(customTheme.colors?.secondary).toBeDefined();
-      expect(customTheme.colors?.secondary[6]).toBe('#e9e6dc');
+      expect(customTheme.colors?.cream).toBeDefined();
+      expect(customTheme.colors?.cream[6]).toBe('#e9e6dc');
     });
 
     it('should have shadows configured', () => {
@@ -34,7 +34,7 @@ describe('Theme Configuration', () => {
     it('should have font family configured', () => {
       expect(customTheme.fontFamily).toBeDefined();
       expect(customTheme.fontFamilyMonospace).toBeDefined();
-      expect(customTheme.fontFamilySerif).toBeDefined();
+      expect(customTheme.headings?.fontFamily).toBeDefined();
     });
 
     it('should have dark mode colors configured', () => {
@@ -44,16 +44,11 @@ describe('Theme Configuration', () => {
 
     it('should have CSS variables configured', () => {
       expect(customTheme.other).toBeDefined();
-      expect(customTheme.other['--mantine-color-background']).toBe('#faf9f5');
-      expect(customTheme.other['--mantine-color-body']).toBe('#faf9f5');
-      expect(customTheme.other['--mantine-color-text']).toBe('#3d3929');
-      expect(customTheme.other['--mantine-color-sidebar']).toBe('#f5f4ee');
-      expect(customTheme.other['--mantine-color-sidebar-border']).toBe(
-        '#ebebeb'
-      );
-      expect(customTheme.other['--mantine-color-sidebar-primary']).toBe(
-        '#c96442'
-      );
+      expect(customTheme.other.customColors.background).toBe('#faf9f5');
+      expect(customTheme.other.customColors.foreground).toBe('#3d3929');
+      expect(customTheme.other.customColors.sidebar).toBe('#f5f4ee');
+      expect(customTheme.other.customColors.sidebarBorder).toBe('#ebebeb');
+      expect(customTheme.other.customColors.sidebarPrimary).toBe('#c96442');
     });
   });
 

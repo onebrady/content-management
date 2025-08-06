@@ -1,4 +1,6 @@
 ---
+description: 'USE WHEN analyzing existing codebases to install Agent-OS documentation and understand current project structure, architecture, and implementation details'
+globs:
 alwaysApply: false
 ---
 
@@ -6,4 +8,4 @@ alwaysApply: false
 
 Analyze your product's codebase and install Agent OS
 
-Refer to the instructions located in @~/.agent-os/instructions/analyze-product.md
+Refer to the instructions located in @.agent-os/instructions/analyze-product.md

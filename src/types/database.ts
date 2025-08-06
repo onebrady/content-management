@@ -123,3 +123,85 @@ export interface ContentVersion {
   content: Content;
   createdBy: User;
 }
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  position: number;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  dueDate: Date | null;
+  completed: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  columnId: string;
+  assigneeId: string | null;
+
+  // Project management enhancements
+  estimatedHours?: number | null;
+  actualHours?: number | null;
+  tags?: string[];
+
+  // Attachments
+  attachments?: TaskAttachment[];
+}
+
+export interface TaskAttachment {
+  id: string;
+  taskId: string;
+  filename: string;
+  url: string;
+  size: number;
+  type: string;
+  createdAt: Date;
+}
+
+export interface Column {
+  id: string;
+  title: string;
+  position: number;
+  color: string;
+  projectId: string;
+}
+
+export interface ColumnWithTasks extends Column {
+  tasks: Task[];
+}
+
+export interface ProjectMember {
+  id: string;
+  role: string;
+  projectId: string;
+  userId: string;
+  user: User;
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  description?: string;
+  color: string;
+  archived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  columns: ColumnWithTasks[];
+  members: ProjectMember[];
+  ownerId: string;
+  owner: User;
+}
+
+export interface TaskUpdatePayload {
+  taskId: string;
+  projectId?: string;
+  columnId?: string;
+  position?: number;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  dueDate?: Date | null;
+  completed?: boolean;
+  title?: string;
+  description?: string | null;
+  assigneeId?: string | null;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
+  tags?: string[];
+}

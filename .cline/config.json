@@ -1,0 +1,28 @@
+{
+  "enableProjectContext": true,
+  "editor": {
+    "formatOnSave": true,
+    "codeActionsOnSave": {
+      "source.fixAll.eslint": true,
+      "source.organizeImports": true
+    }
+  },
+  "files": {
+    "associations": {
+      "*.mantine": "typescript",
+      "*.neon": "sql"
+    },
+    "watcherExclude": {
+      "**/node_modules/**": true,
+      "**/.next/**": true
+    }
+  },
+  "search": {
+    "exclude": {
+      "**/node_modules": true,
+      "**/.next": true,
+      "**/coverage": true,
+      "**/playwright-report": true
+    }
+  }
+}
