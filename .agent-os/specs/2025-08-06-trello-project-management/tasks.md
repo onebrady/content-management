@@ -47,14 +47,14 @@
   - [x] 5.6 Implement auto-save functionality for card changes
   - [x] 5.7 Verify card modal tests pass and all form interactions work correctly
 
-- [ ] 6. **Checklist Management System**
-  - [ ] 6.1 Write tests for checklist creation, item management, and completion tracking
-  - [ ] 6.2 Implement API endpoints for checklist CRUD operations
-  - [ ] 6.3 Create ChecklistComponent with add/edit/delete item functionality
-  - [ ] 6.4 Add checklist progress indicator (e.g., "3/5 completed")
-  - [ ] 6.5 Implement drag-and-drop reordering for checklist items
-  - [ ] 6.6 Add assignee support for individual checklist items
-  - [ ] 6.7 Verify all checklist tests pass and progress tracking works accurately
+- [x] 6. **Checklist Management System**
+  - [x] 6.1 Write tests for checklist creation, item management, and completion tracking
+  - [x] 6.2 Implement API endpoints for checklist CRUD operations
+  - [x] 6.3 Create ChecklistComponent with add/edit/delete item functionality
+  - [x] 6.4 Add checklist progress indicator (e.g., "3/5 completed")
+  - [x] 6.5 Implement drag-and-drop reordering for checklist items
+  - [x] 6.6 Add assignee support for individual checklist items
+  - [x] 6.7 Verify all checklist tests pass and progress tracking works accurately
 
 - [ ] 7. **Real-time Collaboration**
   - [ ] 7.1 Write tests for WebSocket connection and event handling

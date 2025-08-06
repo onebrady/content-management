@@ -1,0 +1,321 @@
+.checklistContainer {
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 8px;
+  background: var(--mantine-color-gray-0);
+}
+
+/* Checklist Title */
+.checklistTitle {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.checklistTitle:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.titleInput {
+  font-weight: 600;
+}
+
+.titleInput input {
+  font-weight: 600 !important;
+  padding: 4px 8px !important;
+  border: 2px solid var(--mantine-color-blue-6) !important;
+  border-radius: 4px !important;
+  background: white !important;
+}
+
+/* Progress Bar */
+.progressBar {
+  transition: all 0.3s ease;
+}
+
+/* Items Container */
+.itemsContainer {
+  min-height: 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  padding: 4px;
+}
+
+.dragOver {
+  background: rgba(0, 123, 255, 0.1);
+  border: 2px dashed var(--mantine-color-blue-4);
+}
+
+/* Checklist Item */
+.checklistItem {
+  padding: 8px 4px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  background: white;
+  border: 1px solid var(--mantine-color-gray-2);
+  transition: all 0.2s ease;
+}
+
+.checklistItem:hover {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-4);
+}
+
+.checklistItem:last-child {
+  margin-bottom: 0;
+}
+
+.dragging {
+  transform: rotate(2deg) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  z-index: 100;
+  background: white !important;
+}
+
+/* Drag Handle */
+.dragHandle {
+  cursor: grab;
+  padding: 2px;
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.checklistItem:hover .dragHandle {
+  opacity: 1;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* Checkbox */
+.checkbox {
+  margin-top: 2px;
+}
+
+/* Item Text */
+.itemText {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  flex: 1;
+  word-break: break-word;
+}
+
+.itemText:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Assignee Avatar */
+.assigneeAvatar {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.assigneeAvatar:hover {
+  transform: scale(1.1);
+}
+
+/* Add Item Button */
+.addItemButton {
+  width: 100%;
+  justify-content: flex-start;
+  color: var(--mantine-color-gray-6);
+  background: transparent;
+  border: 1px dashed var(--mantine-color-gray-3);
+  transition: all 0.2s ease;
+}
+
+.addItemButton:hover {
+  background: var(--mantine-color-gray-1);
+  border-color: var(--mantine-color-gray-4);
+  color: var(--mantine-color-gray-7);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .checklistContainer {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .checklistItem {
+    padding: 6px 4px;
+  }
+  
+  .dragHandle {
+    opacity: 1; /* Always visible on mobile */
+  }
+  
+  .itemText {
+    padding: 2px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .checklistContainer {
+    padding: 8px;
+  }
+  
+  .itemText {
+    font-size: 14px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .checklistContainer {
+    background: var(--mantine-color-dark-6);
+    border-color: var(--mantine-color-dark-4);
+  }
+  
+  .checklistTitle:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .titleInput input {
+    background: var(--mantine-color-dark-7) !important;
+    color: var(--mantine-color-gray-3) !important;
+  }
+  
+  .checklistItem {
+    background: var(--mantine-color-dark-7);
+    border-color: var(--mantine-color-dark-4);
+  }
+  
+  .checklistItem:hover {
+    background: var(--mantine-color-dark-5);
+    border-color: var(--mantine-color-dark-3);
+  }
+  
+  .dragging {
+    background: var(--mantine-color-dark-7) !important;
+  }
+  
+  .itemText:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .addItemButton {
+    color: var(--mantine-color-gray-4);
+    border-color: var(--mantine-color-dark-4);
+  }
+  
+  .addItemButton:hover {
+    background: var(--mantine-color-dark-5);
+    border-color: var(--mantine-color-dark-3);
+    color: var(--mantine-color-gray-3);
+  }
+  
+  .assigneeAvatar {
+    border-color: var(--mantine-color-dark-6);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .checklistItem {
+    border-width: 2px;
+  }
+  
+  .addItemButton {
+    border-width: 2px;
+  }
+  
+  .dragHandle {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .checklistItem,
+  .dragHandle,
+  .itemText,
+  .assigneeAvatar,
+  .addItemButton,
+  .progressBar {
+    transition: none;
+  }
+  
+  .dragging {
+    transform: none !important;
+  }
+}
+
+/* Focus styles for accessibility */
+.checklistTitle:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+}
+
+.itemText:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+}
+
+.addItemButton:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+}
+
+.assigneeAvatar:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+}
+
+/* Animation for progress changes */
+@keyframes progressUpdate {
+  0% {
+    transform: scaleX(0.95);
+  }
+  50% {
+    transform: scaleX(1.02);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+.progressBar[data-completed="true"] {
+  animation: progressUpdate 0.5s ease-out;
+}
+
+/* Item entrance animation */
+@keyframes itemEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.checklistItem {
+  animation: itemEntrance 0.3s ease-out;
+}
+
+/* Completion celebration */
+@keyframes completionCelebration {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.checklistItem[data-just-completed="true"] {
+  animation: completionCelebration 0.4s ease-out;
+}
