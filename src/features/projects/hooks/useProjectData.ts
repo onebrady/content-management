@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchProject, updateTask } from '@/features/projects/api/projectApi';
+import {
+  fetchProject,
+  fetchBoardData,
+  updateCard,
+} from '@/features/projects/api/projectApi';
 import { projectKeys } from './queryKeys';
-import type { TaskUpdatePayload } from '@/types/database';
+import type { ProjectCard } from '@/types/database';
 
 export function useProjects() {
   return useQuery({
@@ -16,31 +20,41 @@ export function useProject(id: string) {
     queryKey: projectKeys.detail(id),
     queryFn: () => fetchProject(id),
     staleTime: 30_000,
+    enabled: !!id, // Only run query if id is provided
   });
 }
 
-export function useUpdateTask() {
+export function useBoardData(projectId: string) {
+  return useQuery({
+    queryKey: projectKeys.board(projectId),
+    queryFn: () => fetchBoardData(projectId),
+    staleTime: 30_000,
+    enabled: !!projectId,
+  });
+}
+
+export function useUpdateCard() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: updateTask,
+    mutationFn: updateCard,
     onMutate: async ({
-      taskId,
+      cardId,
       projectId,
       ...updates
-    }: { taskId: string; projectId: string } & TaskUpdatePayload) => {
+    }: { cardId: string; projectId: string } & Partial<ProjectCard>) => {
       await queryClient.cancelQueries({
-        queryKey: projectKeys.detail(projectId),
+        queryKey: projectKeys.board(projectId),
       });
 
-      const previous = queryClient.getQueryData(projectKeys.detail(projectId));
+      const previous = queryClient.getQueryData(projectKeys.board(projectId));
 
-      queryClient.setQueryData(projectKeys.detail(projectId), (old: any) => ({
+      queryClient.setQueryData(projectKeys.board(projectId), (old: any) => ({
         ...old,
-        columns: old.columns.map((col: any) => ({
-          ...col,
-          tasks: col.tasks.map((task: any) =>
-            task.id === taskId ? { ...task, ...updates } : task
+        lists: old.lists.map((list: any) => ({
+          ...list,
+          cards: list.cards.map((card: any) =>
+            card.id === cardId ? { ...card, ...updates } : card
           ),
         })),
       }));
@@ -50,15 +64,21 @@ export function useUpdateTask() {
     onError: (err, variables, context) => {
       if (context?.previous) {
         queryClient.setQueryData(
-          projectKeys.detail(context.projectId),
+          projectKeys.board(context.projectId),
           context.previous
         );
       }
     },
     onSettled: (data, error, variables) => {
       queryClient.invalidateQueries({
-        queryKey: projectKeys.detail(variables.projectId),
+        queryKey: projectKeys.board(variables.projectId),
       });
     },
   });
+}
+
+// Legacy hook for backward compatibility
+export function useUpdateTask() {
+  console.warn('useUpdateTask is deprecated. Use useUpdateCard instead.');
+  return useUpdateCard();
 }

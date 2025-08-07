@@ -35,13 +35,13 @@ function ProjectErrorFallback({
       <Stack spacing="md">
         <Alert icon={<IconAlertCircle size={20} />} color="red" variant="light">
           <Text fw={500} size="lg">
-            Something went wrong with the project board
+            Something went wrong with the board view
           </Text>
         </Alert>
 
         <Text size="sm" c="dimmed">
-          We encountered an unexpected error while loading the project board.
-          This might be a temporary issue.
+          We encountered an unexpected error while loading the board. This might
+          be a temporary issue.
         </Text>
 
         {isDevelopment && (
@@ -113,7 +113,7 @@ export function ProjectErrorBoundary({
 }: ProjectErrorBoundaryProps) {
   const handleError = (error: Error, errorInfo: { componentStack: string }) => {
     // Log error for monitoring
-    console.error('ProjectBoard Error:', {
+    console.error('Board View Error:', {
       error: {
         name: error.name,
         message: error.message,
@@ -144,7 +144,10 @@ export function ProjectErrorBoundary({
         if (typeof window !== 'undefined') {
           // Clear localStorage cache if needed
           const cacheKeys = Object.keys(localStorage).filter(
-            (key) => key.startsWith('project-') || key.startsWith('task-')
+            (key) =>
+              key.startsWith('project-') ||
+              key.startsWith('card-') ||
+              key.startsWith('list-')
           );
           cacheKeys.forEach((key) => localStorage.removeItem(key));
         }
@@ -156,9 +159,9 @@ export function ProjectErrorBoundary({
 }
 
 /**
- * Specialized error boundary for task components
+ * Specialized error boundary for card components
  */
-export function TaskErrorBoundary({ children }: { children: React.ReactNode }) {
+export function CardErrorBoundary({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary
       fallback={({ error, resetErrorBoundary }) => (
@@ -168,7 +171,7 @@ export function TaskErrorBoundary({ children }: { children: React.ReactNode }) {
           variant="light"
         >
           <Group justify="space-between">
-            <Text size="sm">Failed to load task</Text>
+            <Text size="sm">Failed to load card</Text>
             <Button size="xs" variant="subtle" onClick={resetErrorBoundary}>
               Retry
             </Button>
@@ -176,7 +179,7 @@ export function TaskErrorBoundary({ children }: { children: React.ReactNode }) {
         </Alert>
       )}
       onError={(error) => {
-        console.error('Task component error:', error);
+        console.error('Card component error:', error);
       }}
     >
       {children}
@@ -185,13 +188,9 @@ export function TaskErrorBoundary({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Specialized error boundary for column components
+ * Specialized error boundary for list components
  */
-export function ColumnErrorBoundary({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function ListErrorBoundary({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary
       fallback={({ error, resetErrorBoundary }) => (
@@ -199,7 +198,7 @@ export function ColumnErrorBoundary({
           <Stack align="center" justify="center" h="100%">
             <IconAlertCircle size={32} color="var(--mantine-color-red-6)" />
             <Text size="sm" ta="center" c="dimmed">
-              Failed to load column
+              Failed to load list
             </Text>
             <Button size="xs" onClick={resetErrorBoundary}>
               Retry
@@ -208,7 +207,7 @@ export function ColumnErrorBoundary({
         </Paper>
       )}
       onError={(error) => {
-        console.error('Column component error:', error);
+        console.error('List component error:', error);
       }}
     >
       {children}

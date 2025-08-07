@@ -234,6 +234,7 @@ model Project {
   description String?
   color       String    @default("blue")
   archived    Boolean   @default(false)
+  status      String    @default("planning") // Project status for Kanban board
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -370,6 +371,7 @@ model ProjectList {
   id        String   @id @default(cuid())
   title     String
   position  Int
+  color     String   @default("gray")
   archived  Boolean  @default(false)
   
   projectId String

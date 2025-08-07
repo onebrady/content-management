@@ -57,6 +57,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       roles: ['VIEWER', 'CONTRIBUTOR', 'MODERATOR', 'ADMIN'],
     },
     {
+      text: 'Projects',
+      icon: <IconChecklist size={20} />,
+      href: '/projects',
+      roles: ['VIEWER', 'CONTRIBUTOR', 'MODERATOR', 'ADMIN'],
+    },
+    {
       text: 'Content',
       icon: <IconArticle size={20} />,
       href: '/content',

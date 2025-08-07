@@ -169,15 +169,15 @@ export const createProjectSchema = z.object({
     .max(500, 'Description must be at most 500 characters')
     .optional(),
   color: projectColorSchema.default('blue'),
-  defaultColumns: z
+  defaultLists: z
     .array(
       z.object({
         title: z.string().min(1).max(50),
         color: projectColorSchema.default('gray'),
       })
     )
-    .min(1, 'At least one column is required')
-    .max(10, 'Maximum 10 columns allowed')
+    .min(1, 'At least one list is required')
+    .max(10, 'Maximum 10 lists allowed')
     .default([
       { title: 'To Do', color: 'gray' },
       { title: 'In Progress', color: 'blue' },

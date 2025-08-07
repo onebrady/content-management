@@ -18,7 +18,7 @@ import {
 } from '@mantine/core';
 import {
   IconAlertTriangle,
-  IconMerge,
+  IconGitMerge,
   IconReplace,
   IconX,
   IconInfoCircle,
@@ -39,7 +39,9 @@ export function ConflictResolutionModal({
   onResolve,
   onClose,
 }: ConflictResolutionModalProps) {
-  const [selectedResolution, setSelectedResolution] = useState<'merge' | 'override' | 'cancel'>('merge');
+  const [selectedResolution, setSelectedResolution] = useState<
+    'merge' | 'override' | 'cancel'
+  >('merge');
   const [previewData, setPreviewData] = useState<any>(null);
 
   if (!conflict) return null;
@@ -56,7 +58,9 @@ export function ConflictResolutionModal({
     }
   };
 
-  const handleResolutionChange = (resolution: 'merge' | 'override' | 'cancel') => {
+  const handleResolutionChange = (
+    resolution: 'merge' | 'override' | 'cancel'
+  ) => {
     setSelectedResolution(resolution);
     setPreviewData(generatePreview(resolution));
   };
@@ -71,21 +75,25 @@ export function ConflictResolutionModal({
   // Simple merge function for preview (matches ConflictResolver logic)
   function mergeChanges(local: any, remote: any): any {
     const merged = { ...local };
-    
+
     for (const [key, remoteValue] of Object.entries(remote)) {
       const localValue = local[key];
-      
+
       if (localValue === undefined) {
         merged[key] = remoteValue;
-      } else if (typeof remoteValue === 'string' && typeof localValue === 'string') {
-        merged[key] = localValue.length >= remoteValue.length ? localValue : remoteValue;
+      } else if (
+        typeof remoteValue === 'string' &&
+        typeof localValue === 'string'
+      ) {
+        merged[key] =
+          localValue.length >= remoteValue.length ? localValue : remoteValue;
       } else if (typeof remoteValue === 'boolean') {
         merged[key] = localValue; // Prefer local for booleans
       } else {
         merged[key] = remoteValue; // Default to remote for other types
       }
     }
-    
+
     return merged;
   }
 
@@ -106,10 +114,20 @@ export function ConflictResolutionModal({
     >
       <Stack gap="md">
         {/* Conflict Information */}
-        <Alert icon={<IconInfoCircle size={16} />} color="orange" variant="light">
+        <Alert
+          icon={<IconInfoCircle size={16} />}
+          color="orange"
+          variant="light"
+        >
           <Text size="sm">
-            <Text span fw={500}>{conflict.conflictedBy.userName}</Text> made changes to the same{' '}
-            <Text span fw={500}>{conflict.type}</Text> you're editing. Please choose how to resolve this conflict.
+            <Text span fw={500}>
+              {conflict.conflictedBy.userName}
+            </Text>{' '}
+            made changes to the same{' '}
+            <Text span fw={500}>
+              {conflict.type}
+            </Text>{' '}
+            you're editing. Please choose how to resolve this conflict.
           </Text>
           <Text size="xs" color="dimmed" mt="xs">
             Conflict detected at {new Date(conflict.timestamp).toLocaleString()}
@@ -117,57 +135,62 @@ export function ConflictResolutionModal({
         </Alert>
 
         {/* Resolution Options */}
-        <Tabs value={selectedResolution} onTabChange={(value) => handleResolutionChange(value as any)}>
+        <Tabs
+          value={selectedResolution}
+          onTabChange={(value) => handleResolutionChange(value as any)}
+        >
           <Tabs.List>
-            <Tabs.Tab 
-              value="merge" 
-              leftSection={<IconMerge size={16} />}
-            >
+            <Tabs.Tab value="merge" leftSection={<IconGitMerge size={16} />}>
               Smart Merge
             </Tabs.Tab>
-            <Tabs.Tab 
-              value="override" 
-              leftSection={<IconReplace size={16} />}
-            >
+            <Tabs.Tab value="override" leftSection={<IconReplace size={16} />}>
               Keep My Changes
             </Tabs.Tab>
-            <Tabs.Tab 
-              value="cancel" 
-              leftSection={<IconX size={16} />}
-            >
+            <Tabs.Tab value="cancel" leftSection={<IconX size={16} />}>
               Use Their Changes
             </Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="merge" pt="md">
             <Stack gap="xs">
-              <Text size="sm" fw={500}>Smart Merge Strategy</Text>
+              <Text size="sm" fw={500}>
+                Smart Merge Strategy
+              </Text>
               <Text size="xs" color="dimmed">
-                Automatically combines your changes with theirs using intelligent merging rules:
+                Automatically combines your changes with theirs using
+                intelligent merging rules:
               </Text>
               <Text size="xs" color="dimmed" ml="md">
-                • Longer text values are preferred<br/>
-                • Your boolean choices are kept<br/>
-                • Most recent numerical values are used<br/>
-                • Arrays are combined uniquely
+                • Longer text values are preferred
+                <br />
+                • Your boolean choices are kept
+                <br />
+                • Most recent numerical values are used
+                <br />• Arrays are combined uniquely
               </Text>
             </Stack>
           </Tabs.Panel>
 
           <Tabs.Panel value="override" pt="md">
             <Stack gap="xs">
-              <Text size="sm" fw={500}>Keep Your Changes</Text>
+              <Text size="sm" fw={500}>
+                Keep Your Changes
+              </Text>
               <Text size="xs" color="dimmed">
-                Discard their changes and keep only your modifications. Their work will be lost.
+                Discard their changes and keep only your modifications. Their
+                work will be lost.
               </Text>
             </Stack>
           </Tabs.Panel>
 
           <Tabs.Panel value="cancel" pt="md">
             <Stack gap="xs">
-              <Text size="sm" fw={500}>Use Their Changes</Text>
+              <Text size="sm" fw={500}>
+                Use Their Changes
+              </Text>
               <Text size="xs" color="dimmed">
-                Discard your changes and accept their modifications. Your work will be lost.
+                Discard your changes and accept their modifications. Your work
+                will be lost.
               </Text>
             </Stack>
           </Tabs.Panel>
@@ -177,13 +200,17 @@ export function ConflictResolutionModal({
 
         {/* Changes Comparison */}
         <Box>
-          <Text size="sm" fw={600} mb="xs">Changes Comparison</Text>
-          
+          <Text size="sm" fw={600} mb="xs">
+            Changes Comparison
+          </Text>
+
           <Group align="flex-start" gap="md">
             {/* Your Changes */}
             <Paper flex={1} p="sm" withBorder className={classes.changesPanel}>
               <Group gap="xs" mb="xs">
-                <Badge size="sm" color="blue">Your Changes</Badge>
+                <Badge size="sm" color="blue">
+                  Your Changes
+                </Badge>
               </Group>
               <ScrollArea h={150}>
                 <Code block className={classes.changesCode}>
@@ -211,7 +238,9 @@ export function ConflictResolutionModal({
         {/* Preview */}
         {previewData && (
           <Box>
-            <Text size="sm" fw={600} mb="xs">Preview Result</Text>
+            <Text size="sm" fw={600} mb="xs">
+              Preview Result
+            </Text>
             <Paper p="sm" withBorder className={classes.previewPanel}>
               <ScrollArea h={120}>
                 <Code block className={classes.previewCode}>
@@ -230,18 +259,27 @@ export function ConflictResolutionModal({
           <Button
             onClick={handleResolve}
             color={
-              selectedResolution === 'merge' ? 'blue' :
-              selectedResolution === 'override' ? 'orange' : 'red'
+              selectedResolution === 'merge'
+                ? 'blue'
+                : selectedResolution === 'override'
+                  ? 'orange'
+                  : 'red'
             }
             leftSection={
-              selectedResolution === 'merge' ? <IconMerge size={16} /> :
-              selectedResolution === 'override' ? <IconReplace size={16} /> :
-              <IconX size={16} />
+              selectedResolution === 'merge' ? (
+                <IconGitMerge size={16} />
+              ) : selectedResolution === 'override' ? (
+                <IconReplace size={16} />
+              ) : (
+                <IconX size={16} />
+              )
             }
           >
-            {selectedResolution === 'merge' ? 'Apply Smart Merge' :
-             selectedResolution === 'override' ? 'Keep My Changes' :
-             'Use Their Changes'}
+            {selectedResolution === 'merge'
+              ? 'Apply Smart Merge'
+              : selectedResolution === 'override'
+                ? 'Keep My Changes'
+                : 'Use Their Changes'}
           </Button>
         </Group>
       </Stack>

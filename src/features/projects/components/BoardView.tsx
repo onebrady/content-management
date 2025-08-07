@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Container, Title, Group, Button, Paper, Stack, Skeleton, Text } from '@mantine/core';
+import {
+  Container,
+  Title,
+  Group,
+  Button,
+  Paper,
+  Stack,
+  Skeleton,
+  Text,
+} from '@mantine/core';
 import { IconPlus, IconSettings } from '@tabler/icons-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { notifications } from '@mantine/notifications';
@@ -55,119 +64,155 @@ interface BoardViewProps {
   projectId: string;
   projectData?: ProjectData | null;
   isLoading?: boolean;
+  // Real-time collaboration props
+  onCardMove?: (moveData: any) => void;
+  onCardUpdate?: (updateData: any) => void;
+  onListUpdate?: (updateData: any) => void;
+  onUserPresence?: (users: any[]) => void;
 }
 
-export function BoardView({ projectId, projectData, isLoading }: BoardViewProps) {
+export function BoardView({
+  projectId,
+  projectData,
+  isLoading,
+  onCardMove,
+  onCardUpdate,
+  onListUpdate,
+  onUserPresence,
+}: BoardViewProps) {
   const [selectedCard, setSelectedCard] = useState<ProjectCard | null>(null);
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
 
-  const { 
-    moveCard, 
-    moveList, 
-    createCard, 
-    createList, 
-    updateList, 
+  const {
+    moveCard,
+    moveList,
+    createCard,
+    createList,
+    updateList,
     archiveList,
-    isMoving 
+    isMoving,
   } = useTaskPositioning(projectId);
 
-  const handleDragEnd = useCallback(async (result: DropResult) => {
-    const { destination, source, draggableId, type } = result;
+  const handleDragEnd = useCallback(
+    async (result: DropResult) => {
+      const { destination, source, draggableId, type } = result;
 
-    // Dropped outside the list
-    if (!destination) {
-      return;
-    }
-
-    // Dropped in the same position
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-
-    try {
-      if (type === 'list') {
-        // Moving lists
-        await moveList(draggableId, destination.index);
-      } else {
-        // Moving cards
-        await moveCard(
-          draggableId,
-          source.droppableId,
-          destination.droppableId,
-          destination.index
-        );
+      // Dropped outside the list
+      if (!destination) {
+        return;
       }
-    } catch (error) {
-      console.error('Drag operation failed:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to move item. Please try again.',
-        color: 'red',
-      });
-    }
-  }, [moveCard, moveList]);
+
+      // Dropped in the same position
+      if (
+        destination.droppableId === source.droppableId &&
+        destination.index === source.index
+      ) {
+        return;
+      }
+
+      try {
+        if (type === 'list') {
+          // Moving lists
+          await moveList(draggableId, destination.index);
+        } else {
+          // Moving cards
+          await moveCard(
+            draggableId,
+            source.droppableId,
+            destination.droppableId,
+            destination.index
+          );
+
+          // Emit real-time card move event
+          if (onCardMove) {
+            onCardMove({
+              cardId: draggableId,
+              sourceListId: source.droppableId,
+              destinationListId: destination.droppableId,
+              position: destination.index,
+              projectId,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Drag operation failed:', error);
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to move item. Please try again.',
+          color: 'red',
+        });
+      }
+    },
+    [moveCard, moveList]
+  );
 
   const handleCardClick = useCallback((card: ProjectCard) => {
     setSelectedCard(card);
   }, []);
 
-  const handleAddCard = useCallback(async (listId: string) => {
-    try {
-      await createCard(listId, 'New Card');
-      notifications.show({
-        title: 'Success',
-        message: 'Card created successfully',
-        color: 'green',
-      });
-    } catch (error) {
-      console.error('Failed to create card:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to create card. Please try again.',
-        color: 'red',
-      });
-    }
-  }, [createCard]);
+  const handleAddCard = useCallback(
+    async (listId: string) => {
+      try {
+        await createCard(listId, 'New Card');
+        notifications.show({
+          title: 'Success',
+          message: 'Card created successfully',
+          color: 'green',
+        });
+      } catch (error) {
+        console.error('Failed to create card:', error);
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to create card. Please try again.',
+          color: 'red',
+        });
+      }
+    },
+    [createCard]
+  );
 
-  const handleEditList = useCallback(async (listId: string, title: string) => {
-    try {
-      await updateList(listId, { title });
-      notifications.show({
-        title: 'Success',
-        message: 'List updated successfully',
-        color: 'green',
-      });
-    } catch (error) {
-      console.error('Failed to update list:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to update list. Please try again.',
-        color: 'red',
-      });
-    }
-  }, [updateList]);
+  const handleEditList = useCallback(
+    async (listId: string, title: string) => {
+      try {
+        await updateList(listId, { title });
+        notifications.show({
+          title: 'Success',
+          message: 'List updated successfully',
+          color: 'green',
+        });
+      } catch (error) {
+        console.error('Failed to update list:', error);
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to update list. Please try again.',
+          color: 'red',
+        });
+      }
+    },
+    [updateList]
+  );
 
-  const handleArchiveList = useCallback(async (listId: string) => {
-    try {
-      await archiveList(listId);
-      notifications.show({
-        title: 'Success',
-        message: 'List archived successfully',
-        color: 'green',
-      });
-    } catch (error) {
-      console.error('Failed to archive list:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to archive list. Please try again.',
-        color: 'red',
-      });
-    }
-  }, [archiveList]);
+  const handleArchiveList = useCallback(
+    async (listId: string) => {
+      try {
+        await archiveList(listId);
+        notifications.show({
+          title: 'Success',
+          message: 'List archived successfully',
+          color: 'green',
+        });
+      } catch (error) {
+        console.error('Failed to archive list:', error);
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to archive list. Please try again.',
+          color: 'red',
+        });
+      }
+    },
+    [archiveList]
+  );
 
   const handleAddList = useCallback(async () => {
     if (newListTitle.trim()) {
@@ -202,7 +247,11 @@ export function BoardView({ projectId, projectData, isLoading }: BoardViewProps)
 
   if (isLoading) {
     return (
-      <Container fluid className={classes.container} data-testid="board-skeleton">
+      <Container
+        fluid
+        className={classes.container}
+        data-testid="board-skeleton"
+      >
         <Stack gap="md">
           <Group justify="space-between">
             <Skeleton height={32} width={200} />
@@ -240,12 +289,17 @@ export function BoardView({ projectId, projectData, isLoading }: BoardViewProps)
     );
   }
 
-  const activeLists = projectData.lists.filter(list => !list.archived);
+  const activeLists = projectData.lists.filter((list) => !list.archived);
 
   return (
     <Container fluid className={classes.container}>
       {/* Header */}
-      <Group justify="space-between" align="center" mb="md" className={classes.header}>
+      <Group
+        justify="space-between"
+        align="center"
+        mb="md"
+        className={classes.header}
+      >
         <Title order={2} size="h3">
           {projectData.title}
         </Title>
@@ -262,15 +316,8 @@ export function BoardView({ projectId, projectData, isLoading }: BoardViewProps)
 
       {/* Board Container */}
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div 
-          className={classes.boardContainer} 
-          data-testid="board-container"
-        >
-          <Droppable 
-            droppableId="board" 
-            type="list" 
-            direction="horizontal"
-          >
+        <div className={classes.boardContainer} data-testid="board-container">
+          <Droppable droppableId="board" type="list" direction="horizontal">
             {(provided) => (
               <div
                 ref={provided.innerRef}
@@ -308,12 +355,16 @@ export function BoardView({ projectId, projectData, isLoading }: BoardViewProps)
                           autoFocus
                         />
                         <Group gap="xs">
-                          <Button size="xs" onClick={handleAddList} disabled={!newListTitle.trim()}>
+                          <Button
+                            size="xs"
+                            onClick={handleAddList}
+                            disabled={!newListTitle.trim()}
+                          >
                             Add list
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="subtle" 
+                          <Button
+                            size="xs"
+                            variant="subtle"
                             onClick={() => {
                               setIsAddingList(false);
                               setNewListTitle('');
@@ -347,8 +398,14 @@ export function BoardView({ projectId, projectData, isLoading }: BoardViewProps)
 
       {/* Card Detail Modal - Placeholder for now */}
       {selectedCard && (
-        <div className={classes.modalOverlay} onClick={() => setSelectedCard(null)}>
-          <Paper className={classes.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div
+          className={classes.modalOverlay}
+          onClick={() => setSelectedCard(null)}
+        >
+          <Paper
+            className={classes.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
             <Title order={3}>{selectedCard.title}</Title>
             <Text>{selectedCard.description || 'No description'}</Text>
             <Button onClick={() => setSelectedCard(null)}>Close</Button>

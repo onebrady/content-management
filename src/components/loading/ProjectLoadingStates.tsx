@@ -13,13 +13,14 @@ import {
   Progress,
   Loader,
   Card,
+  Button,
 } from '@mantine/core';
 import { IconKanban, IconChecklist } from '@tabler/icons-react';
 
 /**
- * Loading skeleton for the main project board
+ * Loading skeleton for the main board interface
  */
-export function ProjectBoardSkeleton() {
+export function BoardViewSkeleton() {
   return (
     <Stack spacing="md">
       {/* Header skeleton */}
@@ -33,8 +34,8 @@ export function ProjectBoardSkeleton() {
 
       {/* Board skeleton */}
       <Group align="flex-start" spacing="md" style={{ overflowX: 'auto' }}>
-        {[1, 2, 3].map((column) => (
-          <ColumnSkeleton key={column} />
+        {[1, 2, 3].map((list) => (
+          <ListSkeleton key={list} />
         ))}
       </Group>
     </Stack>
@@ -42,24 +43,24 @@ export function ProjectBoardSkeleton() {
 }
 
 /**
- * Loading skeleton for individual columns
+ * Loading skeleton for individual lists
  */
-export function ColumnSkeleton() {
+export function ListSkeleton() {
   return (
     <Paper p="md" w={300} withBorder>
       <Stack spacing="md">
-        {/* Column header */}
+        {/* List header */}
         <Group justify="space-between">
           <Skeleton height={20} width={100} />
           <Skeleton height={16} width={20} radius="xl" />
         </Group>
 
-        {/* Task skeletons */}
-        {[1, 2, 3].map((task) => (
-          <TaskCardSkeleton key={task} />
+        {/* Card skeletons */}
+        {[1, 2, 3].map((card) => (
+          <CardSkeleton key={card} />
         ))}
 
-        {/* Add task button skeleton */}
+        {/* Add card button skeleton */}
         <Skeleton height={36} />
       </Stack>
     </Paper>
@@ -67,9 +68,9 @@ export function ColumnSkeleton() {
 }
 
 /**
- * Loading skeleton for task cards
+ * Loading skeleton for project cards
  */
-export function TaskCardSkeleton() {
+export function CardSkeleton() {
   return (
     <Card shadow="sm" p="sm" radius="md" withBorder>
       <Stack spacing="xs">
@@ -128,10 +129,10 @@ export function OptimisticUpdateIndicator({
   if (!isUpdating) return null;
 
   const messages = {
-    moving: 'Moving task...',
-    updating: 'Updating task...',
-    deleting: 'Deleting task...',
-    creating: 'Creating task...',
+    moving: 'Moving card...',
+    updating: 'Updating card...',
+    deleting: 'Deleting card...',
+    creating: 'Creating card...',
   };
 
   return (
@@ -245,9 +246,9 @@ export function EmptyState({
 }
 
 /**
- * Task list loading skeleton
+ * Card list loading skeleton
  */
-export function TaskListSkeleton({ count = 5 }: { count?: number }) {
+export function CardListSkeleton({ count = 5 }: { count?: number }) {
   return (
     <Stack spacing="xs">
       {Array.from({ length: count }).map((_, index) => (

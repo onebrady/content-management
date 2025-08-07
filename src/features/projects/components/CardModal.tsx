@@ -137,9 +137,22 @@ interface CardModalProps {
   card: ProjectCard;
   isOpen: boolean;
   onClose: () => void;
+  // Real-time collaboration props
+  onEditStart?: (cardId: string, field: string) => void;
+  onEditEnd?: (cardId: string, field: string) => void;
+  onEditUpdate?: (cardId: string, field: string, value: any) => void;
+  editingUsers?: Array<{ userId: string; userName: string; field: string }>;
 }
 
-export function CardModal({ card, isOpen, onClose }: CardModalProps) {
+export function CardModal({
+  card,
+  isOpen,
+  onClose,
+  onEditStart,
+  onEditEnd,
+  onEditUpdate,
+  editingUsers = [],
+}: CardModalProps) {
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || '');
   const [dueDate, setDueDate] = useState<Date | null>(card.dueDate || null);
@@ -149,36 +162,41 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
   const [newComment, setNewComment] = useState('');
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
   const [isAddingChecklist, setIsAddingChecklist] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>(
+    'idle'
+  );
 
   // Auto-save functionality
-  const debouncedSave = useDebouncedCallback(async (updates: Partial<ProjectCard>) => {
-    setSaveStatus('saving');
-    try {
-      const response = await fetch(`/api/cards/${card.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
+  const debouncedSave = useDebouncedCallback(
+    async (updates: Partial<ProjectCard>) => {
+      setSaveStatus('saving');
+      try {
+        const response = await fetch(`/api/cards/${card.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updates),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to save changes');
+        if (!response.ok) {
+          throw new Error('Failed to save changes');
+        }
+
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch (error) {
+        console.error('Auto-save error:', error);
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to save changes',
+          color: 'red',
+        });
+        setSaveStatus('idle');
       }
-
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    } catch (error) {
-      console.error('Auto-save error:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to save changes',
-        color: 'red',
-      });
-      setSaveStatus('idle');
-    }
-  }, 1000);
+    },
+    1000
+  );
 
   // Handle escape key to close modal
   useEffect(() => {
@@ -195,33 +213,42 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
   }, [isOpen, onClose]);
 
   // Handle title change
-  const handleTitleChange = useCallback((newTitle: string) => {
-    setTitle(newTitle);
-    if (newTitle !== card.title) {
-      debouncedSave({ title: newTitle });
-    }
-  }, [card.title, debouncedSave]);
+  const handleTitleChange = useCallback(
+    (newTitle: string) => {
+      setTitle(newTitle);
+      if (newTitle !== card.title) {
+        debouncedSave({ title: newTitle });
+      }
+    },
+    [card.title, debouncedSave]
+  );
 
   // Handle description change
-  const handleDescriptionChange = useCallback((newDescription: string) => {
-    setDescription(newDescription);
-    if (newDescription !== (card.description || '')) {
-      debouncedSave({ description: newDescription || null });
-    }
-  }, [card.description, debouncedSave]);
+  const handleDescriptionChange = useCallback(
+    (newDescription: string) => {
+      setDescription(newDescription);
+      if (newDescription !== (card.description || '')) {
+        debouncedSave({ description: newDescription || null });
+      }
+    },
+    [card.description, debouncedSave]
+  );
 
   // Handle due date change
-  const handleDueDateChange = useCallback((newDueDate: Date | null) => {
-    setDueDate(newDueDate);
-    debouncedSave({ dueDate: newDueDate });
-  }, [debouncedSave]);
+  const handleDueDateChange = useCallback(
+    (newDueDate: Date | null) => {
+      setDueDate(newDueDate);
+      debouncedSave({ dueDate: newDueDate });
+    },
+    [debouncedSave]
+  );
 
   // Handle completion toggle
   const handleCompletionToggle = useCallback(() => {
     const newCompleted = !completed;
     setCompleted(newCompleted);
     debouncedSave({ completed: newCompleted });
-    
+
     notifications.show({
       title: newCompleted ? 'Card completed' : 'Card marked incomplete',
       message: `"${title}" has been ${newCompleted ? 'completed' : 'marked as incomplete'}`,
@@ -292,9 +319,13 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
 
   // Calculate checklist progress
   const getChecklistProgress = useCallback((checklist: Checklist) => {
-    const completed = checklist.items.filter(item => item.completed).length;
+    const completed = checklist.items.filter((item) => item.completed).length;
     const total = checklist.items.length;
-    return { completed, total, percentage: total > 0 ? (completed / total) * 100 : 0 };
+    return {
+      completed,
+      total,
+      percentage: total > 0 ? (completed / total) * 100 : 0,
+    };
   }, []);
 
   if (!isOpen) return null;
@@ -310,10 +341,10 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
         header: classes.modalHeader,
         body: classes.modalBody,
       }}
-      overlayProps={{ 
-        backgroundOpacity: 0.55, 
+      overlayProps={{
+        backgroundOpacity: 0.55,
         blur: 3,
-        'data-testid': 'modal-overlay' 
+        'data-testid': 'modal-overlay',
       }}
       withCloseButton={false}
     >
@@ -323,7 +354,7 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
           <Box flex={1}>
             {/* Card Cover */}
             {card.cover && (
-              <div 
+              <div
                 className={classes.cardCover}
                 style={{ backgroundImage: `url(${card.cover})` }}
               />
@@ -352,26 +383,53 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
                   autoFocus
                 />
               ) : (
-                <Title 
-                  order={2} 
-                  className={classes.cardTitle}
-                  onClick={() => setIsEditingTitle(true)}
-                >
-                  {title}
-                </Title>
+                <Box style={{ position: 'relative' }}>
+                  <Title
+                    order={2}
+                    className={classes.cardTitle}
+                    onClick={() => {
+                      setIsEditingTitle(true);
+                      onEditStart?.(card.id, 'title');
+                    }}
+                  >
+                    {title}
+                  </Title>
+
+                  {/* Show editing indicators */}
+                  {editingUsers.filter((u) => u.field === 'title').length >
+                    0 && (
+                    <Group gap="xs" mt="xs">
+                      {editingUsers
+                        .filter((u) => u.field === 'title')
+                        .map((user) => (
+                          <Badge
+                            key={user.userId}
+                            size="xs"
+                            color="blue"
+                            variant="light"
+                          >
+                            {user.userName} is editing title
+                          </Badge>
+                        ))}
+                    </Group>
+                  )}
+                </Box>
               )}
             </Group>
 
             {/* List Location */}
             <Text size="sm" color="dimmed" mb="md">
-              in list <Text span fw={500}>{card.list?.title}</Text>
+              in list{' '}
+              <Text span fw={500}>
+                {card.list?.title}
+              </Text>
             </Text>
           </Box>
 
           {/* Close Button */}
-          <ActionIcon 
-            onClick={onClose} 
-            variant="subtle" 
+          <ActionIcon
+            onClick={onClose}
+            variant="subtle"
             aria-label="Close modal"
             className={classes.closeButton}
           >
@@ -385,7 +443,9 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
             {/* Labels */}
             {card.labels && card.labels.length > 0 && (
               <Box mb="md">
-                <Text size="sm" fw={600} mb="xs">Labels</Text>
+                <Text size="sm" fw={600} mb="xs">
+                  Labels
+                </Text>
                 <Group gap="xs">
                   {card.labels.map((labelRef) => (
                     <Badge
@@ -414,9 +474,11 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
             <Box mb="xl">
               <Group align="center" gap="xs" mb="xs">
                 <IconEdit size={16} color="gray" />
-                <Text size="sm" fw={600}>Description</Text>
+                <Text size="sm" fw={600}>
+                  Description
+                </Text>
               </Group>
-              
+
               {isEditingDescription ? (
                 <Textarea
                   value={description}
@@ -438,77 +500,85 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
                   {description ? (
                     <Text>{description}</Text>
                   ) : (
-                    <Text color="dimmed">Add a more detailed description...</Text>
+                    <Text color="dimmed">
+                      Add a more detailed description...
+                    </Text>
                   )}
                 </Box>
               )}
             </Box>
 
             {/* Checklists */}
-            {card.checklists && card.checklists.map((checklist) => {
-              const progress = getChecklistProgress(checklist);
-              return (
-                <Box key={checklist.id} mb="xl">
-                  <Group justify="space-between" align="center" mb="xs">
-                    <Group align="center" gap="xs">
-                      <IconChecklist size={16} color="gray" />
-                      <Text size="sm" fw={600}>{checklist.title}</Text>
-                      <Text size="sm" color="dimmed">
-                        {progress.completed}/{progress.total}
-                      </Text>
-                    </Group>
-                    <Menu>
-                      <Menu.Target>
-                        <ActionIcon variant="subtle" size="sm">
-                          <IconDots size={14} />
-                        </ActionIcon>
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        <Menu.Item leftSection={<IconTrash size={14} />}>
-                          Delete checklist
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
-                  </Group>
-
-                  {/* Progress Bar */}
-                  <Box className={classes.progressBar} mb="xs">
-                    <div 
-                      className={classes.progressFill}
-                      style={{ width: `${progress.percentage}%` }}
-                    />
-                  </Box>
-
-                  {/* Checklist Items */}
-                  <Stack gap="xs">
-                    {checklist.items.map((item) => (
-                      <Group key={item.id} align="center" gap="xs">
-                        <Checkbox
-                          checked={item.completed}
-                          onChange={() => {
-                            // Handle checklist item toggle
-                          }}
-                          aria-label={item.text}
-                        />
-                        <Text 
-                          size="sm" 
-                          td={item.completed ? 'line-through' : undefined}
-                          color={item.completed ? 'dimmed' : undefined}
-                          flex={1}
-                        >
-                          {item.text}
+            {card.checklists &&
+              card.checklists.map((checklist) => {
+                const progress = getChecklistProgress(checklist);
+                return (
+                  <Box key={checklist.id} mb="xl">
+                    <Group justify="space-between" align="center" mb="xs">
+                      <Group align="center" gap="xs">
+                        <IconChecklist size={16} color="gray" />
+                        <Text size="sm" fw={600}>
+                          {checklist.title}
                         </Text>
-                        {item.assignee && (
-                          <Avatar size="xs" src={null}>
-                            {item.assignee.name.split(' ').map(n => n[0]).join('')}
-                          </Avatar>
-                        )}
+                        <Text size="sm" color="dimmed">
+                          {progress.completed}/{progress.total}
+                        </Text>
                       </Group>
-                    ))}
-                  </Stack>
-                </Box>
-              );
-            })}
+                      <Menu>
+                        <Menu.Target>
+                          <ActionIcon variant="subtle" size="sm">
+                            <IconDots size={14} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item leftSection={<IconTrash size={14} />}>
+                            Delete checklist
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    </Group>
+
+                    {/* Progress Bar */}
+                    <Box className={classes.progressBar} mb="xs">
+                      <div
+                        className={classes.progressFill}
+                        style={{ width: `${progress.percentage}%` }}
+                      />
+                    </Box>
+
+                    {/* Checklist Items */}
+                    <Stack gap="xs">
+                      {checklist.items.map((item) => (
+                        <Group key={item.id} align="center" gap="xs">
+                          <Checkbox
+                            checked={item.completed}
+                            onChange={() => {
+                              // Handle checklist item toggle
+                            }}
+                            aria-label={item.text}
+                          />
+                          <Text
+                            size="sm"
+                            td={item.completed ? 'line-through' : undefined}
+                            color={item.completed ? 'dimmed' : undefined}
+                            flex={1}
+                          >
+                            {item.text}
+                          </Text>
+                          {item.assignee && (
+                            <Avatar size="xs" src={null}>
+                              {item.assignee.name
+                                .split(' ')
+                                .map((n) => n[0])
+                                .join('')}
+                            </Avatar>
+                          )}
+                        </Group>
+                      ))}
+                    </Stack>
+                  </Box>
+                );
+              })}
 
             {/* Add Checklist */}
             {isAddingChecklist ? (
@@ -521,8 +591,8 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
                 />
                 <Group gap="xs">
                   <Button size="xs">Add checklist</Button>
-                  <Button 
-                    size="xs" 
+                  <Button
+                    size="xs"
                     variant="subtle"
                     onClick={() => {
                       setIsAddingChecklist(false);
@@ -563,8 +633,8 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
                   mb="xs"
                 />
                 <Group gap="xs">
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     onClick={handleAddComment}
                     disabled={!newComment.trim()}
                   >
@@ -575,22 +645,31 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
 
               {/* Comments List */}
               <Stack gap="md">
-                {card.comments && card.comments.map((comment) => (
-                  <Paper key={comment.id} p="md" withBorder>
-                    <Group justify="space-between" align="center" mb="xs">
-                      <Group gap="xs">
-                        <Avatar size="sm" src={null}>
-                          {comment.user.name.split(' ').map(n => n[0]).join('')}
-                        </Avatar>
-                        <Text size="sm" fw={500}>{comment.user.name}</Text>
-                        <Text size="xs" color="dimmed">
-                          {format(new Date(comment.createdAt), 'MMM dd, yyyy at h:mm a')}
-                        </Text>
+                {card.comments &&
+                  card.comments.map((comment) => (
+                    <Paper key={comment.id} p="md" withBorder>
+                      <Group justify="space-between" align="center" mb="xs">
+                        <Group gap="xs">
+                          <Avatar size="sm" src={null}>
+                            {comment.user.name
+                              .split(' ')
+                              .map((n) => n[0])
+                              .join('')}
+                          </Avatar>
+                          <Text size="sm" fw={500}>
+                            {comment.user.name}
+                          </Text>
+                          <Text size="xs" color="dimmed">
+                            {format(
+                              new Date(comment.createdAt),
+                              'MMM dd, yyyy at h:mm a'
+                            )}
+                          </Text>
+                        </Group>
                       </Group>
-                    </Group>
-                    <Text size="sm">{comment.text}</Text>
-                  </Paper>
-                ))}
+                      <Text size="sm">{comment.text}</Text>
+                    </Paper>
+                  ))}
               </Stack>
             </Box>
           </Box>
@@ -600,17 +679,24 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
             <Stack gap="md">
               {/* Save Status */}
               {saveStatus !== 'idle' && (
-                <Text size="xs" color={saveStatus === 'saving' ? 'blue' : 'green'}>
+                <Text
+                  size="xs"
+                  color={saveStatus === 'saving' ? 'blue' : 'green'}
+                >
                   {saveStatus === 'saving' ? 'Saving...' : 'Saved'}
                 </Text>
               )}
 
               {/* Actions */}
-              <Text size="sm" fw={600} color="dimmed">Actions</Text>
+              <Text size="sm" fw={600} color="dimmed">
+                Actions
+              </Text>
 
               {/* Assignees */}
               <Box>
-                <Text size="xs" fw={500} mb="xs">Members</Text>
+                <Text size="xs" fw={500} mb="xs">
+                  Members
+                </Text>
                 {card.assignees && card.assignees.length > 0 ? (
                   <Group gap="xs" mb="xs">
                     {card.assignees.map((assignee) => (
@@ -620,7 +706,10 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
                         src={null}
                         title={assignee.user.name}
                       >
-                        {assignee.user.name.split(' ').map(n => n[0]).join('')}
+                        {assignee.user.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')}
                         <ActionIcon
                           size="xs"
                           variant="filled"
@@ -636,13 +725,21 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
                     ))}
                   </Group>
                 ) : null}
-                <Button variant="light" size="xs" leftSection={<IconUser size={14} />}>
+                <Button
+                  variant="light"
+                  size="xs"
+                  leftSection={<IconUser size={14} />}
+                >
                   Add assignee
                 </Button>
               </Box>
 
               {/* Labels */}
-              <Button variant="light" size="xs" leftSection={<IconTag size={14} />}>
+              <Button
+                variant="light"
+                size="xs"
+                leftSection={<IconTag size={14} />}
+              >
                 Add label
               </Button>
 
@@ -652,12 +749,10 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
                   <Group gap="xs" mb="xs">
                     <Group gap={4} flex={1}>
                       <IconCalendar size={14} />
-                      <Text size="xs">
-                        {format(dueDate, 'MMM dd, yyyy')}
-                      </Text>
+                      <Text size="xs">{format(dueDate, 'MMM dd, yyyy')}</Text>
                     </Group>
-                    <ActionIcon 
-                      size="xs" 
+                    <ActionIcon
+                      size="xs"
                       variant="subtle"
                       onClick={() => handleDueDateChange(null)}
                       aria-label="Remove due date"
@@ -677,7 +772,11 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
               </Box>
 
               {/* Attachments */}
-              <Button variant="light" size="xs" leftSection={<IconPaperclip size={14} />}>
+              <Button
+                variant="light"
+                size="xs"
+                leftSection={<IconPaperclip size={14} />}
+              >
                 Attach file
               </Button>
 
@@ -685,7 +784,9 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
 
               {/* Card Status */}
               <Group justify="space-between" align="center">
-                <Text size="xs" fw={500}>Complete</Text>
+                <Text size="xs" fw={500}>
+                  Complete
+                </Text>
                 <Switch
                   checked={completed}
                   onChange={handleCompletionToggle}
@@ -694,14 +795,18 @@ export function CardModal({ card, isOpen, onClose }: CardModalProps) {
               </Group>
 
               {/* Move Card */}
-              <Button variant="light" size="xs" leftSection={<IconMove size={14} />}>
+              <Button
+                variant="light"
+                size="xs"
+                leftSection={<IconMove size={14} />}
+              >
                 Move
               </Button>
 
               {/* Archive */}
-              <Button 
-                variant="light" 
-                size="xs" 
+              <Button
+                variant="light"
+                size="xs"
                 leftSection={<IconArchive size={14} />}
                 onClick={handleArchive}
                 color="orange"

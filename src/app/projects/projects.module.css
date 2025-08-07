@@ -1,0 +1,98 @@
+/* Drag and Drop Styles for Project Kanban Board */
+
+.dragHandle {
+  cursor: grab;
+  user-select: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+  position: relative;
+}
+
+.dragHandle::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dragHandle:hover::before {
+  opacity: 1;
+}
+
+.dragHandle:hover:not(.dragging) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.dragging {
+  cursor: grabbing !important;
+  transform: rotate(5deg) scale(1.05) !important;
+  opacity: 0.9 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+  z-index: 1000 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  transition: none !important;
+}
+
+.droppableColumn {
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.droppableColumnDragOver {
+  background-color: var(--mantine-color-blue-1) !important;
+  transform: scale(1.02);
+  border-color: var(--mantine-color-blue-4) !important;
+}
+
+.droppableColumnDragFrom {
+  background-color: var(--mantine-color-gray-1) !important;
+}
+
+/* Prevent pointer events during drag */
+.draggingGlobal {
+  pointer-events: none;
+}
+
+.draggingGlobal * {
+  pointer-events: none;
+}
+
+/* Smooth card transitions */
+.projectCard {
+  cursor: grab;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.projectCard:hover {
+  transform: translateY(-1px);
+}
+
+.projectCard:active {
+  cursor: grabbing;
+}
+
+.projectCard.dragging {
+  cursor: grabbing !important;
+  transform: rotate(5deg) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  z-index: 1000 !important;
+}

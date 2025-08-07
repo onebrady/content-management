@@ -1,4 +1,11 @@
-import { PrismaClient, UserRole, ContentType, Priority, ProjectVisibility, ProjectActivityAction } from '@prisma/client';
+import {
+  PrismaClient,
+  UserRole,
+  ContentType,
+  Priority,
+  ProjectVisibility,
+  ProjectActivityAction,
+} from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -155,6 +162,59 @@ async function main() {
       title: 'Client Website Redesign',
       description: 'Complete redesign of client website with modern UI/UX',
       color: 'blue',
+      status: 'in-progress', // Set initial status
+      background: null,
+      visibility: ProjectVisibility.PRIVATE,
+      starred: true,
+      template: false,
+      ownerId: admin.id,
+    },
+  });
+
+  // Create additional test projects in different statuses
+  const planningProject = await prisma.project.upsert({
+    where: { id: 'seed-project-2' },
+    update: {},
+    create: {
+      id: 'seed-project-2',
+      title: 'Mobile App Development',
+      description: 'Native mobile app for iOS and Android platforms',
+      color: 'green',
+      status: 'planning',
+      background: null,
+      visibility: ProjectVisibility.PRIVATE,
+      starred: false,
+      template: false,
+      ownerId: admin.id,
+    },
+  });
+
+  const reviewProject = await prisma.project.upsert({
+    where: { id: 'seed-project-3' },
+    update: {},
+    create: {
+      id: 'seed-project-3',
+      title: 'Brand Guidelines Update',
+      description: 'Refresh brand guidelines and design system',
+      color: 'purple',
+      status: 'review',
+      background: null,
+      visibility: ProjectVisibility.PRIVATE,
+      starred: false,
+      template: false,
+      ownerId: admin.id,
+    },
+  });
+
+  const completedProject = await prisma.project.upsert({
+    where: { id: 'seed-project-4' },
+    update: {},
+    create: {
+      id: 'seed-project-4',
+      title: 'SEO Optimization',
+      description: 'Website SEO audit and optimization',
+      color: 'orange',
+      status: 'completed',
       background: null,
       visibility: ProjectVisibility.PRIVATE,
       starred: true,
@@ -215,7 +275,8 @@ async function main() {
     create: {
       id: 'seed-card-1',
       title: 'Design Homepage Wireframes',
-      description: 'Create wireframes for the new homepage design including hero section, navigation, and footer',
+      description:
+        'Create wireframes for the new homepage design including hero section, navigation, and footer',
       position: 0,
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       listId: inProgressList.id,
@@ -229,7 +290,8 @@ async function main() {
     create: {
       id: 'seed-card-2',
       title: 'Implement Responsive Navigation',
-      description: 'Create mobile-first responsive navigation with hamburger menu for mobile devices',
+      description:
+        'Create mobile-first responsive navigation with hamburger menu for mobile devices',
       position: 0,
       listId: todoList.id,
       createdById: admin.id,
@@ -242,7 +304,8 @@ async function main() {
     create: {
       id: 'seed-card-3',
       title: 'Content Migration',
-      description: 'Migrate all existing content from old website to new CMS structure',
+      description:
+        'Migrate all existing content from old website to new CMS structure',
       position: 1,
       listId: todoList.id,
       createdById: admin.id,
@@ -256,7 +319,8 @@ async function main() {
     create: {
       id: 'seed-card-4',
       title: 'User Testing & Feedback',
-      description: 'Conduct user testing sessions and gather client feedback on new design',
+      description:
+        'Conduct user testing sessions and gather client feedback on new design',
       position: 0,
       completed: true,
       listId: doneList.id,
@@ -309,7 +373,9 @@ async function main() {
   });
 
   await prisma.projectCardLabel.upsert({
-    where: { cardId_labelId: { cardId: card2.id, labelId: developmentLabel.id } },
+    where: {
+      cardId_labelId: { cardId: card2.id, labelId: developmentLabel.id },
+    },
     update: {},
     create: {
       cardId: card2.id,
@@ -397,7 +463,9 @@ async function main() {
 
   // Create project members
   await prisma.projectMember.upsert({
-    where: { projectId_userId: { projectId: testProject.id, userId: admin.id } },
+    where: {
+      projectId_userId: { projectId: testProject.id, userId: admin.id },
+    },
     update: {},
     create: {
       projectId: testProject.id,
@@ -407,7 +475,9 @@ async function main() {
   });
 
   await prisma.projectMember.upsert({
-    where: { projectId_userId: { projectId: testProject.id, userId: contributor.id } },
+    where: {
+      projectId_userId: { projectId: testProject.id, userId: contributor.id },
+    },
     update: {},
     create: {
       projectId: testProject.id,
@@ -417,7 +487,9 @@ async function main() {
   });
 
   await prisma.projectMember.upsert({
-    where: { projectId_userId: { projectId: testProject.id, userId: moderator.id } },
+    where: {
+      projectId_userId: { projectId: testProject.id, userId: moderator.id },
+    },
     update: {},
     create: {
       projectId: testProject.id,
@@ -458,7 +530,11 @@ async function main() {
     create: {
       id: 'seed-activity-2',
       action: ProjectActivityAction.CARD_MOVED,
-      data: { fromList: 'To Do', toList: 'In Progress', cardTitle: card1.title },
+      data: {
+        fromList: 'To Do',
+        toList: 'In Progress',
+        cardTitle: card1.title,
+      },
       projectId: testProject.id,
       cardId: card1.id,
       userId: admin.id,
@@ -469,7 +545,12 @@ async function main() {
   console.log('👥 Created users:', { admin, moderator, contributor, viewer });
   console.log('🏷️  Created tags:', tags);
   console.log('📝 Created content:', content);
-  console.log('📋 Created project with board structure:', testProject);
+  console.log('📋 Created projects with different statuses:', {
+    testProject,
+    planningProject,
+    reviewProject,
+    completedProject,
+  });
   console.log('📝 Created cards with checklists and assignments');
   console.log('🎯 Created project labels and activities');
 }

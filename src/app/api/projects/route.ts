@@ -49,12 +49,22 @@ export async function POST(req: NextRequest) {
       title,
       description,
       color = 'blue',
-      defaultColumns = [
+      defaultLists = [
         { title: 'To Do', color: 'gray' },
         { title: 'In Progress', color: 'blue' },
         { title: 'Done', color: 'green' },
       ],
+      // Support legacy column format for backward compatibility
+      defaultColumns,
     } = body;
+
+    // Use defaultLists or fall back to defaultColumns for backward compatibility
+    const listsToCreate = defaultLists ||
+      defaultColumns || [
+        { title: 'To Do', color: 'gray' },
+        { title: 'In Progress', color: 'blue' },
+        { title: 'Done', color: 'green' },
+      ];
 
     // Validate required fields
     if (!title) {
@@ -64,31 +74,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!Array.isArray(defaultColumns) || defaultColumns.length === 0) {
+    if (!Array.isArray(listsToCreate) || listsToCreate.length === 0) {
       return NextResponse.json(
-        { error: 'At least one default column is required' },
+        { error: 'At least one default list is required' },
         { status: 400 }
       );
     }
 
-    if (defaultColumns.length > 10) {
+    if (listsToCreate.length > 10) {
       return NextResponse.json(
-        { error: 'Maximum 10 columns allowed per project' },
+        { error: 'Maximum 10 lists allowed per project' },
         { status: 400 }
       );
     }
 
-    // Validate column structure
-    for (const column of defaultColumns) {
-      if (!column.title || typeof column.title !== 'string') {
+    // Validate list structure
+    for (const list of listsToCreate) {
+      if (!list.title || typeof list.title !== 'string') {
         return NextResponse.json(
-          { error: 'Each column must have a valid title' },
+          { error: 'Each list must have a valid title' },
           { status: 400 }
         );
       }
     }
 
-    // Create project with columns in a transaction
+    // Create project with lists in a transaction
     const newProject = await prisma.$transaction(async (tx) => {
       try {
         // Create the project
@@ -103,13 +113,13 @@ export async function POST(req: NextRequest) {
 
         console.log('Project created successfully:', project.id);
 
-        // Create the default columns
-        const columns = await Promise.all(
-          defaultColumns.map((column, index) =>
-            tx.column.create({
+        // Create the default lists
+        const lists = await Promise.all(
+          listsToCreate.map((list, index) =>
+            tx.projectList.create({
               data: {
-                title: column.title,
-                color: column.color || 'gray',
+                title: list.title,
+                color: list.color || 'gray',
                 position: (index + 1) * 1000,
                 projectId: project.id,
               },
@@ -119,7 +129,7 @@ export async function POST(req: NextRequest) {
 
         return {
           ...project,
-          columns,
+          lists,
           members: [],
           owner: {
             id: auth.user.id,
@@ -201,7 +211,20 @@ export async function GET(req: NextRequest) {
     const [projects, total] = await Promise.all([
       prisma.project.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          color: true,
+          archived: true,
+          status: true, // Include the new status field
+          createdAt: true,
+          updatedAt: true,
+          background: true,
+          visibility: true,
+          starred: true,
+          template: true,
+          ownerId: true,
           owner: {
             select: {
               id: true,
@@ -220,11 +243,35 @@ export async function GET(req: NextRequest) {
               },
             },
           },
-          columns: {
+          lists: {
             include: {
+              cards: {
+                include: {
+                  assignees: {
+                    include: {
+                      user: {
+                        select: {
+                          id: true,
+                          name: true,
+                          email: true,
+                        },
+                      },
+                    },
+                  },
+                  labels: true,
+                  checklists: {
+                    include: {
+                      items: true,
+                    },
+                  },
+                },
+                orderBy: {
+                  position: 'asc',
+                },
+              },
               _count: {
                 select: {
-                  tasks: true,
+                  cards: true,
                 },
               },
             },
@@ -234,7 +281,7 @@ export async function GET(req: NextRequest) {
           },
           _count: {
             select: {
-              columns: true,
+              lists: true,
             },
           },
         },

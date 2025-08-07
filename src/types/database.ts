@@ -124,6 +124,7 @@ export interface ContentVersion {
   createdBy: User;
 }
 
+/** @deprecated Use ProjectCard instead */
 export interface Task {
   id: string;
   title: string;
@@ -146,6 +147,7 @@ export interface Task {
   attachments?: TaskAttachment[];
 }
 
+/** @deprecated Use ProjectCardAttachment instead */
 export interface TaskAttachment {
   id: string;
   taskId: string;
@@ -156,6 +158,7 @@ export interface TaskAttachment {
   createdAt: Date;
 }
 
+/** @deprecated Use ProjectList instead */
 export interface Column {
   id: string;
   title: string;
@@ -164,6 +167,7 @@ export interface Column {
   projectId: string;
 }
 
+/** @deprecated Use ProjectList with cards instead */
 export interface ColumnWithTasks extends Column {
   tasks: Task[];
 }
@@ -184,12 +188,34 @@ export interface Project {
   archived: boolean;
   createdAt: Date;
   updatedAt: Date;
-  columns: ColumnWithTasks[];
-  members: ProjectMember[];
   ownerId: string;
   owner: User;
+
+  // New Trello-like fields
+  background?: string | null;
+  visibility?: 'PRIVATE' | 'TEAM' | 'PUBLIC';
+  starred?: boolean;
+  template?: boolean;
+
+  // Relations (new schema)
+  lists?: ProjectList[];
+  labels?: ProjectLabel[];
+  members: ProjectMember[];
+
+  // Legacy relations (deprecated)
+  /** @deprecated Use lists instead */
+  columns?: ColumnWithTasks[];
+
+  // Computed fields
+  _count?: {
+    lists?: number;
+    cards?: number;
+    /** @deprecated Use lists count instead */
+    columns?: number;
+  };
 }
 
+/** @deprecated Use Partial<ProjectCard> instead */
 export interface TaskUpdatePayload {
   taskId: string;
   projectId?: string;
@@ -204,4 +230,134 @@ export interface TaskUpdatePayload {
   estimatedHours?: number | null;
   actualHours?: number | null;
   tags?: string[];
+}
+
+// ============================================================================
+// NEW TRELLO-LIKE PROJECT MANAGEMENT TYPES
+// ============================================================================
+
+export interface ProjectCard {
+  id: string;
+  title: string;
+  description: string | null;
+  position: number;
+  archived: boolean;
+  dueDate: Date | null;
+  cover: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  listId: string;
+  createdById: string;
+
+  // Relations
+  list?: ProjectList;
+  assignees?: ProjectCardAssignee[];
+  labels?: ProjectCardLabel[];
+  checklists?: ProjectChecklist[];
+  attachments?: ProjectCardAttachment[];
+  activities?: ProjectCardActivity[];
+  content?: Content | null;
+}
+
+export interface ProjectList {
+  id: string;
+  title: string;
+  position: number;
+  archived: boolean;
+  color: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  projectId: string;
+
+  // Relations
+  project?: Project;
+  cards?: ProjectCard[];
+
+  // Computed fields
+  _count?: {
+    cards?: number;
+  };
+}
+
+export interface ProjectChecklist {
+  id: string;
+  title: string;
+  position: number;
+  cardId: string;
+
+  // Relations
+  card?: ProjectCard;
+  items?: ProjectChecklistItem[];
+}
+
+export interface ProjectChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  position: number;
+  checklistId: string;
+  assigneeId: string | null;
+
+  // Relations
+  checklist?: ProjectChecklist;
+  assignee?: User | null;
+}
+
+export interface ProjectCardAssignee {
+  id: string;
+  cardId: string;
+  userId: string;
+
+  // Relations
+  card?: ProjectCard;
+  user?: User;
+}
+
+export interface ProjectCardLabel {
+  id: string;
+  cardId: string;
+  labelId: string;
+
+  // Relations
+  card?: ProjectCard;
+  label?: ProjectLabel;
+}
+
+export interface ProjectLabel {
+  id: string;
+  name: string;
+  color: string;
+  projectId: string;
+
+  // Relations
+  project?: Project;
+  cards?: ProjectCardLabel[];
+}
+
+export interface ProjectCardAttachment {
+  id: string;
+  filename: string;
+  url: string;
+  size: number;
+  type: string;
+  cardId: string;
+  uploadedById: string;
+  createdAt: Date;
+
+  // Relations
+  card?: ProjectCard;
+  uploadedBy?: User;
+}
+
+export interface ProjectCardActivity {
+  id: string;
+  type: string;
+  data: any; // JSON data
+  cardId: string;
+  userId: string;
+  createdAt: Date;
+
+  // Relations
+  card?: ProjectCard;
+  user?: User;
 }

@@ -1,5 +1,11 @@
-import { PrismaClient, ProjectList, ProjectCard, ProjectChecklist, ProjectChecklistItem } from '@prisma/client';
-import prisma from './prisma';
+import {
+  PrismaClient,
+  ProjectList,
+  ProjectCard,
+  ProjectChecklist,
+  ProjectChecklistItem,
+} from '@prisma/client';
+import { prisma } from './prisma';
 
 /**
  * Utility functions for board operations
@@ -13,7 +19,7 @@ export class BoardUtils {
       where: { projectId, archived: false },
       orderBy: { position: 'desc' },
     });
-    
+
     return lastList ? lastList.position + 1 : 0;
   }
 
@@ -25,7 +31,7 @@ export class BoardUtils {
       where: { listId, archived: false },
       orderBy: { position: 'desc' },
     });
-    
+
     return lastCard ? lastCard.position + 1 : 0;
   }
 
@@ -42,7 +48,7 @@ export class BoardUtils {
       const card = await tx.projectCard.findUnique({
         where: { id: cardId },
       });
-      
+
       if (!card) {
         throw new Error('Card not found');
       }
@@ -117,7 +123,10 @@ export class BoardUtils {
   /**
    * Reorder lists within a project
    */
-  static async moveLists(projectId: string, listOrders: Array<{ id: string; position: number }>): Promise<void> {
+  static async moveLists(
+    projectId: string,
+    listOrders: Array<{ id: string; position: number }>
+  ): Promise<void> {
     await prisma.$transaction(async (tx) => {
       for (const { id, position } of listOrders) {
         await tx.projectList.update({
@@ -328,14 +337,16 @@ export class BoardUtils {
   /**
    * Calculate checklist completion percentage for a card
    */
-  static calculateChecklistProgress(checklists: Array<{
-    items: Array<{ completed: boolean }>;
-  }>): { completed: number; total: number; percentage: number } {
-    const allItems = checklists.flatMap(checklist => checklist.items);
-    const completed = allItems.filter(item => item.completed).length;
+  static calculateChecklistProgress(
+    checklists: Array<{
+      items: Array<{ completed: boolean }>;
+    }>
+  ): { completed: number; total: number; percentage: number } {
+    const allItems = checklists.flatMap((checklist) => checklist.items);
+    const completed = allItems.filter((item) => item.completed).length;
     const total = allItems.length;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-    
+
     return { completed, total, percentage };
   }
 
