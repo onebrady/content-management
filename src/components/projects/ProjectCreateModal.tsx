@@ -15,6 +15,7 @@ import {
 import { useForm } from '@mantine/form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectKeys } from '@/features/projects/hooks/queryKeys';
+import { notifications } from '@mantine/notifications';
 
 interface ProjectCreateModalProps {
   opened: boolean;
@@ -66,20 +67,41 @@ export function ProjectCreateModal({
         body: JSON.stringify({
           ...data,
           visibility: 'PRIVATE',
+          // Ensure status is persisted so the project appears in the selected column
+          status: (data.status || initialStatus)
+            ?.toLowerCase()
+            .replace(/[ _]+/g, '-'),
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create project');
+        const error = await response.json().catch(() => ({}));
+        throw new Error(
+          error.error || error.message || 'Failed to create project'
+        );
       }
 
       return response.json();
     },
     onSuccess: (data) => {
+      // Invalidate all project lists and details so /projects refreshes immediately
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: projectKeys.list('all') });
       onProjectCreated?.(data);
+      notifications.show({
+        title: 'Project created',
+        message: 'Your project was created successfully',
+        color: 'green',
+      });
       handleClose();
+    },
+    onError: (err: any) => {
+      notifications.show({
+        title: 'Create failed',
+        message: err?.message || 'Failed to create project',
+        color: 'red',
+      });
     },
   });
 

@@ -1,12 +1,19 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
+import { DatesProvider } from '@mantine/dates';
+import { Notifications } from '@mantine/notifications';
+import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
 import '@mantine/core/styles.css';
 
 // Create a custom renderer that wraps components with necessary providers
-const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
-  return <MantineProvider>{children}</MantineProvider>;
-};
+const AllTheProviders = ({ children }: { children: React.ReactNode }) => (
+  <MantineProvider>
+    <Notifications />
+    <DatesProvider settings={{ locale: 'en' }}>{children}</DatesProvider>
+  </MantineProvider>
+);
 
 const customRender = (
   ui: ReactElement,

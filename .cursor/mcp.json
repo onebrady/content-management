@@ -1,7 +1,14 @@
 {
-  "mcpServers": {
-    "context7-remote": {
-      "url": "https://mcp.context7.com/mcp"
+  "servers": {
+    "shell": {
+      "command": "node",
+      "args": ["path/to/mcp-shell-server.js"],
+      "env": {
+        "E2E_TEST": "true",
+        "NEXT_PUBLIC_E2E_TEST": "true",
+        "FORCE_COLOR": "1"
+      },
+      "workingDirectory": "${workspaceFolder}"
     }
   }
 }

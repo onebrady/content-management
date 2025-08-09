@@ -19,12 +19,15 @@ export function AppLayout({ children }: AppLayoutProps) {
         collapsed: { mobile: !opened },
       }}
       padding="md"
+      // Ensure AppShell itself is not a scroll container interfering with DnD
+      style={{ overflow: 'visible' }}
     >
       <AppShell.Navbar>
         <NavbarNested />
       </AppShell.Navbar>
 
-      <AppShell.Main>{children}</AppShell.Main>
+      {/* Avoid making Main a scroll parent; let inner content manage scrolling */}
+      <AppShell.Main style={{ overflow: 'visible' }}>{children}</AppShell.Main>
     </AppShell>
   );
 }

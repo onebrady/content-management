@@ -29,6 +29,36 @@ export async function withProjectAuth(
   projectId: string,
   requiredRole: ProjectRole = 'VIEWER'
 ): Promise<AuthResult> {
+  // Test/E2E bypass: allow auth in non-production when E2E_TEST is set
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.E2E_TEST === 'true'
+  ) {
+    const fallbackUser = await prisma.user.findFirst({
+      where: { email: { in: ['admin@example.com', 'test@example.com'] } },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    if (fallbackUser) {
+      return {
+        user: {
+          id: fallbackUser.id,
+          email: fallbackUser.email,
+          name: fallbackUser.name ?? undefined,
+          role: (fallbackUser as any).role ?? 'ADMIN',
+        },
+      };
+    }
+    // Fallback static user if DB not seeded
+    return {
+      user: {
+        id: 'test-user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+        role: 'ADMIN',
+      },
+    };
+  }
+
   // Get user session
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -95,6 +125,35 @@ export async function withProjectAuth(
  * Simple authentication check for non-project-specific routes
  */
 export async function withAuth(req: NextRequest): Promise<AuthResult> {
+  // Test/E2E bypass: allow auth in non-production when E2E_TEST is set
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.E2E_TEST === 'true'
+  ) {
+    const fallbackUser = await prisma.user.findFirst({
+      where: { email: { in: ['admin@example.com', 'test@example.com'] } },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    if (fallbackUser) {
+      return {
+        user: {
+          id: fallbackUser.id,
+          email: fallbackUser.email,
+          name: fallbackUser.name ?? undefined,
+          role: (fallbackUser as any).role ?? 'ADMIN',
+        },
+      };
+    }
+    return {
+      user: {
+        id: 'test-user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+        role: 'ADMIN',
+      },
+    };
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     throw new Error('Unauthorized - No valid session');

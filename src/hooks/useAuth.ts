@@ -15,6 +15,37 @@ export interface ExtendedSession {
 }
 
 export function useAuth() {
+  // E2E bypass for client-side auth during Playwright runs
+  if (
+    typeof window !== 'undefined' &&
+    process.env.NEXT_PUBLIC_E2E_TEST === 'true'
+  ) {
+    const mockedUser: ExtendedUser = {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: 'ADMIN' as unknown as UserRole,
+      department: null,
+    };
+    return {
+      session: {
+        user: mockedUser,
+        expires: new Date(Date.now() + 86400000).toISOString(),
+      } as ExtendedSession,
+      user: mockedUser,
+      isAuthenticated: true,
+      isLoading: false,
+      signIn,
+      signOut,
+      hasRole: (role: UserRole) => role === mockedUser.role,
+      hasAnyRole: (roles: UserRole[]) => roles.includes(mockedUser.role),
+      isAdmin: true,
+      isModerator: true,
+      isContributor: true,
+      isViewer: true,
+    };
+  }
+
   const { data: session, status } = useSession();
 
   const user = session?.user as ExtendedUser | undefined;

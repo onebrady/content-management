@@ -75,6 +75,42 @@ export async function GET(
   }
 }
 
+// Remove a member via /api/projects/[id]/members?userId=...
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    if (!withRateLimit(req, 20, 15 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429 }
+      );
+    }
+
+    await withProjectAuth(req, params.id, 'ADMIN');
+
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.projectMember.delete({
+      where: {
+        projectId_userId: { projectId: params.id, userId },
+      },
+    });
+
+    return createSuccessResponse({ success: true }, 'Member removed', 200);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -174,6 +210,42 @@ export async function POST(
     });
 
     return createSuccessResponse(newMember, 'Member added successfully', 201);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+// Update member role
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    if (!withRateLimit(req, 20, 15 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429 }
+      );
+    }
+
+    await withProjectAuth(req, params.id, 'ADMIN');
+    const body = await req.json();
+    const { userId, role } = body || {};
+    if (!userId || !['VIEWER', 'MEMBER', 'ADMIN'].includes(role)) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+
+    const updated = await prisma.projectMember.update({
+      where: {
+        projectId_userId: { projectId: params.id, userId },
+      },
+      data: { role },
+      include: {
+        user: { select: { id: true, name: true, email: true, role: true } },
+      },
+    });
+
+    return createSuccessResponse(updated, 'Member role updated', 200);
   } catch (error) {
     return handleApiError(error);
   }

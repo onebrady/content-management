@@ -235,6 +235,7 @@ model Project {
   color       String    @default("blue")
   archived    Boolean   @default(false)
   status      String    @default("planning") // Project status for Kanban board
+  statusOrder Int       @default(0) // Order within a status column for /projects board
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -259,6 +260,7 @@ model Project {
 
   @@index([ownerId, archived])
   @@index([updatedAt])
+  @@index([status, statusOrder])
 }
 
 model Column {

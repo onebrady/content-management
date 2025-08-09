@@ -14,7 +14,14 @@ function createMockRequest(
     url,
     method,
     headers: new Map(),
-    json: jest.fn().mockResolvedValue(body ? JSON.parse(body) : {}),
+    json: jest.fn().mockImplementation(async () => {
+      try {
+        return body ? JSON.parse(body) : {};
+      } catch {
+        // Simulate real NextRequest.json throwing on invalid JSON
+        throw new SyntaxError('Invalid JSON');
+      }
+    }),
     text: jest.fn().mockResolvedValue(body || ''),
   } as any;
 }
@@ -34,6 +41,7 @@ jest.mock('@/lib/prisma', () => ({
       findMany: jest.fn(),
       findUnique: jest.fn(),
       count: jest.fn(),
+      update: jest.fn(),
     },
     projectMember: {
       findFirst: jest.fn(),
@@ -511,6 +519,108 @@ describe('API Integration Tests', () => {
       const response = await createProject(request);
 
       expect(response.status).toBe(400);
+    });
+  });
+
+  describe('PATCH /api/projects/[id] - Ordering and status', () => {
+    it('computes statusOrder using destIndex when provided', async () => {
+      const { PATCH } = require('../projects/[id]/route');
+      // Existing project status and owner
+      mockPrisma.project.findUnique.mockResolvedValue({
+        ownerId: 'user-1',
+        status: 'planning',
+      });
+      // Target column has two items with large gaps
+      mockPrisma.project.findMany.mockResolvedValue([
+        { id: 'a', statusOrder: 1000 },
+        { id: 'b', statusOrder: 5000 },
+      ]);
+      mockPrisma.project.update.mockResolvedValue({
+        id: 'p1',
+        status: 'in-progress',
+        statusOrder: 3000,
+      });
+
+      const req = createMockRequest('http://localhost:3000/api/projects/p1', {
+        method: 'PATCH',
+        body: JSON.stringify({ destStatus: 'In Progress', destIndex: 1 }),
+      });
+
+      const res = await PATCH(req, { params: { id: 'p1' } });
+      expect(res.status).toBe(200);
+      // Ensure compute used neighboring orders and set status
+      expect(mockPrisma.project.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'in-progress',
+            statusOrder: expect.any(Number),
+          }),
+        })
+      );
+    });
+
+    it('PATCH followed by GET reflects updated status (persistence across refetch)', async () => {
+      const { PATCH } = require('../projects/[id]/route');
+      const { GET: listProjects } = require('../projects/route');
+
+      // Existing project status and owner
+      mockPrisma.project.findUnique.mockResolvedValue({
+        ownerId: 'user-1',
+        status: 'planning',
+      });
+      // Target column neighbors for compute
+      mockPrisma.project.findMany.mockResolvedValueOnce([
+        { id: 'a', statusOrder: 1000 },
+        { id: 'b', statusOrder: 5000 },
+      ]);
+      // Update result
+      mockPrisma.project.update.mockResolvedValue({
+        id: 'p1',
+        status: 'in-progress',
+        statusOrder: 3000,
+      });
+
+      const patchReq = createMockRequest(
+        'http://localhost:3000/api/projects/p1',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ destStatus: 'In Progress', destIndex: 1 }),
+        }
+      );
+      const patchRes = await PATCH(patchReq, { params: { id: 'p1' } });
+      expect(patchRes.status).toBe(200);
+
+      // Now GET projects should reflect updated status
+      mockPrisma.project.findMany.mockResolvedValueOnce([
+        {
+          id: 'p1',
+          title: 'Test',
+          description: '',
+          color: '#3b82f6',
+          archived: false,
+          status: 'in-progress',
+          statusOrder: 3000,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          background: null,
+          visibility: 'TEAM',
+          starred: false,
+          template: false,
+          ownerId: 'user-1',
+          owner: { id: 'user-1', name: 'Test User', email: 'test@example.com' },
+          members: [],
+          lists: [],
+          _count: { lists: 0 },
+        },
+      ]);
+      mockPrisma.project.count.mockResolvedValueOnce(1);
+
+      const listReq = createMockRequest('http://localhost:3000/api/projects');
+      const listRes = await listProjects(listReq);
+      expect(listRes.status).toBe(200);
+      const listJson = await listRes.json();
+      const listed = listJson?.data?.projects?.[0];
+      expect(listed.status).toBe('in-progress');
     });
   });
 });

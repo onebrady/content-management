@@ -1,0 +1,36 @@
+
+> content-management-tool@1.0.0 test D:\Projects\WesternTruck\ContentDevelopmentFlow
+> jest "src/app/api/__tests__/api-integration.test.ts" "--verbose" "--no-coverage" "--runInBand"
+
+FAIL src/app/api/__tests__/api-integration.test.ts
+  ΓùÅ Test suite failed to run
+
+      x Expected ',', got '('
+        ,-[D:\Projects\WesternTruck\ContentDevelopmentFlow\src\app\api\__tests__\api-integration.test.ts:24:1]
+     21 |         // Simulate real NextRequest.json throwing on invalid JSON
+     22 |         throw new SyntaxError('Invalid JSON');
+     23 |       }
+     24 |     }()),
+        :      ^
+     25 |     text: jest.fn().mockResolvedValue(body || ''),
+     26 |   } as any;
+     26 | }
+        `----
+
+
+    Caused by:
+        Syntax Error
+
+      at Object.transformSync (node_modules/.pnpm/next@15.4.5_@babel+core@7.2_07e7edbdb3c7dbf6d2936fec87cdc315/node_modules/next/src/build/swc/index.ts:1374:25)
+      at transformSync (node_modules/.pnpm/next@15.4.5_@babel+core@7.2_07e7edbdb3c7dbf6d2936fec87cdc315/node_modules/next/src/build/swc/index.ts:1477:19)
+      at Object.process (node_modules/.pnpm/next@15.4.5_@babel+core@7.2_07e7edbdb3c7dbf6d2936fec87cdc315/node_modules/next/src/build/swc/jest-transformer.ts:105:25)
+      at ScriptTransformer.transformSource (node_modules/.pnpm/@jest+transform@30.0.5/node_modules/@jest/transform/build/index.js:422:31)
+      at ScriptTransformer._transformAndBuildScript (node_modules/.pnpm/@jest+transform@30.0.5/node_modules/@jest/transform/build/index.js:519:40)
+      at ScriptTransformer.transform (node_modules/.pnpm/@jest+transform@30.0.5/node_modules/@jest/transform/build/index.js:558:19)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.702 s
+Ran all test suites matching src/app/api/__tests__/api-integration.test.ts.
+ΓÇëELIFECYCLEΓÇë Test failed. See above for more details.

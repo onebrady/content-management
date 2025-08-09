@@ -6,7 +6,7 @@ import { UserPresence } from '@/features/projects/components/UserPresence';
 import { ConflictResolutionModal } from '@/features/projects/components/ConflictResolutionModal';
 import { useRealtimeBoard } from '@/hooks/useRealtimeBoard';
 import { ConflictResolver } from '@/lib/conflict-resolution';
-import { useBoardData } from '@/features/projects/hooks/useProjectData';
+import { useProject } from '@/features/projects/hooks/useProjectData';
 import { Box, Title, LoadingOverlay, Alert, Group, Paper } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -16,15 +16,19 @@ import { useSession } from 'next-auth/react';
 export default function ProjectPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string } | Promise<{ id: string }>;
 }) {
   const [id, setId] = useState<string>('');
-
   useEffect(() => {
-    params.then(({ id }) => setId(id));
+    const p: any = params as any;
+    if (p && typeof p.then === 'function') {
+      (p as Promise<{ id: string }>).then(({ id }) => setId(id));
+    } else if (p && typeof p.id === 'string') {
+      setId(p.id);
+    }
   }, [params]);
   const { data: session } = useSession();
-  const { data: project, isLoading, isError } = useBoardData(id);
+  const { data: project, isLoading, isError } = useProject(id);
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
   const [currentConflict, setCurrentConflict] = useState(null);
 
@@ -154,7 +158,7 @@ export default function ProjectPage({
               {id && (
                 <BoardView
                   projectId={id}
-                  projectData={project}
+                  project={project}
                   isLoading={isLoading}
                   onCardMove={emitCardMove}
                   onCardUpdate={emitCardUpdate}

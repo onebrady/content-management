@@ -10,8 +10,23 @@ import type { ProjectCard } from '@/types/database';
 export function useProjects() {
   return useQuery({
     queryKey: projectKeys.list('all'),
-    queryFn: () => fetch('/api/projects').then((r) => r.json()),
+    queryFn: async () => {
+      // Fetch enough records so cross-column moves don't page the moved item out
+      const r = await fetch('/api/projects?limit=1000&page=1');
+      const json = await r.json().catch(() => ({}));
+      if (!r.ok || (json && json.success === false)) {
+        const message =
+          json?.error || json?.message || 'Failed to load projects';
+        throw new Error(message);
+      }
+      return json;
+    },
+    // Reduce refetch storms during drag operations
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 0,
+    keepPreviousData: true,
   });
 }
 

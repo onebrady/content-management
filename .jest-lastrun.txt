@@ -1,0 +1,12 @@
+Error: Could not resolve a module for a custom reporter.
+  Module name: jest-junit
+    at D:\Projects\WesternTruck\ContentDevelopmentFlow\node_modules\.pnpm\jest-config@30.0.5_@types+n_450520e84be6d08428efa6fe64654ac9\node_modules\jest-config\build\index.js:1551:15
+    at Array.map (<anonymous>)
+    at normalizeReporters (D:\Projects\WesternTruck\ContentDevelopmentFlow\node_modules\.pnpm\jest-config@30.0.5_@types+n_450520e84be6d08428efa6fe64654ac9\node_modules\jest-config\build\index.js:1539:20)
+    at D:\Projects\WesternTruck\ContentDevelopmentFlow\node_modules\.pnpm\jest-config@30.0.5_@types+n_450520e84be6d08428efa6fe64654ac9\node_modules\jest-config\build\index.js:1760:17
+    at Array.reduce (<anonymous>)
+    at normalize (D:\Projects\WesternTruck\ContentDevelopmentFlow\node_modules\.pnpm\jest-config@30.0.5_@types+n_450520e84be6d08428efa6fe64654ac9\node_modules\jest-config\build\index.js:1658:14)
+    at readConfig (D:\Projects\WesternTruck\ContentDevelopmentFlow\node_modules\.pnpm\jest-config@30.0.5_@types+n_450520e84be6d08428efa6fe64654ac9\node_modules\jest-config\build\index.js:928:36)
+    at async readConfigs (D:\Projects\WesternTruck\ContentDevelopmentFlow\node_modules\.pnpm\jest-config@30.0.5_@types+n_450520e84be6d08428efa6fe64654ac9\node_modules\jest-config\build\index.js:1168:26)
+    at async runCLI (D:\Projects\WesternTruck\ContentDevelopmentFlow\node_modules\.pnpm\@jest+core@30.0.5_babel-plugin-macros@3.1.0\node_modules\@jest\core\build\index.js:1393:7)
+    at async Object.run (D:\Projects\WesternTruck\ContentDevelopmentFlow\node_modules\.pnpm\jest-cli@30.0.5_@types+node_1e315782437214b6e34b8eefde66fcbb\node_modules\jest-cli\build\index.js:656:9)
