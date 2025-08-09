@@ -25,7 +25,9 @@ import {
   IconUser,
   IconGripVertical,
 } from '@tabler/icons-react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { notifications } from '@mantine/notifications';
 import { useDebouncedCallback } from '@mantine/hooks';
 import classes from './ChecklistComponent.module.css';
@@ -169,6 +171,14 @@ export function ChecklistComponent({
     }
   }, [onItemUpdate]);
 
+  // Helper: provide a stable checkbox onChange handler for toggling item completion
+  const createItemToggleHandler = useCallback(
+    (itemId: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      return handleItemToggle(itemId, event.currentTarget.checked);
+    },
+    [handleItemToggle]
+  );
+
   // Handle adding new item
   const handleAddItem = useCallback(async () => {
     if (!newItemText.trim()) return;
@@ -276,26 +286,25 @@ export function ChecklistComponent({
   }, [onItemDelete]);
 
   // Handle drag and drop reordering
-  const handleDragEnd = useCallback((result: DropResult) => {
-    const { destination, source, draggableId } = result;
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-    if (!destination) return;
-
-    if (destination.index === source.index) return;
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    if (activeId === overId) return;
 
     const items = Array.from(checklist.items);
-    const [reorderedItem] = items.splice(source.index, 1);
-    items.splice(destination.index, 0, reorderedItem);
+    const fromIndex = items.findIndex((i) => i.id === activeId);
+    const toIndex = items.findIndex((i) => i.id === overId);
+    if (fromIndex < 0 || toIndex < 0) return;
 
-    // Calculate new positions
-    const itemOrders = items.map((item, index) => ({
-      id: item.id,
-      position: (index + 1) * 1000,
-    }));
+    const [reorderedItem] = items.splice(fromIndex, 1);
+    items.splice(toIndex, 0, reorderedItem);
 
-    if (onItemReorder) {
-      onItemReorder(checklist.id, itemOrders);
-    }
+    const itemOrders = items.map((item, index) => ({ id: item.id, position: (index + 1) * 1000 }));
+    onItemReorder?.(checklist.id, itemOrders);
   }, [checklist.items, checklist.id, onItemReorder]);
 
   // Handle assignee assignment
@@ -420,32 +429,35 @@ export function ChecklistComponent({
       )}
 
       {/* Checklist Items */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId={`checklist-${checklist.id}`}>
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={`${classes.itemsContainer} ${snapshot.isDraggingOver ? classes.dragOver : ''}`}
-            >
-              {checklist.items.map((item, index) => (
-                <Draggable key={item.id} draggableId={item.id} index={index}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className={`${classes.checklistItem} ${snapshot.isDragging ? classes.dragging : ''}`}
-                    >
-                      <Group align="flex-start" gap="xs" wrap="nowrap">
-                        {/* Drag Handle */}
-                        <div {...provided.dragHandleProps} className={classes.dragHandle}>
-                          <IconGripVertical size={14} color="gray" />
-                        </div>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className={classes.itemsContainer}>
+          <SortableContext
+            items={checklist.items.map((i) => i.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {checklist.items.map((item, index) => {
+              const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: item.id });
+              const style: React.CSSProperties = {
+                transform: CSS.Transform.toString(transform),
+                transition,
+              };
+              return (
+                <div
+                  key={item.id}
+                  ref={setNodeRef}
+                  style={style}
+                  className={`${classes.checklistItem} ${isDragging ? classes.dragging : ''}`}
+                >
+                  <Group align="flex-start" gap="xs" wrap="nowrap">
+                    {/* Drag Handle */}
+                    <div {...listeners} {...attributes} className={classes.dragHandle}>
+                      <IconGripVertical size={14} color="gray" />
+                    </div>
 
                         {/* Checkbox */}
                         <Checkbox
                           checked={item.completed}
-                          onChange={(e) => handleItemToggle(item.id, e.currentTarget.checked)}
+                          onChange={createItemToggleHandler(item.id)}
                           className={classes.checkbox}
                         />
 
@@ -524,15 +536,13 @@ export function ChecklistComponent({
                           )}
                         </Box>
                       </Group>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+                  </Group>
+                </div>
+              );
+            })}
+          </SortableContext>
+        </div>
+      </DndContext>
 
       {/* Add Item Section */}
       <Box mt="xs">
