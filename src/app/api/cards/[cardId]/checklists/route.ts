@@ -50,10 +50,7 @@ export async function POST(
     });
 
     if (!card) {
-      return NextResponse.json(
-        { error: 'Card not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Card not found' }, { status: 404 });
     }
 
     if (card.archived) {
@@ -72,11 +69,12 @@ export async function POST(
     });
 
     // Allow access if user is owner or project member
-    if (!projectMember && card.list.project.ownerId !== auth.user.id) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+    if (
+      !projectMember &&
+      card.list.project.ownerId !== auth.user.id &&
+      (auth as any)?.user?.role !== 'ADMIN'
+    ) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Parse and validate request body
@@ -119,7 +117,7 @@ export async function POST(
     return createSuccessResponse(newChecklist, 201);
   } catch (error) {
     console.error('Create Checklist API Error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
@@ -167,10 +165,7 @@ export async function GET(
     });
 
     if (!card) {
-      return NextResponse.json(
-        { error: 'Card not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Card not found' }, { status: 404 });
     }
 
     // Check if user has read access to this project
@@ -183,14 +178,12 @@ export async function GET(
 
     // Allow access if user is owner, member, or project is public
     if (
-      !projectMember && 
-      card.list.project.ownerId !== auth.user.id && 
-      card.list.project.visibility !== 'PUBLIC'
+      !projectMember &&
+      card.list.project.ownerId !== auth.user.id &&
+      card.list.project.visibility !== 'PUBLIC' &&
+      (auth as any)?.user?.role !== 'ADMIN'
     ) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Get checklists with full details

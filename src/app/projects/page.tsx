@@ -26,6 +26,7 @@ import {
   Select,
   Avatar,
   Divider,
+  Checkbox,
 } from '@mantine/core';
 import {
   IconFolder,
@@ -41,21 +42,15 @@ import {
   IconCheck,
   IconX,
 } from '@tabler/icons-react';
-import styles from './projects.module.css';
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from '@hello-pangea/dnd';
 import BoardDndKit from '@/features/projects/components/BoardDndKit';
 import { notifications } from '@mantine/notifications';
-import Link from 'next/link';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import ProjectCreateModal from '@/components/projects/ProjectCreateModal';
 import { useForm } from '@mantine/form';
 import { computeNextStatusOrder } from '@/lib/projects/order';
+import TeamMembersSection from '@/features/projects/components/TeamMembersSection';
+import QuickTaskSection from '@/features/projects/components/QuickTaskSection';
 
 // Default project status columns for new users
 const DEFAULT_PROJECT_STATUSES = [
@@ -76,308 +71,7 @@ function normalizeStatusIdClient(input?: string): string {
   return s;
 }
 
-// Optimized ProjectCard component for smooth dragging
-interface ProjectCardProps {
-  project: any;
-  index: number;
-  onViewProject: (project: any) => void;
-  onArchiveProject: (project: any) => void;
-  onDeleteProject: (project: any) => void;
-  onDebugMove?: (project: any, targetStatus: string) => void;
-  showDebug?: boolean;
-}
-
-const ProjectCard = memo(
-  ({
-    project,
-    index,
-    onViewProject,
-    onArchiveProject,
-    onDeleteProject,
-    onDebugMove,
-    showDebug = false,
-  }: ProjectCardProps) => {
-    return (
-      <Draggable draggableId={project.id} index={index}>
-        {(provided, snapshot) => (
-          <Paper
-            ref={provided.innerRef}
-            {...provided.draggableProps}
-            {...provided.dragHandleProps}
-            data-testid={`draggable-${project.id}`}
-            className={`${styles.projectCard} ${styles.dragHandle} ${
-              snapshot.isDragging ? styles.dragging : ''
-            } ${snapshot.isDropAnimating ? styles.dropAnimating : ''}`}
-            onClick={(e) => {
-              // Only open details on direct click, not during drag
-              if (!snapshot.isDragging) {
-                e.stopPropagation();
-                onViewProject(project);
-              }
-            }}
-            p="md"
-            withBorder
-            shadow="sm"
-            style={{
-              ...(snapshot.isDropAnimating
-                ? {
-                    ...provided.draggableProps.style,
-                    transitionDuration: '0.001s',
-                  }
-                : (provided.draggableProps.style as any)),
-              position: 'relative',
-              zIndex: snapshot.isDragging
-                ? 1000
-                : ((provided.draggableProps.style as any)?.zIndex ?? 'auto'),
-              pointerEvents: snapshot.isDragging ? 'none' : 'auto',
-            }}
-          >
-            <Stack gap="xs">
-              <Group justify="space-between" align="flex-start">
-                <Group gap="xs" style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: project.color || '#3b82f6',
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Text fw={500} size="sm" lineClamp={2} style={{ flex: 1 }}>
-                    {project.title}
-                  </Text>
-                </Group>
-                <Menu shadow="md" withinPortal>
-                  <Menu.Target>
-                    <ActionIcon
-                      variant="subtle"
-                      size="sm"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <IconDots size={16} />
-                    </ActionIcon>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item
-                      leftSection={<IconArchive size={14} />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onArchiveProject(project);
-                      }}
-                    >
-                      {project.archived ? 'Unarchive' : 'Archive'}
-                    </Menu.Item>
-                    <Menu.Divider />
-                    {showDebug && (
-                      <Menu.Item
-                        leftSection={<IconCheck size={14} />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDebugMove?.(project, 'in-progress');
-                        }}
-                      >
-                        Debug: Move to In Progress
-                      </Menu.Item>
-                    )}
-                    {showDebug && (
-                      <Menu.Item
-                        leftSection={<IconCheck size={14} />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDebugMove?.(project, 'planning');
-                        }}
-                      >
-                        Debug: Move to Planning
-                      </Menu.Item>
-                    )}
-                    {showDebug && <Menu.Divider />}
-                    <Menu.Item
-                      leftSection={<IconTrash size={14} />}
-                      color="red"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteProject(project);
-                      }}
-                    >
-                      Delete Project
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-              </Group>
-
-              {project.description && (
-                <Text size="xs" c="dimmed" lineClamp={2}>
-                  {project.description}
-                </Text>
-              )}
-
-              {/* Project Metadata */}
-              <Group justify="space-between" gap="xs">
-                <Group gap="xs">
-                  <IconCalendar size={12} color="var(--mantine-color-gray-6)" />
-                  <Text size="xs" c="dimmed">
-                    {new Date(project.updatedAt).toLocaleDateString()}
-                  </Text>
-                </Group>
-                <Group gap="xs">
-                  <IconUsers size={12} color="var(--mantine-color-gray-6)" />
-                  <Text size="xs" c="dimmed">
-                    {(project.members?.length || 0) + 1}
-                  </Text>
-                </Group>
-              </Group>
-            </Stack>
-          </Paper>
-        )}
-      </Draggable>
-    );
-  }
-);
-
-ProjectCard.displayName = 'ProjectCard';
-
-// Optimized column component for better performance
-interface ColumnProps {
-  status: { id: string; title: string; color: string };
-  projects: any[];
-  onViewProject: (project: any) => void;
-  onArchiveProject: (project: any) => void;
-  onDeleteProject: (project: any) => void;
-  onAddProject: (statusId: string) => void;
-  onEditColumn?: (status: { id: string; title: string; color: string }) => void;
-  onDeleteColumn?: (statusId: string) => void;
-  canEdit?: boolean;
-  // Debug helpers wired from parent so we don't reference parent-local state here
-  onDebugMove?: (project: any, index: number, targetStatus: string) => void;
-  showDebug?: boolean;
-}
-
-const ProjectColumn = memo(
-  ({
-    status,
-    projects,
-    onViewProject,
-    onArchiveProject,
-    onDeleteProject,
-    onAddProject,
-    onEditColumn,
-    onDeleteColumn,
-    canEdit = false,
-    onDebugMove,
-    showDebug = false,
-  }: ColumnProps) => {
-    const [isEditingTitle, setIsEditingTitle] = useState(false);
-    const [editTitle, setEditTitle] = useState(status.title);
-
-    const handleTitleEdit = () => {
-      if (isEditingTitle && editTitle.trim() && editTitle !== status.title) {
-        onEditColumn?.({ ...status, title: editTitle.trim() });
-      }
-      setIsEditingTitle(false);
-    };
-
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        handleTitleEdit();
-      } else if (e.key === 'Escape') {
-        setEditTitle(status.title);
-        setIsEditingTitle(false);
-      }
-    };
-
-    return (
-      <Paper
-        withBorder
-        radius="md"
-        className={`droppableColumn`}
-        style={{
-          minWidth: '320px',
-          width: '320px',
-          minHeight: '500px',
-          display: 'flex',
-          flexDirection: 'column',
-          background: 'var(--mantine-color-gray-0)',
-        }}
-        p="md"
-      >
-        {/* Column Header */}
-        <Group justify="space-between" align="center" mb="md">
-          <Group gap="xs" style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                background: status.color,
-                flexShrink: 0,
-              }}
-            />
-            <Title order={4} fw={600} style={{ flex: 1 }}>
-              {status.title}
-            </Title>
-          </Group>
-          <Badge variant="light" size="sm">
-            {projects.length}
-          </Badge>
-        </Group>
-
-        {/* Project Cards droppable area (only the list is droppable) */}
-        <Droppable droppableId={status.id} type="project">
-          {(provided, snapshot) => (
-            <Stack
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              gap="sm"
-              /* Ensure this is the ONLY scroll parent for items */
-              style={{
-                flex: 1,
-                minHeight: '300px',
-                overflowY: 'auto',
-                overflowX: 'hidden',
-              }}
-              data-testid={`column-${status.id}`}
-              data-e2e-column-id={status.id}
-              className={`${snapshot.isDraggingOver ? styles.dragOver : ''} ${styles.droppableList}`}
-            >
-              {projects.map((project, index) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  index={index}
-                  onViewProject={onViewProject}
-                  onArchiveProject={onArchiveProject}
-                  onDeleteProject={onDeleteProject}
-                  showDebug={showDebug}
-                  onDebugMove={(p, target) => onDebugMove?.(p, index, target)}
-                />
-              ))}
-              {provided.placeholder}
-            </Stack>
-          )}
-        </Droppable>
-
-        {/* Add Project Card Button */}
-        <Button
-          variant="subtle"
-          leftSection={<IconPlus size={14} />}
-          size="sm"
-          fullWidth
-          onClick={() => onAddProject(status.id)}
-          style={{
-            marginTop: '8px',
-            color: 'var(--mantine-color-gray-6)',
-            justifyContent: 'flex-start',
-          }}
-        >
-          Add a project
-        </Button>
-      </Paper>
-    );
-  }
-);
-
-ProjectColumn.displayName = 'ProjectColumn';
+// Removed legacy hello-pangea/dnd components and columns
 
 // ProjectEditForm component
 interface ProjectEditFormProps {
@@ -462,7 +156,7 @@ function ProjectEditForm({
 export default function ProjectsPage() {
   const isE2ETest =
     typeof window !== 'undefined' &&
-    process.env.NEXT_PUBLIC_E2E_TEST === 'true';
+    process.env['NEXT_PUBLIC_E2E_TEST'] === 'true';
   const [createModalOpened, setCreateModalOpened] = useState(false);
   const [deleteModalOpened, setDeleteModalOpened] = useState(false);
   const [archiveModalOpened, setArchiveModalOpened] = useState(false);
@@ -542,6 +236,10 @@ export default function ProjectsPage() {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskListId, setNewTaskListId] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTaskTitle, setEditingTaskTitle] = useState('');
+  const [isSavingTaskId, setIsSavingTaskId] = useState<string | null>(null);
+  const [isDeletingTaskId, setIsDeletingTaskId] = useState<string | null>(null);
 
   // Column management state
   const [projectStatuses, setProjectStatuses] = useState(
@@ -652,7 +350,9 @@ export default function ProjectsPage() {
       // Build grouped map for destination list
       const grouped: Record<string, any[]> = {};
       projectStatuses.forEach((s) => (grouped[s.id] = []));
-      const projectsAll: any[] = response?.data?.projects || [];
+      const projectsAll: any[] = ((response as any)?.data?.projects ||
+        (response as any)?.projects ||
+        []) as any[];
       projectsAll.forEach((p) => {
         const sid = p.status || 'planning';
         if (grouped[sid]) grouped[sid].push(p);
@@ -674,7 +374,7 @@ export default function ProjectsPage() {
       const insertIndex = Math.min(args.destIndex, destList.length);
       return computeNextStatusOrder(destList as any, insertIndex);
     },
-    [projectStatuses, response?.data?.projects]
+    [projectStatuses, (response as any)?.data?.projects]
   );
 
   // Project status update mutation - persist status and statusOrder
@@ -881,13 +581,17 @@ export default function ProjectsPage() {
 
       projects.forEach((project) => {
         const status = getProjectStatus(project);
-        if (grouped[status]) {
+        if (status && grouped[status]) {
           grouped[status].push(project);
         } else {
           // If project has unknown status, put in first available column
-          const firstColumn = projectStatuses[0];
-          if (firstColumn) {
-            grouped[firstColumn.id].push(project);
+          const firstColumn = projectStatuses?.[0];
+          const keys = Object.keys(grouped);
+          const fallbackId: string | null =
+            (firstColumn ? (firstColumn.id as string) : null) ??
+            (keys.length > 0 ? (keys[0] as string) : null);
+          if (fallbackId) {
+            grouped[fallbackId]!.push(project);
           }
         }
       });
@@ -897,112 +601,7 @@ export default function ProjectsPage() {
     [projectStatuses]
   );
 
-  // Handle drag start
-  const handleDragStart = useCallback(() => {
-    setIsDragging(true);
-    // Disable pointer events to prevent hover effects during drag
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'grabbing';
-    // eslint-disable-next-line no-console
-    console.info('[Projects DnD] DragStart');
-    if (process.env.NEXT_PUBLIC_E2E_TEST !== 'true') {
-      // Diagnostic: log scroll parents for first droppable
-      try {
-        const firstDroppable = document.querySelector('[data-e2e-column-id]');
-        const scrollParents: string[] = [];
-        let p: any = firstDroppable?.parentElement;
-        while (p) {
-          const style = window.getComputedStyle(p);
-          if (
-            ['auto', 'scroll'].includes(style.overflow) ||
-            ['auto', 'scroll'].includes(style.overflowY) ||
-            ['auto', 'scroll'].includes(style.overflowX)
-          ) {
-            scrollParents.push(
-              `${p.tagName.toLowerCase()}${p.className ? '.' + String(p.className).split(' ').join('.') : ''}`
-            );
-          }
-          p = p.parentElement;
-        }
-        // Only emit if something interesting
-        if (scrollParents.length) {
-          // eslint-disable-next-line no-console
-          console.warn(
-            '[Projects DnD] Scroll parents detected for Droppable:',
-            scrollParents
-          );
-        }
-      } catch {}
-    }
-  }, []);
-
-  // Handle drag end
-  const handleDragEnd = useCallback(
-    (result: DropResult) => {
-      setIsDragging(false);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      const { destination, source, draggableId } = result;
-      if (
-        !destination ||
-        (destination.droppableId === source.droppableId &&
-          destination.index === source.index)
-      ) {
-        return;
-      }
-      const sourceId = source.droppableId.toLowerCase().replace(/[ _]+/g, '-');
-      const destId = destination.droppableId
-        .toLowerCase()
-        .replace(/[ _]+/g, '-');
-      const statusOrder = computeNewStatusOrder({
-        draggableId,
-        sourceDroppableId: sourceId,
-        destDroppableId: destId,
-        sourceIndex: source.index,
-        destIndex: destination.index,
-      });
-
-      // Diagnostics
-      // eslint-disable-next-line no-console
-      console.info('[Projects DnD] DragEnd', {
-        draggableId,
-        source: { id: sourceId, index: source.index },
-        dest: { id: destId, index: destination.index },
-        computedStatusOrder: statusOrder,
-        placeholderSettled: true,
-      });
-
-      // Persist immediately
-      (updateProjectStatusMutation as any)
-        .mutateAsync({
-          projectId: draggableId,
-          status: destId,
-          sourceIndex: source.index,
-          destIndex: destination.index,
-          sourceDroppableId: sourceId,
-          destDroppableId: destId,
-          statusOrder,
-          destIndex: destination.index,
-        })
-        .catch(() => {
-          /* handled in onError */
-        });
-    },
-    [updateProjectStatusMutation, computeNewStatusOrder]
-  );
-
-  // Optional: log drag updates to confirm events are firing
-  const handleDragUpdate = useCallback((update: any) => {
-    try {
-      const d = update?.destination;
-      if (d) {
-        // eslint-disable-next-line no-console
-        console.info('[Projects DnD] DragUpdate', {
-          dest: { id: d.droppableId, index: d.index },
-        });
-      }
-    } catch {}
-  }, []);
+  // Removed legacy drag handlers (hello-pangea/dnd)
 
   // Column management handlers
   const handleEditColumn = useCallback(
@@ -1052,7 +651,8 @@ export default function ProjectsPage() {
   }, []);
 
   // Backward/forward compatible response handling
-  const projects = response?.data?.projects ?? response?.projects ?? [];
+  const projects =
+    (response as any)?.data?.projects ?? (response as any)?.projects ?? [];
 
   // Memoize grouped projects for better performance
   const groupedProjects = useMemo(
@@ -1062,7 +662,7 @@ export default function ProjectsPage() {
 
   // One-time diagnostic on mount: log ancestor scroll parents for first droppable
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_E2E_TEST === 'true') return;
+    if (process.env['NEXT_PUBLIC_E2E_TEST'] === 'true') return;
     try {
       const el = document.querySelector('[data-e2e-column-id]');
       if (!el) return;
@@ -1120,7 +720,29 @@ export default function ProjectsPage() {
       const res = await fetch(`/api/projects/${projectId}`);
       if (!res.ok) return;
       const detail = await res.json();
-      setSelectedProject((prev: any) => ({ ...prev, ...detail }));
+      let data = (detail?.data ?? detail) as any;
+      // Fallback: if lists not present, hydrate from board endpoint
+      if (
+        !data?.lists ||
+        !Array.isArray(data.lists) ||
+        data.lists.length === 0
+      ) {
+        try {
+          const boardRes = await fetch(`/api/projects/${projectId}/board`);
+          if (boardRes.ok) {
+            const boardJson = await boardRes.json().catch(() => ({}));
+            const board = boardJson?.data ?? boardJson;
+            if (board?.lists) {
+              data = { ...data, lists: board.lists };
+            }
+          }
+        } catch {}
+      }
+      setSelectedProject((prev: any) => ({ ...prev, ...data }));
+      // Initialize quick task default list after lists load
+      if (!newTaskListId && Array.isArray(data?.lists) && data.lists.length) {
+        setNewTaskListId(data.lists[0].id);
+      }
     } catch {}
   }, []);
 
@@ -1204,16 +826,18 @@ export default function ProjectsPage() {
     if (!selectedProject?.id || !newTaskListId || !newTaskTitle.trim()) return;
     try {
       setIsAddingTask(true);
+      const taskTitle = newTaskTitle.trim();
       const res = await fetch(`/api/lists/${newTaskListId}/cards`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTaskTitle.trim() }),
+        body: JSON.stringify({ title: taskTitle }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || 'Failed to add task');
       }
-      const created = await res.json().catch(() => null);
+      const createdRaw = await res.json().catch(() => null);
+      const created = (createdRaw && (createdRaw.data ?? createdRaw)) || null;
       setNewTaskTitle('');
       notifications.show({
         title: 'Task created',
@@ -1233,11 +857,18 @@ export default function ProjectsPage() {
                 ? {
                     ...l,
                     cards: [
+                      ...(l.cards || []),
                       {
                         id: created?.id || `temp-${Date.now()}`,
-                        title: created?.title || newTaskTitle.trim(),
+                        title: created?.title || taskTitle,
                         description: created?.description || null,
-                        position: created?.position || 0,
+                        position:
+                          created?.position ??
+                          (l.cards && l.cards.length
+                            ? (l.cards[l.cards.length - 1].position ??
+                              l.cards.length - 1)
+                            : -1) + 1,
+                        completed: created?.completed ?? false,
                         archived: false,
                         cover: null,
                         dueDate: null,
@@ -1246,7 +877,6 @@ export default function ProjectsPage() {
                         updatedAt:
                           created?.updatedAt || new Date().toISOString(),
                       },
-                      ...(l.cards || []),
                     ],
                   }
                 : l
@@ -1254,6 +884,22 @@ export default function ProjectsPage() {
           };
         });
       }
+      // Rehydrate lists to ensure persistence is visible
+      try {
+        const boardRes = await fetch(
+          `/api/projects/${selectedProject!.id}/board`
+        );
+        if (boardRes.ok) {
+          const boardJson: any = await boardRes.json().catch(() => ({}) as any);
+          const board = (boardJson && (boardJson.data ?? boardJson)) as any;
+          if (board?.lists) {
+            setSelectedProject((prev: any) => ({
+              ...prev,
+              lists: board.lists,
+            }));
+          }
+        }
+      } catch {}
     } catch (e) {
       console.error(e);
       notifications.show({
@@ -1266,27 +912,149 @@ export default function ProjectsPage() {
     }
   }, [selectedProject?.id, newTaskListId, newTaskTitle, queryClient]);
 
-  const useDndKit = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return process.env.NEXT_PUBLIC_USE_DND_KIT === 'true';
-    }
-    const forced = new URLSearchParams(window.location.search).get('dnd');
-    if (forced === 'kit') return true;
-    if (forced === 'pangea') return false;
-    return process.env.NEXT_PUBLIC_USE_DND_KIT === 'true';
+  // Helpers to mutate tasks in local modal state
+  const updateCardInState = useCallback(
+    (cardId: string, updater: (c: any) => any) => {
+      setSelectedProject((prev: any) => {
+        if (!prev?.lists) return prev;
+        return {
+          ...prev,
+          lists: prev.lists.map((l: any) => ({
+            ...l,
+            cards: (l.cards || []).map((c: any) =>
+              c.id === cardId ? updater(c) : c
+            ),
+          })),
+        };
+      });
+    },
+    []
+  );
+
+  const removeCardFromState = useCallback((cardId: string) => {
+    setSelectedProject((prev: any) => {
+      if (!prev?.lists) return prev;
+      return {
+        ...prev,
+        lists: prev.lists.map((l: any) => ({
+          ...l,
+          cards: (l.cards || []).filter((c: any) => c.id !== cardId),
+        })),
+      };
+    });
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.info(
-      '[Projects Board] DnD library:',
-      useDndKit ? 'dnd-kit' : 'hello-pangea/dnd'
-    );
-  }, [useDndKit]);
+  const handleToggleTaskCompleted = useCallback(
+    async (cardId: string, nextCompleted: boolean) => {
+      try {
+        setIsSavingTaskId(cardId);
+        updateCardInState(cardId, (c) => ({ ...c, completed: nextCompleted }));
+        const res = await fetch(`/api/cards/${cardId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ completed: nextCompleted }),
+        });
+        if (!res.ok) throw new Error('Failed to update task');
+      } catch (e) {
+        updateCardInState(cardId, (c) => ({ ...c, completed: !nextCompleted }));
+        notifications.show({
+          title: 'Error',
+          message: (e as Error).message,
+          color: 'red',
+        });
+      } finally {
+        setIsSavingTaskId(null);
+      }
+    },
+    [updateCardInState]
+  );
+
+  const handleStartEditTask = useCallback((cardId: string, title: string) => {
+    setEditingTaskId(cardId);
+    setEditingTaskTitle(title);
+  }, []);
+
+  const handleCancelEditTask = useCallback(() => {
+    setEditingTaskId(null);
+    setEditingTaskTitle('');
+  }, []);
+
+  const handleSaveTaskTitle = useCallback(async () => {
+    if (!editingTaskId) return;
+    const cardId = editingTaskId;
+    const title = editingTaskTitle.trim();
+    if (!title) return;
+    try {
+      setIsSavingTaskId(cardId);
+      updateCardInState(cardId, (c) => ({ ...c, title }));
+      const res = await fetch(`/api/cards/${cardId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+      if (!res.ok) throw new Error('Failed to rename task');
+      setEditingTaskId(null);
+      setEditingTaskTitle('');
+    } catch (e) {
+      notifications.show({
+        title: 'Error',
+        message: (e as Error).message,
+        color: 'red',
+      });
+    } finally {
+      setIsSavingTaskId(null);
+    }
+  }, [editingTaskId, editingTaskTitle, updateCardInState]);
+
+  const handleDeleteTask = useCallback(
+    async (cardId: string) => {
+      try {
+        setIsDeletingTaskId(cardId);
+        removeCardFromState(cardId);
+        const res = await fetch(`/api/cards/${cardId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete task');
+        notifications.show({
+          title: 'Task deleted',
+          message: '',
+          color: 'green',
+        });
+      } catch (e) {
+        notifications.show({
+          title: 'Error',
+          message: (e as Error).message,
+          color: 'red',
+        });
+        try {
+          if (selectedProject?.id) {
+            const boardRes = await fetch(
+              `/api/projects/${selectedProject!.id}/board`
+            );
+            if (boardRes.ok) {
+              const boardJson: any = await boardRes
+                .json()
+                .catch(() => ({}) as any);
+              const board = (boardJson && (boardJson.data ?? boardJson)) as any;
+              if (board?.lists) {
+                setSelectedProject((prev: any) => ({
+                  ...prev,
+                  lists: board.lists,
+                }));
+              }
+            }
+          }
+        } catch {}
+      } finally {
+        setIsDeletingTaskId(null);
+      }
+    },
+    [removeCardFromState, selectedProject?.id]
+  );
+
+  // Single implementation: dnd-kit
 
   const content = (
     <AppLayout>
-      <Box p="xl" style={{ overflow: useDndKit ? 'visible' : 'hidden' }}>
+      <Box p="xl" style={{ overflow: 'visible' }}>
         {/* Header */}
         <Box mb="xl">
           <Title order={1} mb="xs">
@@ -1299,7 +1067,7 @@ export default function ProjectsPage() {
 
         {isLoading ? (
           <LoadingOverlay visible />
-        ) : useDndKit ? (
+        ) : (
           <BoardDndKit
             statuses={projectStatuses}
             grouped={groupedProjects}
@@ -1308,7 +1076,6 @@ export default function ProjectsPage() {
             onAddProject={handleAddProject}
             onEditColumn={handleEditColumn}
             onDeleteColumn={handleDeleteColumn}
-            onAddColumn={handleAddColumn}
             onMove={({
               projectId,
               fromStatus,
@@ -1347,97 +1114,6 @@ export default function ProjectsPage() {
             }}
             onClickProject={handleViewProject}
           />
-        ) : (
-          /* Main Kanban Board */
-          <DragDropContext
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragUpdate={handleDragUpdate}
-          >
-            <div
-              className={`${styles.boardContainer} ${projectDetailsOpened ? styles.boardDisabled : ''}`}
-              data-e2e-board
-              style={{ overflow: 'visible' }}
-            >
-              {projectStatuses.map((status) => (
-                <ProjectColumn
-                  key={status.id}
-                  status={status}
-                  projects={groupedProjects[status.id] || []}
-                  onViewProject={handleViewProject}
-                  onArchiveProject={handleArchiveProject}
-                  onDeleteProject={handleDeleteProject}
-                  onAddProject={handleAddProject}
-                  onEditColumn={handleEditColumn}
-                  onDeleteColumn={handleDeleteColumn}
-                  canEdit={true}
-                  showDebug={true}
-                  onDebugMove={(p, idx, target) => {
-                    try {
-                      // eslint-disable-next-line no-console
-                      console.info(
-                        '[Projects DnD] Debug move click',
-                        p.id,
-                        '->',
-                        target
-                      );
-                      const sourceId = (p.status || 'planning')
-                        .toLowerCase()
-                        .replace(/[ _]+/g, '-');
-                      const destId = target
-                        .toLowerCase()
-                        .replace(/[ _]+/g, '-');
-                      const destIndex = 0;
-                      const statusOrder = computeNewStatusOrder({
-                        draggableId: p.id,
-                        sourceDroppableId: sourceId,
-                        destDroppableId: destId,
-                        sourceIndex: idx,
-                        destIndex,
-                      });
-                      (updateProjectStatusMutation as any)
-                        .mutateAsync({
-                          projectId: p.id,
-                          status: destId,
-                          destIndex,
-                          statusOrder,
-                        })
-                        .catch(() => {});
-                    } catch (e) {
-                      // eslint-disable-next-line no-console
-                      console.error('[Projects DnD] Debug move error', e);
-                    }
-                  }}
-                />
-              ))}
-
-              {/* Add Column Button */}
-              <Paper
-                withBorder
-                radius="md"
-                style={{
-                  minWidth: '320px',
-                  width: '320px',
-                  minHeight: '100px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  backgroundColor: 'var(--mantine-color-gray-0)',
-                  borderStyle: 'dashed',
-                }}
-                p="md"
-                onClick={handleAddColumn}
-              >
-                <Stack align="center" gap="sm">
-                  <IconPlus size={32} color="var(--mantine-color-gray-6)" />
-                  <Text size="sm" c="dimmed" fw={500}>
-                    Add another list
-                  </Text>
-                </Stack>
-              </Paper>
-            </div>
-          </DragDropContext>
         )}
       </Box>
 
@@ -1598,117 +1274,38 @@ export default function ProjectsPage() {
                   </Text>
                 </Group>
               </div>
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconEdit size={14} />}
+                onClick={() => setIsEditingProject(true)}
+              >
+                Edit
+              </Button>
             </Group>
 
-            <div>
-              <Text fw={500} mb="xs">
-                Team Members
-              </Text>
-              <Stack gap="xs">
-                <Group gap="xs" wrap="wrap">
-                  {projectMembers?.map((m) => (
-                    <Group key={m.user.id || m.id} gap={6} align="center">
-                      <Avatar size="sm" radius="xl" color="blue">
-                        {(m.user.name || m.user.email || '?')
-                          .split(' ')
-                          .map((n: string) => n[0])
-                          .join('')}
-                      </Avatar>
-                      <Text size="xs">{m.user.name || m.user.email}</Text>
-                      <Select
-                        size="xs"
-                        data={[
-                          { value: 'VIEWER', label: 'Viewer' },
-                          { value: 'MEMBER', label: 'Member' },
-                          { value: 'ADMIN', label: 'Admin' },
-                        ]}
-                        value={m.role}
-                        onChange={(val) =>
-                          val && handleUpdateMemberRole(m.user.id, val as any)
-                        }
-                        w={120}
-                      />
-                      {m.role !== 'OWNER' && (
-                        <Button
-                          size="xs"
-                          variant="subtle"
-                          color="red"
-                          onClick={() => handleRemoveMember(m.user.id)}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </Group>
-                  ))}
-                </Group>
-                <Group gap="xs">
-                  <Select
-                    placeholder={
-                      isLoadingMembers ? 'Loading users...' : 'Add member...'
-                    }
-                    data={allUsers
-                      .filter(
-                        (u) =>
-                          !projectMembers?.some((m) => m.user.id === u.id) &&
-                          u.id !== selectedProject.ownerId
-                      )
-                      .map((u) => ({
-                        value: u.id,
-                        label: u.name || u.email,
-                      }))}
-                    searchable
-                    value={selectedUserToAdd}
-                    onChange={setSelectedUserToAdd}
-                    nothingFoundMessage={
-                      isLoadingMembers ? 'Loading...' : 'No users'
-                    }
-                    w={260}
-                  />
-                  <Button
-                    size="xs"
-                    onClick={handleAddMember}
-                    disabled={!selectedUserToAdd}
-                  >
-                    Add
-                  </Button>
-                </Group>
-              </Stack>
-            </div>
+            <TeamMembersSection
+              projectId={selectedProject.id}
+              projectOwnerId={selectedProject.ownerId}
+              members={projectMembers || []}
+              allUsers={allUsers}
+              isLoading={isLoadingMembers}
+              onAddMember={() => {
+                if (!selectedUserToAdd) return;
+                handleAddMember();
+              }}
+              onRemoveMember={handleRemoveMember}
+            />
 
             <Divider />
 
-            {/* Quick add task into a list */}
-            <div>
-              <Text fw={500} mb="xs">
-                Quick Task
-              </Text>
-              <Group align="flex-end" gap="xs" wrap="wrap">
-                <TextInput
-                  placeholder="Task title"
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  w={280}
-                />
-                <Select
-                  placeholder="Select list"
-                  data={(selectedProject?.lists || []).map((l: any) => ({
-                    value: l.id,
-                    label: l.title,
-                  }))}
-                  value={newTaskListId}
-                  onChange={setNewTaskListId}
-                  w={220}
-                />
-                <Button
-                  size="sm"
-                  loading={isAddingTask}
-                  onClick={handleAddTask}
-                  disabled={!newTaskTitle.trim() || !newTaskListId}
-                >
-                  Add Task
-                </Button>
-              </Group>
-            </div>
+            <QuickTaskSection
+              projectId={selectedProject.id}
+              lists={selectedProject?.lists || []}
+              onReplaceLists={(lists) =>
+                setSelectedProject((prev: any) => ({ ...prev, lists }))
+              }
+            />
 
             <Group justify="flex-end" mt="md">
               <Button

@@ -6,7 +6,10 @@ import { prisma } from '@/lib/prisma';
 // GET /api/users/[id] - Get a specific user
 export const GET = createProtectedHandler(async (req, context) => {
   try {
-    const { params } = context;
+    const params =
+      context?.params && typeof context.params.then === 'function'
+        ? await context.params
+        : context.params;
     const { id } = params;
 
     const user = await prisma.user.findUnique({
@@ -37,18 +40,16 @@ export const GET = createProtectedHandler(async (req, context) => {
 // PUT /api/users/[id] - Update a user
 export const PUT = createProtectedHandler(async (req, context) => {
   try {
-    const { params } = context;
+    const params =
+      context?.params && typeof context.params.then === 'function'
+        ? await context.params
+        : context.params;
     const { id } = params;
-    const body = await req.json();
-    const { name, email, role, department } = body;
-
-    // Validate required fields
-    if (!name || !email || !role) {
-      return NextResponse.json(
-        { error: 'Name, email, and role are required' },
-        { status: 400 }
-      );
-    }
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {}
+    const { name, email, role, department } = body || {};
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -59,15 +60,24 @@ export const PUT = createProtectedHandler(async (req, context) => {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Update user
+    // Build partial update; fall back to existing values when omitted
+    const updateData: any = {
+      ...(typeof name === 'string' && name.trim() ? { name } : {}),
+      ...(typeof email === 'string' && email.trim() ? { email } : {}),
+      ...(typeof role === 'string' && role.trim() ? { role } : {}),
+      ...(department !== undefined ? { department: department || null } : {}),
+    };
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields provided to update' },
+        { status: 400 }
+      );
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: {
-        name,
-        email,
-        role,
-        department: department || null,
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
@@ -90,7 +100,10 @@ export const PUT = createProtectedHandler(async (req, context) => {
 // DELETE /api/users/[id] - Delete a user
 export const DELETE = createProtectedHandler(async (req, context) => {
   try {
-    const { params } = context;
+    const params =
+      context?.params && typeof context.params.then === 'function'
+        ? await context.params
+        : context.params;
     const { id } = params;
 
     // Check if user exists

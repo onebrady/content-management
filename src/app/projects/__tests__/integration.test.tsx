@@ -20,27 +20,29 @@ const mockUseProjects = useProjects as jest.MockedFunction<typeof useProjects>;
 
 // Mock BoardView component
 jest.mock('@/features/projects/components/BoardView', () => {
+  const MockBoardView = ({ project }: { project: any }) => {
+    return (
+      <div data-testid="board-view">
+        <h2>{project.title}</h2>
+        <div data-testid="lists-container">
+          {project.lists?.map((list: any) => (
+            <div key={list.id} data-testid={`list-${list.id}`}>
+              {list.title}
+              {list.cards?.map((card: any) => (
+                <div key={card.id} data-testid={`card-${card.id}`}>
+                  {card.title}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
   return {
     __esModule: true,
-    default: function MockBoardView({ project }: { project: any }) {
-      return (
-        <div data-testid="board-view">
-          <h2>{project.title}</h2>
-          <div data-testid="lists-container">
-            {project.lists?.map((list: any) => (
-              <div key={list.id} data-testid={`list-${list.id}`}>
-                {list.title}
-                {list.cards?.map((card: any) => (
-                  <div key={card.id} data-testid={`card-${card.id}`}>
-                    {card.title}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    },
+    default: MockBoardView,
+    BoardView: MockBoardView,
   };
 });
 

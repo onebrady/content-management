@@ -14,7 +14,7 @@ import { BoardUtils } from '@/lib/board-utils';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
     // Rate limiting
@@ -27,7 +27,11 @@ export async function GET(
 
     // Authentication
     const auth = await withAuth(req);
-    const projectId = params.id;
+    const { id } =
+      context?.params && typeof (context.params as any)?.then === 'function'
+        ? await (context.params as Promise<{ id: string }>)
+        : (context.params as { id: string });
+    const projectId = id;
 
     // Check if user has access to this project
     const projectMember = await prisma.projectMember.findFirst({
@@ -51,12 +55,13 @@ export async function GET(
         );
       }
 
-      // Allow access if user is owner or project is public
-      if (project.ownerId !== auth.user.id && project.visibility !== 'PUBLIC') {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        );
+      // Allow access if user is owner, project is public, or global ADMIN
+      if (
+        project.ownerId !== auth.user.id &&
+        project.visibility !== 'PUBLIC' &&
+        (auth as any)?.user?.role !== 'ADMIN'
+      ) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
     }
 
@@ -64,10 +69,7 @@ export async function GET(
     const boardData = await BoardUtils.getBoardData(projectId);
 
     if (!boardData) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     return createSuccessResponse(boardData);

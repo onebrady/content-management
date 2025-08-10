@@ -17,10 +17,12 @@ const createItemSchema = z.object({
 
 // Validation schema for reordering items
 const reorderItemsSchema = z.object({
-  itemOrders: z.array(z.object({
-    id: z.string(),
-    position: z.number().min(0),
-  })),
+  itemOrders: z.array(
+    z.object({
+      id: z.string(),
+      position: z.number().min(0),
+    })
+  ),
 });
 
 /**
@@ -77,12 +79,13 @@ export async function POST(
       },
     });
 
-    // Allow access if user is owner or project member
-    if (!projectMember && checklist.card.list.project.ownerId !== auth.user.id) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+    // Allow access if user is owner, member, or global ADMIN
+    if (
+      !projectMember &&
+      checklist.card.list.project.ownerId !== auth.user.id &&
+      (auth as any)?.user?.role !== 'ADMIN'
+    ) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Parse and validate request body
@@ -138,7 +141,7 @@ export async function POST(
     return createSuccessResponse(newItem, 201);
   } catch (error) {
     console.error('Create Checklist Item API Error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
@@ -204,12 +207,13 @@ export async function PATCH(
       },
     });
 
-    // Allow access if user is owner or project member
-    if (!projectMember && checklist.card.list.project.ownerId !== auth.user.id) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+    // Allow access if user is owner, member, or global ADMIN
+    if (
+      !projectMember &&
+      checklist.card.list.project.ownerId !== auth.user.id &&
+      (auth as any)?.user?.role !== 'ADMIN'
+    ) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Parse and validate request body
@@ -217,7 +221,7 @@ export async function PATCH(
     const validatedData = reorderItemsSchema.parse(body);
 
     // Verify all items belong to this checklist
-    const itemIds = validatedData.itemOrders.map(item => item.id);
+    const itemIds = validatedData.itemOrders.map((item) => item.id);
     const existingItems = await prisma.projectChecklistItem.findMany({
       where: {
         id: { in: itemIds },
@@ -260,7 +264,7 @@ export async function PATCH(
     return createSuccessResponse(updatedItems);
   } catch (error) {
     console.error('Reorder Checklist Items API Error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },

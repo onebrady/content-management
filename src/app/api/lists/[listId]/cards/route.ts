@@ -26,7 +26,7 @@ const createCardSchema = z.object({
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { listId: string } }
+  context: { params: { listId: string } | Promise<{ listId: string }> }
 ) {
   try {
     // Rate limiting
@@ -39,7 +39,10 @@ export async function POST(
 
     // Authentication
     const auth = await withAuth(req);
-    const listId = params.listId;
+    const { listId } =
+      context?.params && typeof (context.params as any)?.then === 'function'
+        ? await (context.params as Promise<{ listId: string }>)
+        : (context.params as { listId: string });
 
     // Get the list and check permissions
     const list = await prisma.projectList.findUnique({
@@ -52,10 +55,7 @@ export async function POST(
     });
 
     if (!list) {
-      return NextResponse.json(
-        { error: 'List not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'List not found' }, { status: 404 });
     }
 
     if (list.archived) {
@@ -74,11 +74,13 @@ export async function POST(
     });
 
     // Allow access if user is owner or project member
-    if (!projectMember && list.project.ownerId !== auth.user.id) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+    // Allow if user is member, owner, or global ADMIN
+    if (
+      !projectMember &&
+      list.project.ownerId !== auth.user.id &&
+      (auth as any)?.user?.role !== 'ADMIN'
+    ) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Parse and validate request body
@@ -86,14 +88,16 @@ export async function POST(
     const validatedData = createCardSchema.parse(body);
 
     // Get next position if not provided
-    const position = validatedData.position ?? await BoardUtils.getNextCardPosition(listId);
+    const position =
+      validatedData.position ?? (await BoardUtils.getNextCardPosition(listId));
 
     // Parse due date if provided
     let dueDate: Date | null = null;
     if (validatedData.dueDate) {
-      dueDate = typeof validatedData.dueDate === 'string' 
-        ? new Date(validatedData.dueDate) 
-        : validatedData.dueDate;
+      dueDate =
+        typeof validatedData.dueDate === 'string'
+          ? new Date(validatedData.dueDate)
+          : validatedData.dueDate;
     }
 
     // Create the card with transaction for atomicity
@@ -153,7 +157,7 @@ export async function POST(
       // Add assignees if provided
       if (validatedData.assigneeIds && validatedData.assigneeIds.length > 0) {
         await Promise.all(
-          validatedData.assigneeIds.map(userId =>
+          validatedData.assigneeIds.map((userId) =>
             tx.projectCardAssignee.create({
               data: {
                 cardId: card.id,
@@ -214,7 +218,7 @@ export async function POST(
     return createSuccessResponse(newCard, 201);
   } catch (error) {
     console.error('Create Card API Error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
@@ -258,10 +262,7 @@ export async function GET(
     });
 
     if (!list) {
-      return NextResponse.json(
-        { error: 'List not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'List not found' }, { status: 404 });
     }
 
     // Check if user has read access to this project
@@ -274,14 +275,11 @@ export async function GET(
 
     // Allow access if user is owner, member, or project is public
     if (
-      !projectMember && 
-      list.project.ownerId !== auth.user.id && 
+      !projectMember &&
+      list.project.ownerId !== auth.user.id &&
       list.project.visibility !== 'PUBLIC'
     ) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Get cards with full details

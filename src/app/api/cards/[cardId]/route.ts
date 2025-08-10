@@ -11,10 +11,19 @@ import { z } from 'zod';
 
 // Validation schema for updating cards
 const updateCardSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200, 'Title too long').optional(),
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(200, 'Title too long')
+    .optional(),
   description: z.string().max(5000, 'Description too long').optional(),
   completed: z.boolean().optional(),
-  dueDate: z.string().datetime().optional().or(z.date().optional()).or(z.null()),
+  dueDate: z
+    .string()
+    .datetime()
+    .optional()
+    .or(z.date().optional())
+    .or(z.null()),
   cover: z.string().url().optional().or(z.null()),
   archived: z.boolean().optional(),
   assigneeIds: z.array(z.string()).optional(),
@@ -47,10 +56,7 @@ export async function GET(
     const card = await BoardUtils.getCardDetails(cardId);
 
     if (!card) {
-      return NextResponse.json(
-        { error: 'Card not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Card not found' }, { status: 404 });
     }
 
     // Check if user has read access to this project
@@ -62,10 +68,7 @@ export async function GET(
     });
 
     // Allow access if user is owner, member, or project is public
-    if (
-      !projectMember && 
-      card.list.project.ownerId !== auth.user.id
-    ) {
+    if (!projectMember && card.list.project.ownerId !== auth.user.id) {
       // Check if project is public
       const project = await prisma.project.findUnique({
         where: { id: card.list.project.id },
@@ -73,10 +76,7 @@ export async function GET(
       });
 
       if (!project || project.visibility !== 'PUBLIC') {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        );
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
     }
 
@@ -123,10 +123,7 @@ export async function PATCH(
     });
 
     if (!card) {
-      return NextResponse.json(
-        { error: 'Card not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Card not found' }, { status: 404 });
     }
 
     // Check if user has write access to this project
@@ -138,11 +135,12 @@ export async function PATCH(
     });
 
     // Allow access if user is owner or project member
-    if (!projectMember && card.list.project.ownerId !== auth.user.id) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+    if (
+      !projectMember &&
+      card.list.project.ownerId !== auth.user.id &&
+      (auth as any)?.user?.role !== 'ADMIN'
+    ) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Parse and validate request body
@@ -165,14 +163,20 @@ export async function PATCH(
     const updatedCard = await prisma.$transaction(async (tx) => {
       // Prepare update data
       const updateData: any = {};
-      
-      if (validatedData.title !== undefined) updateData.title = validatedData.title;
-      if (validatedData.description !== undefined) updateData.description = validatedData.description;
-      if (validatedData.completed !== undefined) updateData.completed = validatedData.completed;
+
+      if (validatedData.title !== undefined)
+        updateData.title = validatedData.title;
+      if (validatedData.description !== undefined)
+        updateData.description = validatedData.description;
+      if (validatedData.completed !== undefined)
+        updateData.completed = validatedData.completed;
       if (validatedData.dueDate !== undefined) updateData.dueDate = dueDate;
-      if (validatedData.cover !== undefined) updateData.cover = validatedData.cover;
-      if (validatedData.archived !== undefined) updateData.archived = validatedData.archived;
-      if (validatedData.contentId !== undefined) updateData.contentId = validatedData.contentId;
+      if (validatedData.cover !== undefined)
+        updateData.cover = validatedData.cover;
+      if (validatedData.archived !== undefined)
+        updateData.archived = validatedData.archived;
+      if (validatedData.contentId !== undefined)
+        updateData.contentId = validatedData.contentId;
 
       // Update the card
       const card = await tx.projectCard.update({
@@ -190,7 +194,7 @@ export async function PATCH(
         // Add new assignees
         if (validatedData.assigneeIds.length > 0) {
           await Promise.all(
-            validatedData.assigneeIds.map(userId =>
+            validatedData.assigneeIds.map((userId) =>
               tx.projectCardAssignee.create({
                 data: {
                   cardId,
@@ -266,7 +270,7 @@ export async function PATCH(
     return createSuccessResponse(updatedCard);
   } catch (error) {
     console.error('Update Card API Error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
@@ -314,10 +318,7 @@ export async function DELETE(
     });
 
     if (!card) {
-      return NextResponse.json(
-        { error: 'Card not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Card not found' }, { status: 404 });
     }
 
     // Check if user has write access to this project
@@ -329,11 +330,12 @@ export async function DELETE(
     });
 
     // Allow access if user is owner or project member
-    if (!projectMember && card.list.project.ownerId !== auth.user.id) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+    if (
+      !projectMember &&
+      card.list.project.ownerId !== auth.user.id &&
+      (auth as any)?.user?.role !== 'ADMIN'
+    ) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Archive the card using BoardUtils

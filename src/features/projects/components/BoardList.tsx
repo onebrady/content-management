@@ -1,9 +1,30 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Paper, Text, Group, Button, Stack, TextInput, ActionIcon, Menu, Badge } from '@mantine/core';
-import { IconPlus, IconDots, IconArchive, IconEdit, IconTrash } from '@tabler/icons-react';
-import { Droppable, Draggable } from '@hello-pangea/dnd';
+import {
+  Paper,
+  Text,
+  Group,
+  Button,
+  Stack,
+  TextInput,
+  ActionIcon,
+  Menu,
+  Badge,
+} from '@mantine/core';
+import {
+  IconPlus,
+  IconDots,
+  IconArchive,
+  IconEdit,
+  IconTrash,
+} from '@tabler/icons-react';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { BoardCard } from './BoardCard';
 import classes from './BoardList.module.css';
 
@@ -55,22 +76,22 @@ interface BoardListProps {
   isDragging: boolean;
 }
 
-export function BoardList({ 
-  list, 
-  index, 
-  onCardClick, 
-  onAddCard, 
+export function BoardList({
+  list,
+  index,
+  onCardClick,
+  onAddCard,
   onEditList,
   onArchiveList,
-  isDragging 
+  isDragging,
 }: BoardListProps) {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState(list.title);
 
-  const activeCards = list.cards.filter(card => !card.archived);
-  const completedCount = activeCards.filter(card => card.completed).length;
+  const activeCards = list.cards.filter((card) => !card.archived);
+  const completedCount = activeCards.filter((card) => card.completed).length;
 
   const handleAddCard = () => {
     if (newCardTitle.trim()) {
@@ -105,170 +126,178 @@ export function BoardList({
     }
   };
 
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging: listDragging,
+  } = useSortable({
+    id: list.id,
+    data: { type: 'list', listId: list.id },
+  });
+
+  const listStyle: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <Draggable draggableId={list.id} index={index}>
-      {(provided, snapshot) => (
-        <Paper
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          className={`
-            ${classes.list} 
-            ${isDragging || snapshot.isDragging ? classes.dragging : ''}
-          `}
-          data-testid="board-list"
-          data-rbd-droppable-id={list.id}
-          shadow="sm"
-          p="md"
-          radius="md"
-          withBorder
-        >
-          {/* List Header */}
-          <div {...provided.dragHandleProps}>
-            <Group justify="space-between" align="center" mb="md">
-              {isEditingTitle ? (
-                <TextInput
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  onBlur={handleEditTitle}
-                  onKeyDown={(e) => handleKeyPress(e, 'title')}
-                  size="sm"
-                  variant="unstyled"
-                  autoFocus
-                  className={classes.titleInput}
-                />
-              ) : (
-                <Group gap="xs" align="center">
-                  <Text fw={600} size="sm" lineClamp={1}>
-                    {list.title}
-                  </Text>
-                  <Badge size="sm" variant="light" color="gray">
-                    {activeCards.length}
-                  </Badge>
-                  {completedCount > 0 && (
-                    <Badge size="sm" variant="light" color="green">
-                      {completedCount} done
-                    </Badge>
-                  )}
-                </Group>
+    <Paper
+      ref={setNodeRef}
+      className={`
+        ${classes.list} 
+        ${isDragging || listDragging ? classes.dragging : ''}
+      `}
+      data-testid="board-list"
+      shadow="sm"
+      p="md"
+      radius="md"
+      withBorder
+      style={listStyle}
+    >
+      {/* List Header */}
+      <div {...listeners} {...attributes}>
+        <Group justify="space-between" align="center" mb="md">
+          {isEditingTitle ? (
+            <TextInput
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onBlur={handleEditTitle}
+              onKeyDown={(e) => handleKeyPress(e, 'title')}
+              size="sm"
+              variant="unstyled"
+              autoFocus
+              className={classes.titleInput}
+            />
+          ) : (
+            <Group gap="xs" align="center">
+              <Text fw={600} size="sm" lineClamp={1}>
+                {list.title}
+              </Text>
+              <Badge size="sm" variant="light" color="gray">
+                {activeCards.length}
+              </Badge>
+              {completedCount > 0 && (
+                <Badge size="sm" variant="light" color="green">
+                  {completedCount} done
+                </Badge>
               )}
-
-              <Menu shadow="md" width={200}>
-                <Menu.Target>
-                  <ActionIcon variant="subtle" size="sm">
-                    <IconDots size={16} />
-                  </ActionIcon>
-                </Menu.Target>
-
-                <Menu.Dropdown>
-                  <Menu.Item
-                    leftSection={<IconEdit size={14} />}
-                    onClick={() => setIsEditingTitle(true)}
-                  >
-                    Edit list name
-                  </Menu.Item>
-                  <Menu.Item
-                    leftSection={<IconArchive size={14} />}
-                    onClick={() => onArchiveList?.(list.id)}
-                    color="orange"
-                  >
-                    Archive list
-                  </Menu.Item>
-                  <Menu.Divider />
-                  <Menu.Item
-                    leftSection={<IconTrash size={14} />}
-                    color="red"
-                    disabled
-                  >
-                    Delete list
-                  </Menu.Item>
-                </Menu.Dropdown>
-              </Menu>
             </Group>
-          </div>
+          )}
 
-          {/* Cards Container */}
-          <Droppable droppableId={list.id} type="card">
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className={`
-                  ${classes.cardsContainer} 
-                  ${snapshot.isDraggingOver ? classes.dragOver : ''}
-                `}
-                data-testid="cards-container"
+          <Menu shadow="md" width={200}>
+            <Menu.Target>
+              <ActionIcon variant="subtle" size="sm">
+                <IconDots size={16} />
+              </ActionIcon>
+            </Menu.Target>
+
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<IconEdit size={14} />}
+                onClick={() => setIsEditingTitle(true)}
               >
-                {activeCards.length > 0 ? (
-                  <Stack gap="xs">
-                    {activeCards
-                      .sort((a, b) => a.position - b.position)
-                      .map((card, cardIndex) => (
-                        <BoardCard
-                          key={card.id}
-                          card={card}
-                          index={cardIndex}
-                          onCardClick={onCardClick}
-                          isDragging={false}
-                        />
-                      ))}
-                  </Stack>
-                ) : (
-                  <div className={classes.emptyState}>
-                    <Text size="sm" color="dimmed" ta="center">
-                      No cards yet
-                    </Text>
-                  </div>
-                )}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
+                Edit list name
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconArchive size={14} />}
+                onClick={() => onArchiveList?.(list.id)}
+                color="orange"
+              >
+                Archive list
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
+                leftSection={<IconTrash size={14} />}
+                color="red"
+                disabled
+              >
+                Delete list
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
+      </div>
 
-          {/* Add Card Section */}
-          <div className={classes.addCardSection}>
-            {isAddingCard ? (
-              <Stack gap="xs">
-                <TextInput
-                  placeholder="Enter a title for this card..."
-                  value={newCardTitle}
-                  onChange={(e) => setNewCardTitle(e.target.value)}
-                  onKeyDown={(e) => handleKeyPress(e, 'card')}
-                  size="sm"
-                  autoFocus
-                />
-                <Group gap="xs">
-                  <Button size="xs" onClick={handleAddCard} disabled={!newCardTitle.trim()}>
-                    Add card
-                  </Button>
-                  <Button 
-                    size="xs" 
-                    variant="subtle" 
-                    onClick={() => {
-                      setIsAddingCard(false);
-                      setNewCardTitle('');
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Group>
-              </Stack>
-            ) : (
+      {/* Cards Container */}
+      <div className={classes.cardsContainer} data-testid="cards-container">
+        {activeCards.length > 0 ? (
+          <Stack gap="xs">
+            <SortableContext
+              items={activeCards.map((c) => c.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {activeCards
+                .sort((a, b) => a.position - b.position)
+                .map((card, cardIndex) => (
+                  <BoardCard
+                    key={card.id}
+                    card={card}
+                    index={cardIndex}
+                    onCardClick={onCardClick}
+                    isDragging={false}
+                  />
+                ))}
+            </SortableContext>
+          </Stack>
+        ) : (
+          <div className={classes.emptyState}>
+            <Text size="sm" color="dimmed" ta="center">
+              No cards yet
+            </Text>
+          </div>
+        )}
+      </div>
+
+      {/* Add Card Section */}
+      <div className={classes.addCardSection}>
+        {isAddingCard ? (
+          <Stack gap="xs">
+            <TextInput
+              placeholder="Enter a title for this card..."
+              value={newCardTitle}
+              onChange={(e) => setNewCardTitle(e.target.value)}
+              onKeyDown={(e) => handleKeyPress(e, 'card')}
+              size="sm"
+              autoFocus
+            />
+            <Group gap="xs">
               <Button
-                variant="subtle"
-                color="gray"
-                leftSection={<IconPlus size={16} />}
-                onClick={() => setIsAddingCard(true)}
-                fullWidth
-                justify="flex-start"
-                size="sm"
-                className={classes.addCardButton}
+                size="xs"
+                onClick={handleAddCard}
+                disabled={!newCardTitle.trim()}
               >
-                Add a card
+                Add card
               </Button>
-            )}
-          </div>
-        </Paper>
-      )}
-    </Draggable>
+              <Button
+                size="xs"
+                variant="subtle"
+                onClick={() => {
+                  setIsAddingCard(false);
+                  setNewCardTitle('');
+                }}
+              >
+                Cancel
+              </Button>
+            </Group>
+          </Stack>
+        ) : (
+          <Button
+            variant="subtle"
+            color="gray"
+            leftSection={<IconPlus size={16} />}
+            onClick={() => setIsAddingCard(true)}
+            fullWidth
+            justify="flex-start"
+            size="sm"
+            className={classes.addCardButton}
+          >
+            Add a card
+          </Button>
+        )}
+      </div>
+    </Paper>
   );
 }

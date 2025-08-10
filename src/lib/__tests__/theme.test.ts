@@ -1,3 +1,12 @@
+// Mock Mantine core theming creation to avoid version differences in tests
+jest.mock('@mantine/core', () => {
+  const actual = jest.requireActual('@mantine/core');
+  return {
+    ...actual,
+    createTheme: (input: any) => input,
+  };
+});
+
 import { customTheme } from '../theme';
 import { generateColorShades, isValidHexColor } from '../theme-utils';
 

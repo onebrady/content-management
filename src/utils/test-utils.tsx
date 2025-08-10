@@ -9,7 +9,7 @@ import '@mantine/core/styles.css';
 
 // Create a custom renderer that wraps components with necessary providers
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => (
-  <MantineProvider>
+  <MantineProvider forceColorScheme="light">
     <Notifications />
     <DatesProvider settings={{ locale: 'en' }}>{children}</DatesProvider>
   </MantineProvider>

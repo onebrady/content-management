@@ -29,6 +29,21 @@ export async function withProjectAuth(
   projectId: string,
   requiredRole: ProjectRole = 'VIEWER'
 ): Promise<AuthResult> {
+  // Global ADMINs have full access across all projects
+  // and should bypass membership checks entirely
+  try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role === 'ADMIN') {
+      return {
+        user: {
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.name || undefined,
+          role: session.user.role,
+        },
+      };
+    }
+  } catch {}
   // Test/E2E bypass: allow auth in non-production when E2E_TEST is set
   if (
     process.env.NODE_ENV !== 'production' &&

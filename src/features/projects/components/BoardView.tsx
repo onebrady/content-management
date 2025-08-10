@@ -12,9 +12,24 @@ import {
   Text,
 } from '@mantine/core';
 import { IconPlus, IconSettings } from '@tabler/icons-react';
-import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
+import {
+  DndContext,
+  DragEndEvent,
+  DragStartEvent,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
 import { notifications } from '@mantine/notifications';
 import { BoardList } from './BoardList';
+import CardModal from './CardModal';
 import { useProjectData } from '../hooks/useProjectData';
 import { useTaskPositioning } from '../hooks/useTaskPositioning';
 import classes from './BoardView.module.css';
@@ -94,22 +109,34 @@ export function BoardView({
     isMoving,
   } = useTaskPositioning(projectId);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const [activeItem, setActiveItem] = useState<{
+    type: 'list' | 'card';
+    id: string;
+  } | null>(null);
+
   const handleDragEnd = useCallback(
-    async (result: DropResult) => {
-      const { destination, source, draggableId, type } = result;
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over) return;
+      const draggableId = String(active.id);
+      const type = (active.data?.current as any)?.type;
+      const source = (active.data?.current as any) || {};
+      const destination = (over.data?.current as any) || {
+        droppableId: over.id,
+        index: 0,
+      };
 
-      // Dropped outside the list
-      if (!destination) {
-        return;
-      }
-
-      // Dropped in the same position
+      if (!destination) return;
       if (
         destination.droppableId === source.droppableId &&
         destination.index === source.index
-      ) {
+      )
         return;
-      }
 
       try {
         if (type === 'list') {
@@ -149,6 +176,13 @@ export function BoardView({
 
   const handleCardClick = useCallback((card: ProjectCard) => {
     setSelectedCard(card);
+  }, []);
+
+  const handleDragStart = useCallback((e: DragStartEvent) => {
+    const type = (e.active.data?.current as any)?.type;
+    if (type === 'list' || type === 'card') {
+      setActiveItem({ type, id: String(e.active.id) });
+    }
   }, []);
 
   const handleAddCard = useCallback(
@@ -315,102 +349,143 @@ export function BoardView({
       </Group>
 
       {/* Board Container */}
-      <DragDropContext onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
         <div className={classes.boardContainer} data-testid="board-container">
-          <Droppable droppableId="board" type="list" direction="horizontal">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className={classes.listsContainer}
-              >
-                {/* Lists */}
-                {activeLists
-                  .sort((a, b) => a.position - b.position)
-                  .map((list, index) => (
-                    <BoardList
-                      key={list.id}
-                      list={list}
-                      index={index}
-                      onCardClick={handleCardClick}
-                      onAddCard={handleAddCard}
-                      onEditList={handleEditList}
-                      onArchiveList={handleArchiveList}
-                      isDragging={isMoving}
-                    />
-                  ))}
+          <div className={classes.listsContainer}>
+            <SortableContext
+              items={activeLists.map((l) => l.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              {/* Lists */}
+              {activeLists
+                .sort((a, b) => a.position - b.position)
+                .map((list, index) => (
+                  <BoardList
+                    key={list.id}
+                    list={list}
+                    index={index}
+                    onCardClick={handleCardClick}
+                    onAddCard={handleAddCard}
+                    onEditList={handleEditList}
+                    onArchiveList={handleArchiveList}
+                    isDragging={isMoving}
+                  />
+                ))}
 
-                {/* Add List Section */}
-                <div className={classes.addListSection}>
-                  {isAddingList ? (
-                    <Paper className={classes.addListForm} p="md">
-                      <Stack gap="xs">
-                        <input
-                          type="text"
-                          placeholder="Enter list title..."
-                          value={newListTitle}
-                          onChange={(e) => setNewListTitle(e.target.value)}
-                          onKeyDown={handleKeyPress}
-                          className={classes.addListInput}
-                          autoFocus
-                        />
-                        <Group gap="xs">
-                          <Button
-                            size="xs"
-                            onClick={handleAddList}
-                            disabled={!newListTitle.trim()}
-                          >
-                            Add list
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="subtle"
-                            onClick={() => {
-                              setIsAddingList(false);
-                              setNewListTitle('');
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        </Group>
-                      </Stack>
-                    </Paper>
-                  ) : (
-                    <Button
-                      variant="light"
-                      color="gray"
-                      leftSection={<IconPlus size={16} />}
-                      onClick={() => setIsAddingList(true)}
-                      className={classes.addListButton}
-                      size="md"
-                    >
-                      Add another list
-                    </Button>
-                  )}
-                </div>
-
-                {provided.placeholder}
+              {/* Add List Section */}
+              <div className={classes.addListSection}>
+                {isAddingList ? (
+                  <Paper className={classes.addListForm} p="md">
+                    <Stack gap="xs">
+                      <input
+                        type="text"
+                        placeholder="Enter list title..."
+                        value={newListTitle}
+                        onChange={(e) => setNewListTitle(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        className={classes.addListInput}
+                        autoFocus
+                      />
+                      <Group gap="xs">
+                        <Button
+                          size="xs"
+                          onClick={handleAddList}
+                          disabled={!newListTitle.trim()}
+                        >
+                          Add list
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="subtle"
+                          onClick={() => {
+                            setIsAddingList(false);
+                            setNewListTitle('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </Paper>
+                ) : (
+                  <Button
+                    variant="light"
+                    color="gray"
+                    leftSection={<IconPlus size={16} />}
+                    onClick={() => setIsAddingList(true)}
+                    className={classes.addListButton}
+                    size="md"
+                  >
+                    Add another list
+                  </Button>
+                )}
               </div>
-            )}
-          </Droppable>
+            </SortableContext>
+          </div>
+          <DragOverlay>
+            {activeItem?.type === 'card'
+              ? (() => {
+                  const allCards = (projectData?.lists || []).flatMap(
+                    (l) => l.cards || []
+                  );
+                  const card = allCards.find((c) => c.id === activeItem.id);
+                  return card ? (
+                    <Paper
+                      p="md"
+                      withBorder
+                      shadow="lg"
+                      radius="md"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      <Text size="sm" fw={500} lineClamp={2}>
+                        {card.title}
+                      </Text>
+                    </Paper>
+                  ) : null;
+                })()
+              : activeItem?.type === 'list'
+                ? (() => {
+                    const list = activeLists.find(
+                      (l) => l.id === activeItem.id
+                    );
+                    return list ? (
+                      <Paper
+                        p="md"
+                        withBorder
+                        shadow="lg"
+                        radius="md"
+                        style={{ width: 280, pointerEvents: 'none' }}
+                      >
+                        <Group justify="space-between" align="center" mb="sm">
+                          <Text fw={600} size="sm" lineClamp={1}>
+                            {list.title}
+                          </Text>
+                          <Badge size="sm" variant="light" color="gray">
+                            {
+                              (list.cards || []).filter((c: any) => !c.archived)
+                                .length
+                            }
+                          </Badge>
+                        </Group>
+                      </Paper>
+                    ) : null;
+                  })()
+                : null}
+          </DragOverlay>
         </div>
-      </DragDropContext>
+      </DndContext>
 
-      {/* Card Detail Modal - Placeholder for now */}
+      {/* Card Detail Modal */}
       {selectedCard && (
-        <div
-          className={classes.modalOverlay}
-          onClick={() => setSelectedCard(null)}
-        >
-          <Paper
-            className={classes.modalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Title order={3}>{selectedCard.title}</Title>
-            <Text>{selectedCard.description || 'No description'}</Text>
-            <Button onClick={() => setSelectedCard(null)}>Close</Button>
-          </Paper>
-        </div>
+        <CardModal
+          card={selectedCard}
+          isOpen={!!selectedCard}
+          onClose={() => setSelectedCard(null)}
+        />
       )}
     </Container>
   );

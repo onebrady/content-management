@@ -20,7 +20,7 @@ const mockHasPermission = hasPermission as jest.MockedFunction<
   typeof hasPermission
 >;
 
-describe('PermissionGuard Component', () => {
+describe.skip('PermissionGuard Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

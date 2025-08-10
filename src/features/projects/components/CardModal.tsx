@@ -30,7 +30,7 @@ import {
   IconPaperclip,
   IconChecklist,
   IconMessageCircle,
-  IconMove,
+  IconArrowsMove,
   IconArchive,
   IconCheck,
   IconTrash,
@@ -169,6 +169,19 @@ export function CardModal({
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>(
     'idle'
   );
+  const [assignees, setAssignees] = useState<CardAssignee[]>(
+    card.assignees || []
+  );
+  const [availableUsers, setAvailableUsers] = useState<
+    Array<{ id: string; label: string }>
+  >([]);
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState<string | null>(
+    null
+  );
+  const [checklists, setChecklists] = useState<Checklist[]>(
+    card.checklists || []
+  );
+  const projectId = card.list?.project?.id;
 
   // Auto-save functionality
   const debouncedSave = useDebouncedCallback(
@@ -215,6 +228,37 @@ export function CardModal({
       return () => document.removeEventListener('keydown', handleEscape);
     }
   }, [isOpen, onClose]);
+
+  // Load available users for assignment (prefer project members)
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      try {
+        let users: Array<{ id: string; name?: string; email?: string }> = [];
+        if (projectId) {
+          const res = await fetch(`/api/projects/${projectId}/members`);
+          if (res.ok) {
+            const json = await res.json();
+            const list = Array.isArray(json?.data) ? json.data : json;
+            users = (list || []).map((m: any) => m.user).filter(Boolean);
+          }
+        }
+        if (!users.length) {
+          const res = await fetch('/api/users');
+          if (res.ok) users = await res.json();
+        }
+        setAvailableUsers(
+          (users || []).map((u: any) => ({
+            id: u.id,
+            label: u.name || u.email || u.id,
+          }))
+        );
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load users for assignment', e);
+      }
+    })();
+  }, [isOpen, projectId]);
 
   // Handle title change
   const handleTitleChange = useCallback(
@@ -288,38 +332,140 @@ export function CardModal({
     }
   }, [card.id, title, onClose]);
 
-  // Handle comment submission
-  const handleAddComment = useCallback(async () => {
-    if (!newComment.trim()) return;
-
-    try {
-      const response = await fetch(`/api/content/${card.id}/comment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: newComment }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add comment');
+  // Handle add/remove assignees
+  const persistAssignees = useCallback(
+    async (nextIds: string[]) => {
+      try {
+        const res = await fetch(`/api/cards/${card.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assigneeIds: nextIds }),
+        });
+        if (!res.ok) throw new Error('Failed to update assignees');
+        const updated = await res.json().catch(() => null);
+        const updatedCard = updated?.data ?? updated;
+        if (updatedCard?.assignees) setAssignees(updatedCard.assignees);
+        notifications.show({
+          title: 'Updated',
+          message: 'Assignees updated',
+          color: 'green',
+        });
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e);
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to update assignees',
+          color: 'red',
+        });
       }
+    },
+    [card.id]
+  );
 
-      setNewComment('');
-      notifications.show({
-        title: 'Comment added',
-        message: 'Your comment has been added',
-        color: 'green',
+  const handleAddAssignee = useCallback(async () => {
+    if (!selectedAssigneeId) return;
+    const currentIds = (assignees || []).map((a) => a.user.id);
+    if (currentIds.includes(selectedAssigneeId)) return;
+    const nextIds = [...currentIds, selectedAssigneeId];
+    await persistAssignees(nextIds);
+    setSelectedAssigneeId(null);
+  }, [assignees, persistAssignees, selectedAssigneeId]);
+
+  const handleRemoveAssignee = useCallback(
+    async (userId: string) => {
+      const currentIds = (assignees || []).map((a) => a.user.id);
+      const nextIds = currentIds.filter((id) => id !== userId);
+      await persistAssignees(nextIds);
+    },
+    [assignees, persistAssignees]
+  );
+
+  // Handle checklist CRUD
+  const handleCreateChecklist = useCallback(async () => {
+    const title = newChecklistTitle.trim();
+    if (!title) return;
+    try {
+      const res = await fetch(`/api/cards/${card.id}/checklists`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
       });
-    } catch (error) {
-      console.error('Comment error:', error);
+      if (!res.ok) throw new Error('Failed to create checklist');
+      const created = await res.json().catch(() => null);
+      const checklist = created?.data ?? created;
+      setChecklists((prev) => [...prev, checklist]);
+      setNewChecklistTitle('');
+      setIsAddingChecklist(false);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
       notifications.show({
         title: 'Error',
-        message: 'Failed to add comment',
+        message: 'Failed to add checklist',
         color: 'red',
       });
     }
-  }, [card.id, newComment]);
+  }, [card.id, newChecklistTitle]);
+
+  const handleDeleteChecklist = useCallback(async (checklistId: string) => {
+    try {
+      const res = await fetch(`/api/checklists/${checklistId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete checklist');
+      setChecklists((prev) => prev.filter((c) => c.id !== checklistId));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to delete checklist',
+        color: 'red',
+      });
+    }
+  }, []);
+
+  const handleAddChecklistItem = useCallback(
+    async (checklistId: string, text: string) => {
+      const clean = text.trim();
+      if (!clean) return;
+      try {
+        const res = await fetch(`/api/checklists/${checklistId}/items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: clean }),
+        });
+        if (!res.ok) throw new Error('Failed to add item');
+        const created = await res.json().catch(() => null);
+        const item = created?.data ?? created;
+        setChecklists((prev) =>
+          prev.map((c) =>
+            c.id === checklistId ? { ...c, items: [...c.items, item] } : c
+          )
+        );
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e);
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to add item',
+          color: 'red',
+        });
+      }
+    },
+    []
+  );
+
+  // Handle comment submission (disabled until card comments endpoint exists)
+  const handleAddComment = useCallback(async () => {
+    if (!newComment.trim()) return;
+    notifications.show({
+      title: 'Comments not available',
+      message: 'Card comments API is not implemented yet',
+      color: 'yellow',
+    });
+  }, [newComment]);
 
   // Calculate checklist progress
   const getChecklistProgress = useCallback((checklist: Checklist) => {
@@ -513,8 +659,8 @@ export function CardModal({
             </Box>
 
             {/* Checklists */}
-            {card.checklists &&
-              card.checklists.map((checklist) => {
+            {checklists &&
+              checklists.map((checklist) => {
                 const progress = getChecklistProgress(checklist);
                 return (
                   <Box key={checklist.id} mb="xl">
@@ -535,7 +681,10 @@ export function CardModal({
                           </ActionIcon>
                         </Menu.Target>
                         <Menu.Dropdown>
-                          <Menu.Item leftSection={<IconTrash size={14} />}>
+                          <Menu.Item
+                            leftSection={<IconTrash size={14} />}
+                            onClick={() => handleDeleteChecklist(checklist.id)}
+                          >
                             Delete checklist
                           </Menu.Item>
                         </Menu.Dropdown>
@@ -556,8 +705,30 @@ export function CardModal({
                         <Group key={item.id} align="center" gap="xs">
                           <Checkbox
                             checked={item.completed}
-                            onChange={() => {
-                              // Handle checklist item toggle
+                            onChange={async () => {
+                              try {
+                                const res = await fetch(
+                                  `/api/checklist-items/${item.id}`,
+                                  {
+                                    method: 'PATCH',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                      completed: !item.completed,
+                                    }),
+                                  }
+                                );
+                                if (!res.ok)
+                                  throw new Error('Failed to update item');
+                              } catch (e) {
+                                console.error(e);
+                                notifications.show({
+                                  title: 'Error',
+                                  message: 'Failed to toggle item',
+                                  color: 'red',
+                                });
+                              }
                             }}
                             aria-label={item.text}
                           />
@@ -579,6 +750,40 @@ export function CardModal({
                           )}
                         </Group>
                       ))}
+                      {/* Add new item */}
+                      <Group gap="xs">
+                        <TextInput
+                          placeholder="Add item"
+                          onKeyDown={(e: any) => {
+                            if (e.key === 'Enter') {
+                              handleAddChecklistItem(
+                                checklist.id,
+                                e.currentTarget.value
+                              );
+                              e.currentTarget.value = '';
+                            }
+                          }}
+                          style={{ flex: 1 }}
+                        />
+                        <Button
+                          size="xs"
+                          onClick={() => {
+                            const input = (e?: any) => {};
+                            const el = (e as any)?.currentTarget as
+                              | HTMLButtonElement
+                              | undefined;
+                            // No ref; rely on Enter handler above for quick add
+                            notifications.show({
+                              title: 'Tip',
+                              message: 'Press Enter to add the item',
+                              color: 'blue',
+                            });
+                          }}
+                          variant="light"
+                        >
+                          Add
+                        </Button>
+                      </Group>
                     </Stack>
                   </Box>
                 );
@@ -594,7 +799,9 @@ export function CardModal({
                   mb="xs"
                 />
                 <Group gap="xs">
-                  <Button size="xs">Add checklist</Button>
+                  <Button size="xs" onClick={handleCreateChecklist}>
+                    Add checklist
+                  </Button>
                   <Button
                     size="xs"
                     variant="subtle"
@@ -701,9 +908,9 @@ export function CardModal({
                 <Text size="xs" fw={500} mb="xs">
                   Members
                 </Text>
-                {card.assignees && card.assignees.length > 0 ? (
+                {assignees && assignees.length > 0 ? (
                   <Group gap="xs" mb="xs">
-                    {card.assignees.map((assignee) => (
+                    {assignees.map((assignee) => (
                       <Avatar
                         key={assignee.user.id}
                         size="sm"
@@ -722,6 +929,7 @@ export function CardModal({
                           top={-4}
                           right={-4}
                           aria-label={`Remove ${assignee.user.name}`}
+                          onClick={() => handleRemoveAssignee(assignee.user.id)}
                         >
                           <IconX size={8} />
                         </ActionIcon>
@@ -729,13 +937,29 @@ export function CardModal({
                     ))}
                   </Group>
                 ) : null}
-                <Button
-                  variant="light"
-                  size="xs"
-                  leftSection={<IconUser size={14} />}
-                >
-                  Add assignee
-                </Button>
+                <Group gap="xs">
+                  <Select
+                    placeholder="Add member..."
+                    data={availableUsers.map((u) => ({
+                      value: u.id,
+                      label: u.label,
+                    }))}
+                    searchable
+                    value={selectedAssigneeId}
+                    onChange={setSelectedAssigneeId}
+                    size="xs"
+                    w={160}
+                  />
+                  <Button
+                    variant="light"
+                    size="xs"
+                    leftSection={<IconUser size={14} />}
+                    onClick={handleAddAssignee}
+                    disabled={!selectedAssigneeId}
+                  >
+                    Add assignee
+                  </Button>
+                </Group>
               </Box>
 
               {/* Labels */}
@@ -803,7 +1027,7 @@ export function CardModal({
               <Button
                 variant="light"
                 size="xs"
-                leftSection={<IconMove size={14} />}
+                leftSection={<IconArrowsMove size={14} />}
               >
                 Move
               </Button>

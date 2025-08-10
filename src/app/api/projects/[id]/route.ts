@@ -53,6 +53,7 @@ export async function GET(
                 title: true,
                 description: true,
                 position: true,
+                completed: true,
                 dueDate: true,
                 cover: true,
                 archived: true,
@@ -74,10 +75,11 @@ export async function GET(
           },
         },
         labels: true,
+        // Prisma Project model does not expose cards on ProjectCountOutputType
+        // Keep only valid counters
         _count: {
           select: {
             lists: true,
-            cards: true,
           },
         },
       },

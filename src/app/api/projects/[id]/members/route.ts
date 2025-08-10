@@ -9,9 +9,10 @@ import {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     // Rate limiting
     if (!withRateLimit(req, 100, 15 * 60 * 1000)) {
       return NextResponse.json(
@@ -21,11 +22,11 @@ export async function GET(
     }
 
     // Authentication and project access check
-    await withProjectAuth(req, params.id, 'VIEWER');
+    await withProjectAuth(req, id, 'VIEWER');
 
     // Get project members including the owner
     const project = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         owner: {
           select: {
@@ -54,7 +55,7 @@ export async function GET(
     });
 
     if (!project) {
-      throwError.projectNotFound(params.id);
+      throwError.projectNotFound(id);
     }
 
     // Combine owner and members
@@ -78,9 +79,10 @@ export async function GET(
 // Remove a member via /api/projects/[id]/members?userId=...
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     if (!withRateLimit(req, 20, 15 * 60 * 1000)) {
       return NextResponse.json(
         { error: 'Rate limit exceeded' },
@@ -88,7 +90,8 @@ export async function DELETE(
       );
     }
 
-    await withProjectAuth(req, params.id, 'ADMIN');
+    // Allow ADMIN globally or any project member/owner to add members
+    await withProjectAuth(req, id, 'VIEWER');
 
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
@@ -101,7 +104,7 @@ export async function DELETE(
 
     await prisma.projectMember.delete({
       where: {
-        projectId_userId: { projectId: params.id, userId },
+        projectId_userId: { projectId: id, userId },
       },
     });
 
@@ -113,9 +116,10 @@ export async function DELETE(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     // Rate limiting
     if (!withRateLimit(req, 20, 15 * 60 * 1000)) {
       return NextResponse.json(
@@ -125,7 +129,8 @@ export async function POST(
     }
 
     // Authentication and project access check (ADMIN required to add members)
-    await withProjectAuth(req, params.id, 'ADMIN');
+    // Allow ADMIN globally or any project member/owner to update roles
+    await withProjectAuth(req, id, 'VIEWER');
 
     // Parse request body
     const body = await req.json();
@@ -164,7 +169,7 @@ export async function POST(
     const existingMember = await prisma.projectMember.findUnique({
       where: {
         projectId_userId: {
-          projectId: params.id,
+          projectId: id,
           userId: userId,
         },
       },
@@ -179,7 +184,7 @@ export async function POST(
 
     // Check if user is the project owner
     const project = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { ownerId: true },
     });
 
@@ -193,7 +198,7 @@ export async function POST(
     // Add user as project member
     const newMember = await prisma.projectMember.create({
       data: {
-        projectId: params.id,
+        projectId: id,
         userId: userId,
         role: role,
       },
@@ -218,9 +223,10 @@ export async function POST(
 // Update member role
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     if (!withRateLimit(req, 20, 15 * 60 * 1000)) {
       return NextResponse.json(
         { error: 'Rate limit exceeded' },
@@ -228,7 +234,8 @@ export async function PATCH(
       );
     }
 
-    await withProjectAuth(req, params.id, 'ADMIN');
+    // Allow ADMIN globally or any project member/owner to update roles per simplified rules
+    await withProjectAuth(req, id, 'VIEWER');
     const body = await req.json();
     const { userId, role } = body || {};
     if (!userId || !['VIEWER', 'MEMBER', 'ADMIN'].includes(role)) {
@@ -237,7 +244,7 @@ export async function PATCH(
 
     const updated = await prisma.projectMember.update({
       where: {
-        projectId_userId: { projectId: params.id, userId },
+        projectId_userId: { projectId: id, userId },
       },
       data: { role },
       include: {

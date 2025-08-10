@@ -125,7 +125,7 @@ export interface ContentVersion {
 }
 
 /** @deprecated Use ProjectCard instead */
-export interface Task {
+export interface Task /* @deprecated */ {
   id: string;
   title: string;
   description: string | null;
@@ -148,7 +148,7 @@ export interface Task {
 }
 
 /** @deprecated Use ProjectCardAttachment instead */
-export interface TaskAttachment {
+export interface TaskAttachment /* @deprecated */ {
   id: string;
   taskId: string;
   filename: string;
@@ -159,7 +159,7 @@ export interface TaskAttachment {
 }
 
 /** @deprecated Use ProjectList instead */
-export interface Column {
+export interface Column /* @deprecated */ {
   id: string;
   title: string;
   position: number;
@@ -168,7 +168,7 @@ export interface Column {
 }
 
 /** @deprecated Use ProjectList with cards instead */
-export interface ColumnWithTasks extends Column {
+export interface ColumnWithTasks /* @deprecated */ extends Column {
   tasks: Task[];
 }
 
@@ -216,7 +216,7 @@ export interface Project {
 }
 
 /** @deprecated Use Partial<ProjectCard> instead */
-export interface TaskUpdatePayload {
+export interface TaskUpdatePayload /* @deprecated */ {
   taskId: string;
   projectId?: string;
   columnId?: string;

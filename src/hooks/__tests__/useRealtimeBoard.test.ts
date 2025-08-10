@@ -8,8 +8,10 @@ jest.mock('next-auth/react');
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 
 // Mock socket.io-client
-jest.mock('socket.io-client');
-const mockIo = io as jest.MockedFunction<typeof io>;
+jest.mock('socket.io-client', () => ({
+  io: jest.fn(),
+}));
+const mockIo = io as unknown as jest.MockedFunction<typeof io>;
 
 // Mock notifications
 jest.mock('@mantine/notifications', () => ({
@@ -59,9 +61,18 @@ describe('useRealtimeBoard Hook', () => {
         retries: 3,
       });
 
-      expect(mockSocket.on).toHaveBeenCalledWith('connect', expect.any(Function));
-      expect(mockSocket.on).toHaveBeenCalledWith('disconnect', expect.any(Function));
-      expect(mockSocket.on).toHaveBeenCalledWith('connect_error', expect.any(Function));
+      expect(mockSocket.on).toHaveBeenCalledWith(
+        'connect',
+        expect.any(Function)
+      );
+      expect(mockSocket.on).toHaveBeenCalledWith(
+        'disconnect',
+        expect.any(Function)
+      );
+      expect(mockSocket.on).toHaveBeenCalledWith(
+        'connect_error',
+        expect.any(Function)
+      );
     });
 
     it('should join project room on connection', () => {
@@ -73,7 +84,7 @@ describe('useRealtimeBoard Hook', () => {
 
       // Simulate connection
       const connectHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'connect'
+        (call) => call[0] === 'connect'
       )?.[1];
 
       act(() => {
@@ -98,7 +109,7 @@ describe('useRealtimeBoard Hook', () => {
 
       // Simulate connection
       const connectHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'connect'
+        (call) => call[0] === 'connect'
       )?.[1];
 
       act(() => {
@@ -109,7 +120,7 @@ describe('useRealtimeBoard Hook', () => {
 
       // Simulate disconnection
       const disconnectHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'disconnect'
+        (call) => call[0] === 'disconnect'
       )?.[1];
 
       act(() => {
@@ -127,7 +138,7 @@ describe('useRealtimeBoard Hook', () => {
       );
 
       const errorHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'connect_error'
+        (call) => call[0] === 'connect_error'
       )?.[1];
 
       act(() => {
@@ -148,7 +159,7 @@ describe('useRealtimeBoard Hook', () => {
       );
 
       const roomUsersHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'room:users'
+        (call) => call[0] === 'room:users'
       )?.[1];
 
       const mockUsers = [
@@ -176,10 +187,14 @@ describe('useRealtimeBoard Hook', () => {
       );
 
       const userJoinedHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'user:joined'
+        (call) => call[0] === 'user:joined'
       )?.[1];
 
-      const newUser = { userId: 'user-3', userName: 'Bob Wilson', presence: 'viewing' };
+      const newUser = {
+        userId: 'user-3',
+        userName: 'Bob Wilson',
+        presence: 'viewing',
+      };
 
       act(() => {
         userJoinedHandler?.(newUser);
@@ -200,16 +215,20 @@ describe('useRealtimeBoard Hook', () => {
 
       // Add a user first
       const userJoinedHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'user:joined'
+        (call) => call[0] === 'user:joined'
       )?.[1];
 
       act(() => {
-        userJoinedHandler?.({ userId: 'user-2', userName: 'Jane Smith', presence: 'viewing' });
+        userJoinedHandler?.({
+          userId: 'user-2',
+          userName: 'Jane Smith',
+          presence: 'viewing',
+        });
       });
 
       // Now remove the user
       const userLeftHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'user:left'
+        (call) => call[0] === 'user:left'
       )?.[1];
 
       act(() => {
@@ -219,7 +238,10 @@ describe('useRealtimeBoard Hook', () => {
       expect(result.current.users).not.toContainEqual(
         expect.objectContaining({ userId: 'user-2' })
       );
-      expect(onUserLeft).toHaveBeenCalledWith({ userId: 'user-2', userName: 'Jane Smith' });
+      expect(onUserLeft).toHaveBeenCalledWith({
+        userId: 'user-2',
+        userName: 'Jane Smith',
+      });
     });
 
     it('should handle presence updates', () => {
@@ -233,23 +255,27 @@ describe('useRealtimeBoard Hook', () => {
 
       // Add a user first
       const userJoinedHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'user:joined'
+        (call) => call[0] === 'user:joined'
       )?.[1];
 
       act(() => {
-        userJoinedHandler?.({ userId: 'user-2', userName: 'Jane Smith', presence: 'viewing' });
+        userJoinedHandler?.({
+          userId: 'user-2',
+          userName: 'Jane Smith',
+          presence: 'viewing',
+        });
       });
 
       // Update presence
       const presenceHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'user:presence'
+        (call) => call[0] === 'user:presence'
       )?.[1];
 
-      const updatedUser = { 
-        userId: 'user-2', 
-        userName: 'Jane Smith', 
-        presence: 'editing', 
-        editingCard: 'card-123' 
+      const updatedUser = {
+        userId: 'user-2',
+        userName: 'Jane Smith',
+        presence: 'editing',
+        editingCard: 'card-123',
       };
 
       act(() => {
@@ -272,7 +298,7 @@ describe('useRealtimeBoard Hook', () => {
       );
 
       const cardMovedHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'card:moved'
+        (call) => call[0] === 'card:moved'
       )?.[1];
 
       const moveEvent = {
@@ -301,7 +327,7 @@ describe('useRealtimeBoard Hook', () => {
       );
 
       const cardUpdatedHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'card:updated'
+        (call) => call[0] === 'card:updated'
       )?.[1];
 
       const updateEvent = {
@@ -328,7 +354,7 @@ describe('useRealtimeBoard Hook', () => {
       );
 
       const listUpdatedHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'list:updated'
+        (call) => call[0] === 'list:updated'
       )?.[1];
 
       const updateEvent = {
@@ -355,7 +381,7 @@ describe('useRealtimeBoard Hook', () => {
       );
 
       const checklistUpdatedHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'checklist:updated'
+        (call) => call[0] === 'checklist:updated'
       )?.[1];
 
       const updateEvent = {
@@ -384,7 +410,7 @@ describe('useRealtimeBoard Hook', () => {
 
       // Simulate connection
       const connectHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'connect'
+        (call) => call[0] === 'connect'
       )?.[1];
 
       act(() => {
@@ -411,7 +437,7 @@ describe('useRealtimeBoard Hook', () => {
 
       // Simulate connection
       const connectHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'connect'
+        (call) => call[0] === 'connect'
       )?.[1];
 
       act(() => {
@@ -445,7 +471,10 @@ describe('useRealtimeBoard Hook', () => {
       });
 
       // Should not emit when disconnected
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('presence:update', expect.any(Object));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'presence:update',
+        expect.any(Object)
+      );
     });
   });
 
@@ -515,7 +544,7 @@ describe('useRealtimeBoard Hook', () => {
       );
 
       const errorHandler = mockSocket.on.mock.calls.find(
-        call => call[0] === 'error'
+        (call) => call[0] === 'error'
       )?.[1];
 
       act(() => {
